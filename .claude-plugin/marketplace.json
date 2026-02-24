@@ -1,11 +1,36 @@
 {
   "name": "agent-team-plugin",
   "description": "Claude Code plugin for orchestrating parallel work via Agent Teams",
+  "owner": {
+    "name": "ducdmdev"
+  },
   "plugins": [
     {
       "name": "agent-team",
       "description": "Orchestrates parallel work via Agent Teams with automated coordination, workspace tracking, and hook enforcement",
-      "path": "."
+      "version": "1.0.0",
+      "source": ".",
+      "author": {
+        "name": "ducdmdev"
+      },
+      "homepage": "https://github.com/ducdmdev/agent-team-plugin",
+      "repository": "https://github.com/ducdmdev/agent-team-plugin",
+      "license": "MIT",
+      "keywords": [
+        "claude-code",
+        "plugin",
+        "agent-team",
+        "orchestration",
+        "parallel"
+      ],
+      "category": "automation",
+      "tags": [
+        "agent-team",
+        "parallel-execution",
+        "workspace-tracking",
+        "hook-enforcement",
+        "team-coordination"
+      ]
     }
   ]
 }
