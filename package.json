@@ -1,0 +1,16 @@
+{
+  "name": "agent-team-plugin",
+  "version": "1.0.0",
+  "description": "Claude Code plugin for orchestrating parallel work via Agent Teams",
+  "license": "MIT",
+  "keywords": ["claude-code", "plugin", "agent-team", "orchestration", "parallel"],
+  "files": [
+    ".claude-plugin/",
+    "hooks/",
+    "scripts/",
+    "skills/",
+    "docs/",
+    "README.md",
+    "LICENSE"
+  ]
+}

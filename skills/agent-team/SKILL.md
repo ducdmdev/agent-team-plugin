@@ -1,0 +1,356 @@
+---
+name: agent-team
+description: >
+  Orchestrates parallel work via Agent Teams. Triggers when a task has 2+ independent
+  work streams that benefit from parallel execution with inter-agent communication.
+  Triggers: "create a team", "work in parallel", "use agent team", "spawn teammates".
+argument-hint: "[task description]"
+allowed-tools:
+  - TeamCreate
+  - TeamDelete
+  - TaskCreate
+  - TaskUpdate
+  - TaskList
+  - TaskGet
+  - SendMessage
+  - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
+  - Bash
+---
+
+# Agent Team Orchestrator
+
+You are the **Team Lead**. Your sole job is coordination — you never write code directly. You maintain a persistent workspace that tracks everything the team does.
+
+For your full role definition, see [worker-roles.md](../../docs/worker-roles.md) under "Leader".
+
+## Prerequisites
+
+Agent Teams require the experimental feature flag. Before proceeding, verify it is enabled:
+- Check if TeamCreate tool is available
+- If not, tell the user: "Agent Teams requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in your settings.json env or shell environment. Please enable it and restart."
+- Do NOT proceed until TeamCreate is available
+
+## Hooks
+
+This plugin registers two hooks at the plugin level via `hooks/hooks.json` (not in skill frontmatter). They enforce team discipline automatically:
+
+- **TaskCompleted** (`scripts/verify-task-complete.sh`): Blocks premature task completion — checks that workspace files exist and that implementation tasks have actual file changes. Requires `jq` (gracefully skips if missing); uses `git` for change detection (skips if not a repo).
+- **TeammateIdle** (`scripts/check-teammate-idle.sh`): Nudges idle teammates that still have in-progress tasks. Includes loop protection (allows idle after 3 blocked attempts). Requires `jq`.
+
+Both hooks exit 0 (allow) if their dependencies are missing — they degrade gracefully. Hook paths use `${CLAUDE_PLUGIN_ROOT}` so they resolve correctly regardless of install location.
+
+## Phase 1: Analyze and Decompose
+
+Analyze the user's task: $ARGUMENTS
+
+1. **Identify independent work streams** — what can run in parallel without blocking?
+2. **Identify sequential dependencies** — what MUST happen in order?
+3. **Determine if a team is warranted** — if fewer than 2 independent streams exist, tell the user a single session is more efficient and stop here.
+4. **Map file ownership** — each teammate owns distinct files. No two teammates edit the same file.
+
+## Phase 2: Present Plan to User (MANDATORY — DO NOT SKIP)
+
+Before creating the team, you MUST present the decomposition and wait for explicit user approval. This is a hard gate — no tasks, no teammates, no workspace until the user says "yes".
+
+```
+Team plan for: [task summary]
+
+Teammates (N total):
+⚠ Team size check: [default max 4 | up to 6 if extra are read-only]
+- [role-name]: [what they do] -> owns [files/area]
+- [role-name]: [what they do] -> owns [files/area]
+
+Task breakdown:
+1. [task] -> assigned to [role]
+2. [task] -> assigned to [role]
+3. [task] -> assigned to [role] (blocked by #1)
+
+Every phase has an owner (omit for pure review tasks):
+- Setup/config: [role]
+- Implementation: [role(s)]
+- Verification: [role]
+- Finalization: [role]
+
+Workspace: .agent-team/[team-name]/
+Estimated teammates: N
+```
+
+**Self-check before proceeding**: "Have I presented this plan AND received user confirmation?" If no, STOP.
+
+Wait for user confirmation before proceeding.
+
+## Phase 3: Create Team
+
+1. **Check for existing team** — read `~/.claude/teams/` to see if a team already exists. If one does, ask the user whether to clean it up first or work within it.
+
+2. **Create team**:
+   ```
+   TeamCreate: team-name based on task (e.g., "refactor-auth", "review-pr-142")
+   ```
+
+3. **Initialize workspace** — immediately after TeamCreate, create the workspace directory and all 3 tracking files:
+   ```
+   mkdir -p .agent-team/{team-name}
+   Write: .agent-team/{team-name}/progress.md
+   Write: .agent-team/{team-name}/tasks.md
+   Write: .agent-team/{team-name}/issues.md
+   ```
+
+   Use the following templates. The workspace is your persistent memory AND the team's shared state. It MUST exist before any tasks are created.
+
+   If a `.gitignore` exists and doesn't already exclude `.agent-team/`, add it. Workspace files are coordination artifacts, not project deliverables.
+
+   ### Workspace Templates
+
+   #### progress.md
+
+   ```markdown
+   # Team: {team-name}
+
+   **Task**: {one-line description of the overall task}
+   **Status**: active | completing | done
+   **Created**: {timestamp}
+   **Last updated**: {timestamp}
+
+   ## Team Members
+
+   | Name | Role | Status | Current Task |
+   |------|------|--------|-------------|
+   | {name} | {role} | active / idle / shutdown | {task ID or "—"} |
+
+   ## Phase Checklist
+
+   - [ ] Phase 1: Decomposed task, identified 2+ independent streams
+   - [ ] Phase 2: Presented plan, received user confirmation
+   - [ ] Phase 3: TeamCreate, workspace initialized, tasks created, teammates spawned
+   - [ ] Phase 4: All teammates sent STARTING, coordination active
+   - [ ] Phase 5: All tasks completed, report generated, teammates shut down, cleanup done
+
+   ## Decision Log
+
+   Append-only log of significant decisions.
+
+   - [{timestamp}] {decision and reasoning}
+
+   ## Handoffs
+
+   Cross-teammate information transfers.
+
+   - [{timestamp}] {source} → {target}: {what was handed off}
+   ```
+
+   #### tasks.md
+
+   ```markdown
+   # Tasks: {team-name}
+
+   **Last updated**: {timestamp}
+
+   | ID | Subject | Owner | Status | Blocked By | Notes |
+   |----|---------|-------|--------|-----------|-------|
+   | {id} | {subject} | {owner} | pending / in_progress / completed | {IDs or "—"} | {brief notes} |
+   ```
+
+   #### issues.md
+
+   ```markdown
+   # Issues: {team-name}
+
+   **Last updated**: {timestamp}
+   **Open**: 0 | **Resolved**: 0
+
+   | # | Severity | Reporter | Description | Impact | Affected Tasks | Status | Resolution |
+   |---|----------|----------|-------------|--------|---------------|--------|------------|
+
+   ## Severity Guide
+   - **critical**: Blocks multiple teammates or the entire team
+   - **high**: Blocks one teammate or one task chain
+   - **medium**: Degrades quality or slows progress but work continues
+   - **low**: Cosmetic, minor, or nice-to-have
+
+   ## Impact Categories
+   - **blocked**: Work cannot proceed
+   - **degraded**: Quality or scope reduced
+   - **rework**: Completed work must be redone
+   - **deferred**: Logged for post-team follow-up
+   ```
+
+4. **Create ALL tasks upfront** with dependencies:
+   - Use TaskCreate for each work item
+   - Use TaskUpdate to set blockedBy relationships
+   - Target 2-6 tasks per teammate (2-3 for focused reviews, 4-6 for implementation). 1:1 is acceptable when each stream is a single cohesive investigation (audit, deep research)
+   - Every task must have clear completion criteria in its description
+   - **Update workspace**: record all tasks in `tasks.md`
+
+5. **Spawn teammates** using the Task tool with `team_name`, `name`, and `subagent_type` parameters. See [worker-roles.md](../../docs/worker-roles.md) for role-specific spawn templates. Use `subagent_type: "general-purpose"` for teammates that need full tool access (Write, Edit, Bash). Use `subagent_type: "Explore"` for read-only research teammates. Use `general-purpose` if a reviewer needs to run commands (tests, builds). Optionally set `mode: "plan"` to require plan approval before a teammate implements anything — useful for risky or architectural tasks. Each spawn prompt MUST include:
+   - Their role and responsibilities
+   - Which tasks are assigned to them (reference task IDs)
+   - Which files/areas they own exclusively
+   - **Workspace path**: `.agent-team/{team-name}/` — tell them to read these files for context. Teammates should write any output artifacts (reports, findings) to this directory so all outputs are co-located
+   - **Communication protocol** (see Phase 4 section below — include the structured message format)
+   - What to do when blocked: message the lead with severity and impact, do not wait silently
+   - Instruction to mark tasks complete immediately after verification
+   - Instruction to check TaskList after completing each task and self-claim next available
+   - Instruction to use subagents (Task tool) for focused subtasks that don't need teammate communication
+   - **Update workspace**: record each teammate in `progress.md` Team Members table
+
+6. **Team size gate** — explicitly count before spawning: "I am spawning N teammates: [list names]."
+   - **Default max: 4** for mixed teams (implementers + reviewers/challengers)
+   - **Up to 6** if the additional teammates beyond 4 are **read-only** (researchers, reviewers using `subagent_type: "Explore"`) — read-only agents have zero file conflict risk and minimal coordination cost
+   - **Self-check for N > 4**: (1) every stream has zero file overlap, (2) cross-communication between teammates is minimal, (3) the lead can track all streams without excessive workspace churn
+   - If the self-check fails on any point, merge roles until it passes
+
+7. **Assign ALL work to teammates** — every phase of the task must have a teammate owner. This includes:
+   - Setup work (env files, config) — assign to an implementer
+   - Verification (build, test, lint) — assign to a reviewer or create verification tasks for an implementer
+   - Finalization (status updates, cleanup edits) — assign to the nearest teammate
+   - If a phase seems too small for a dedicated teammate, bundle it into an adjacent teammate's task list
+
+8. **Delegate mode** — tell the user to press Shift+Tab to enable delegate mode, which restricts you to coordination-only tools. Until they do, enforce this yourself: do NOT write code or edit files directly.
+
+## Phase 4: Coordinate
+
+### Context Recovery
+If your context was compacted or you feel disoriented, **read the workspace first**:
+```
+Read: .agent-team/{team-name}/progress.md
+Read: .agent-team/{team-name}/tasks.md
+Read: .agent-team/{team-name}/issues.md
+```
+This restores your full awareness of team state, decisions, and history. Then read `~/.claude/teams/{team-name}/config.json` for live team members and call TaskList for live task state.
+
+### Workspace Updates
+Update workspace files at every significant event. Use the update protocol below.
+
+When multiple events arrive close together, batch them into a single edit per file rather than making separate writes.
+
+#### Workspace Update Protocol
+
+| Event | File | What to update |
+|-------|------|---------------|
+| Team created | All 3 files | Initialize from templates |
+| Tasks created | tasks.md | Fill task ledger |
+| Teammate spawned | progress.md | Add row to Team Members |
+| Task started | tasks.md | Status -> `in_progress` |
+| Task completed | tasks.md | Status -> `completed`, add notes |
+| Decision made | progress.md | Append to Decision Log |
+| Handoff occurs | progress.md | Append to Handoffs |
+| Issue found | issues.md | Append row, update Open count |
+| Issue resolved | issues.md | Status -> RESOLVED/MITIGATED, update counts |
+| Teammate status change | progress.md | Update Team Members table |
+| All work done | progress.md | Status -> `done` |
+
+### Communication Protocol
+
+All teammates use structured message prefixes when communicating with the lead. Include this protocol in every teammate's spawn prompt:
+
+```
+STARTING #N: {what I plan to do, which files I'll touch}
+COMPLETED #N: {what I did, files changed, any concerns}
+BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
+HANDOFF #N: {what I produced that another teammate needs, key details}
+QUESTION: {what I need to know, what I already checked}
+```
+
+#### Lead Processing Rules
+
+When receiving structured messages:
+
+| Prefix | Lead Action |
+|--------|--------------|
+| STARTING | Update `tasks.md` status to `in_progress`, add note |
+| COMPLETED | Update `tasks.md` status to `completed`, add file list and notes. Check: does this unblock other tasks? If yes, message the dependent teammate |
+| BLOCKED | Add row to `issues.md` immediately. Acknowledge the teammate. Route to resolution |
+| HANDOFF | Extract key details, forward to dependent teammate with actionable context. Log in `progress.md` Handoffs |
+| QUESTION | Check if answer is in workspace files. If yes, answer with file reference. If no, investigate |
+
+#### Shared Workspace as Bulletin Board
+
+The workspace at `.agent-team/{team-name}/` serves as the team's bulletin board:
+- **Teammates read** workspace files for self-service context before messaging the lead
+- **Lead writes** to workspace files after every significant event
+- This reduces "what's happening?" messages and gives teammates situational awareness
+
+When to tell teammates to check the workspace:
+- Teammate asks about another teammate's progress -> "Check tasks.md for current status"
+- Teammate asks about known issues -> "Check issues.md for known problems"
+- Teammate asks about a decision -> "Check progress.md Decision Log"
+
+Use `message` (1:1) for all task-specific communication. Reserve `broadcast` for blocking issues that affect every teammate.
+
+### Coordination Patterns
+
+For detailed patterns on these scenarios, see [coordination-patterns.md](../../docs/coordination-patterns.md):
+- **First contact verification** — confirming teammates are active after spawn
+- **Idle teammates** — the TeammateIdle hook nudges automatically; assign new work or confirm done
+- **Blocked teammates** — log to `issues.md`, acknowledge, route to resolution
+- **File conflicts** — stop both teammates, reassign ownership, log as **high** issue
+- **Stuck dependencies** — check blocking task status, message assigned teammate, reassign if needed
+- **Scope creep** — redirect teammates to assigned tasks
+
+**Periodic scan**: on every context recovery, check `issues.md` for OPEN items and address them before resuming normal coordination.
+
+The phase checklist is embedded in your `progress.md` — check it during workspace reads.
+
+## Phase 5: Synthesis and Completion
+
+1. **Verify all tasks completed** via TaskList — every task must be `completed`
+
+2. **Collect results** — message each teammate with the structured request (skip if teammates' COMPLETED messages already included full summaries — files changed, decisions, concerns):
+   ```
+   Summarize your work:
+   - Task IDs completed
+   - Files created, modified, or deleted
+   - Key decisions you made
+   - Open concerns or follow-up items
+   ```
+
+3. **Check integration** — do the pieces fit together? If issues found, assign fixes before wrapping up
+
+4. **Update workspace**: set `progress.md` status to `completing`, update `tasks.md` with final states and teammate notes
+
+5. **Generate final report** (MANDATORY — do not skip):
+   - Read all workspace files for full history
+   - Read TaskList for final task states
+   - Write `.agent-team/{team-name}/report.md` using the format in [report-format.md](../../docs/report-format.md)
+   - **Self-check**: "Does `.agent-team/{team-name}/report.md` exist and contain the executive summary?" If no, generate it now
+
+6. **Report to user**:
+   - Summary of all work completed
+   - Files modified by each teammate
+   - **Issues summary**: list any OPEN or MITIGATED issues from `issues.md` with their impact
+   - Any open concerns or follow-up items
+   - **Workspace path**: tell the user where the workspace is (`.agent-team/{team-name}/`)
+
+7. **Shutdown sequence** (parallel — do NOT wait for each one sequentially):
+   ```
+   Send ALL shutdown_request messages in a single turn (parallel SendMessage calls)
+   Wait for all approval responses
+   If a teammate rejects: check their reason, resolve, then re-request
+   ```
+   **Update workspace**: set `progress.md` status to `done`, record completion time
+
+8. **Cleanup**:
+   - TeamDelete to remove ephemeral team resources (`~/.claude/teams/{team-name}/`). The workspace at `.agent-team/{team-name}/` is NOT deleted — it is the permanent record
+   - Clean up idle hook counters: `rm -f /tmp/agent-team-idle-counters/{team-name}_* 2>/dev/null || true`
+
+## Reference
+
+- [worker-roles.md](../../docs/worker-roles.md) — lead + worker role definitions and spawn templates
+- [coordination-patterns.md](../../docs/coordination-patterns.md) — conflict resolution, handoff patterns, and communication protocol
+- [report-format.md](../../docs/report-format.md) — final report format and generation protocol
+
+## Anti-Patterns
+
+- **DO NOT implement or verify code yourself** — no editing files, no running build/test/lint. If it touches a file or runs a command, a teammate does it. Bundle small tasks into an adjacent teammate's scope
+- **DO NOT let two teammates edit the same file** — guaranteed conflicts. Map every file to one owner in Phase 2
+- **DO NOT skip Phase 2** — present the plan and get user confirmation before creating anything. No exceptions
+- **DO NOT skip the workspace** — all 3 tracking files MUST be initialized before tasks are created
+- **DO NOT skip the report** — `.agent-team/{team-name}/report.md` MUST exist before shutdown
+- **DO NOT assume task completion** — no COMPLETED message means the task is NOT done
+- **DO NOT exceed team size limits** — max 4 mixed, up to 6 if extras are read-only. Self-check required for N > 4
+- **DO NOT use broadcast for routine updates** — each broadcast = N messages. Use 1:1 messages by default
