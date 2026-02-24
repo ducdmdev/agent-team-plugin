@@ -1,154 +1,173 @@
-# Agent Team Plugin
+# Agent Team
 
-Orchestrates parallel work via Agent Teams with automated coordination, workspace tracking, and hook enforcement for Claude Code.
+> Orchestrate parallel work via AI Agent Teams in Claude Code — with automated coordination, workspace tracking, and hook enforcement.
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Claude Code Plugin](https://img.shields.io/badge/Claude_Code-Plugin-blueviolet)](https://github.com/ducdmdev/agent-team-plugin)
 
 ## What It Does
 
-This plugin adds an **Agent Team** skill to Claude Code that lets you decompose complex tasks into parallel work streams executed by multiple AI teammates. A team lead coordinates the work while dedicated teammates implement, review, or research in parallel — each owning distinct files to avoid conflicts.
+This plugin adds an **Agent Team** skill to Claude Code that decomposes complex tasks into parallel work streams executed by multiple AI teammates.
 
-The plugin enforces team discipline through hooks that prevent premature task completion and nudge idle teammates, and maintains a persistent workspace that tracks progress, tasks, issues, and a final report.
+- A **team lead** coordinates but never writes code
+- **Teammates** (implementers, reviewers, researchers) work in parallel — each owning distinct files
+- **Hooks** enforce discipline: block premature completion, nudge idle teammates
+- A **persistent workspace** tracks progress, tasks, issues, decisions, and generates a final report
 
 ## Prerequisites
 
-- **Claude Code CLI** (with plugin support)
-- **Agent Teams feature flag**: `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` must be set in your shell environment or Claude Code `settings.json` env
-- **jq** — required by hook scripts for parsing JSON input. Hooks degrade gracefully (skip checks) if `jq` is not installed
-- **git** (optional) — used by the `verify-task-complete` hook to detect file changes. If not in a git repo, the check is skipped
+| Requirement | Details |
+|------------|---------|
+| Claude Code CLI | With plugin support |
+| Feature flag | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in shell env or `settings.json` |
+| `jq` | Required by hook scripts. Hooks skip gracefully if missing |
+| `git` | Optional — used for file change detection |
 
 ## Installation
 
+### From Marketplace
+
+First, add the marketplace:
+
 ```bash
-claude plugin install agent-team-plugin
+claude plugin marketplace add ducdmdev/agent-team-plugin
 ```
 
-Or for local development, use the `--plugin-dir` flag:
+Then install:
+
+```bash
+claude plugin install agent-team
+```
+
+### Local Development
 
 ```bash
 claude --plugin-dir /path/to/agent-team-plugin
 ```
+
+## Usage
+
+Trigger the skill with phrases like:
+
+```
+> create a team to refactor the auth module
+> work in parallel on the API endpoints and frontend components
+> use agent team to build the new dashboard feature
+> spawn teammates to review the PR from security, performance, and correctness angles
+```
+
+The skill activates when your task has **2+ independent work streams**. If the task is better handled sequentially, the lead will tell you.
+
+## How It Works
+
+```
+Phase 1          Phase 2          Phase 3          Phase 4          Phase 5
+Analyze    -->   Present Plan --> Create Team -->  Coordinate  -->  Synthesize
+                 (user approves)  (spawn agents)   (track work)     (report)
+```
+
+| Phase | What Happens |
+|-------|-------------|
+| **1. Analyze** | Identify independent streams, dependencies, file ownership |
+| **2. Plan** | Present teammate roles, task breakdown, and dependencies. **You approve before anything starts** |
+| **3. Create** | Create team, initialize workspace, create tasks, spawn teammates with roles and protocols |
+| **4. Coordinate** | Monitor progress, update workspace, resolve blockers, route handoffs between teammates |
+| **5. Synthesize** | Collect results, verify integration, generate final report, shut down team |
+
+### Teammate Roles
+
+| Role | Purpose | Tools |
+|------|---------|-------|
+| **Implementer** | Write code, create files, build features | Read, Write, Edit, Bash |
+| **Reviewer** | Validate quality, find issues | Read, Grep, Glob, Bash |
+| **Researcher** | Investigate, analyze, report findings | Read, Grep, WebSearch |
+| **Challenger** | Stress-test assumptions, find edge cases | Read, Grep, Bash |
+
+### Communication Protocol
+
+Teammates use structured messages for clean coordination:
+
+```
+STARTING #N:   what I plan to do, which files I'll touch
+COMPLETED #N:  what I did, files changed, any concerns
+BLOCKED #N:    severity={level}, what's blocking, impact
+HANDOFF #N:    what I produced that another teammate needs
+QUESTION:      what I need to know
+```
+
+## Hooks
+
+Two hooks enforce team discipline automatically:
+
+### TaskCompleted
+
+Blocks premature task completion by checking:
+- Workspace exists with all tracking files (`progress.md`, `tasks.md`, `issues.md`)
+- Implementation tasks have actual file changes (via `git status`)
+
+### TeammateIdle
+
+Nudges idle teammates that still have in-progress tasks:
+- Counts assigned in-progress tasks
+- Loop protection: allows idle after 3 consecutive blocks (teammate is genuinely stuck)
+
+Both hooks degrade gracefully — exit 0 if `jq` is missing.
+
+## Workspace
+
+Each team creates a persistent workspace at `.agent-team/{team-name}/` in your project:
+
+```
+.agent-team/{team-name}/
+├── progress.md     # Team status, members, decisions, handoffs
+├── tasks.md        # Task ledger with status and dependencies
+├── issues.md       # Issue tracker with severity and resolution
+└── report.md       # Final report (generated at completion)
+```
+
+- **Persists** after team deletion — it's the permanent record
+- **Shared** — all teammates can read for context
+- **Auto-gitignored** — coordination artifacts, not deliverables
 
 ## Plugin Structure
 
 ```
 agent-team-plugin/
 ├── .claude-plugin/
-│   └── plugin.json          # Plugin metadata (name, description, version)
+│   ├── plugin.json              # Plugin metadata
+│   └── marketplace.json         # Marketplace registry
 ├── hooks/
-│   └── hooks.json           # Hook definitions (TaskCompleted, TeammateIdle)
+│   └── hooks.json               # Hook definitions (${CLAUDE_PLUGIN_ROOT} paths)
 ├── scripts/
-│   ├── verify-task-complete.sh   # Blocks premature task completion
-│   └── check-teammate-idle.sh    # Nudges idle teammates with pending work
+│   ├── verify-task-complete.sh  # TaskCompleted hook
+│   └── check-teammate-idle.sh   # TeammateIdle hook
 ├── skills/
 │   └── agent-team/
-│       └── SKILL.md         # Main skill definition (team lead orchestrator)
+│       └── SKILL.md             # Main skill (team lead orchestrator)
 ├── docs/
 │   ├── worker-roles.md          # Role definitions and spawn templates
 │   ├── coordination-patterns.md # Conflict resolution and handoff patterns
-│   └── report-format.md         # Final report format specification
+│   └── report-format.md         # Final report specification
 ├── package.json
 ├── LICENSE
 └── README.md
 ```
 
-## Usage
-
-Trigger the skill by including phrases like:
-
-- "create a team to ..."
-- "work in parallel on ..."
-- "use agent team for ..."
-- "spawn teammates to ..."
-
-The skill activates when your task has 2 or more independent work streams that benefit from parallel execution. If the task is better handled sequentially, the lead will tell you and work in a single session instead.
-
-### Example
-
-```
-> Use agent team to refactor the auth module: extract JWT logic into a service,
-  update all route handlers, and add integration tests.
-```
-
-The lead will analyze the task, present a plan with teammate assignments, and wait for your confirmation before creating the team.
-
-## How It Works
-
-The skill follows a structured 5-phase workflow:
-
-### Phase 1: Analyze and Decompose
-The lead analyzes your task to identify independent work streams, sequential dependencies, and file ownership boundaries. If fewer than 2 parallel streams exist, it recommends a single session instead.
-
-### Phase 2: Present Plan (Mandatory)
-Before any work begins, the lead presents a detailed plan showing teammates, task breakdown, file ownership, and dependencies. **You must approve** before the team is created.
-
-### Phase 3: Create Team
-The lead creates the team, initializes the workspace, creates all tasks with dependency chains, and spawns teammates. Each teammate receives their role, assigned tasks, file ownership, and communication protocol.
-
-### Phase 4: Coordinate
-The lead monitors progress, updates workspace files, handles blocked teammates, resolves conflicts, and ensures work stays on track. Teammates communicate via structured messages (STARTING, COMPLETED, BLOCKED, HANDOFF, QUESTION).
-
-### Phase 5: Synthesize and Complete
-Once all tasks are done, the lead collects results, checks integration, generates a final report at `.agent-team/{team-name}/report.md`, and shuts down the team. The workspace persists as a permanent record.
-
-## Hooks
-
-The plugin registers two hooks that enforce team discipline automatically:
-
-### TaskCompleted
-
-**Script**: `scripts/verify-task-complete.sh`
-
-Runs when any task is marked as completed. It checks:
-
-1. **Workspace existence** — if this is a team task, verifies that the workspace directory (`.agent-team/{team-name}/`) exists with all required tracking files (`progress.md`, `tasks.md`, `issues.md`)
-2. **File changes** — for implementation tasks (create, add, build, write, refactor, fix, migrate), verifies that actual file changes were made via `git status`
-
-If checks fail, the hook blocks completion (exit 2) with a feedback message explaining what's missing.
-
-### TeammateIdle
-
-**Script**: `scripts/check-teammate-idle.sh`
-
-Runs when a teammate goes idle. It checks:
-
-1. **In-progress tasks** — counts tasks still assigned to and in-progress for the idle teammate
-2. **Loop protection** — after 3 consecutive blocks, allows idle to prevent infinite loops (the teammate is genuinely stuck)
-
-If the teammate has pending work, the hook blocks idle (exit 2) with a nudge to complete or update their tasks.
-
-Both hooks require `jq` and degrade gracefully if it's missing (exit 0, allowing the action).
-
-## Workspace
-
-Each team creates a persistent workspace at `.agent-team/{team-name}/` in your project directory. This workspace:
-
-- Survives team deletion (it's the permanent record)
-- Is shared (teammates can read it for context)
-- Is automatically added to `.gitignore`
-
-### Workspace Files
-
-| File | Purpose |
-|------|---------|
-| `progress.md` | Team status, member table, phase checklist, decision log, handoffs |
-| `tasks.md` | Task table with IDs, owners, status, dependencies, and notes |
-| `issues.md` | Issue tracker with severity, impact, affected tasks, and resolution |
-| `report.md` | Final report generated in Phase 5 with executive summary and full results |
-
 ## Troubleshooting
 
-### Agent Teams feature flag not enabled
+### Agent Teams not available
 
 ```
 Error: TeamCreate tool is not available
 ```
 
-Set the environment variable before launching Claude Code:
+Set the feature flag:
 
 ```bash
 export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
 ```
 
-Or add it to your Claude Code `settings.json`:
+Or in Claude Code `settings.json`:
 
 ```json
 {
@@ -158,32 +177,28 @@ Or add it to your Claude Code `settings.json`:
 }
 ```
 
-### jq not installed
+### `jq` not installed
 
-Hooks will silently skip their checks (exit 0) if `jq` is not found. Install it for full enforcement:
+Hooks skip checks silently without `jq`. Install for full enforcement:
 
 ```bash
-# macOS
-brew install jq
-
-# Ubuntu/Debian
-sudo apt-get install jq
-
-# Windows (scoop)
-scoop install jq
+brew install jq          # macOS
+sudo apt install jq      # Ubuntu/Debian
+scoop install jq         # Windows
 ```
 
 ### Hooks not firing
 
-1. Verify the plugin is installed: `claude plugin list`
-2. Check that `hooks/hooks.json` exists in the plugin directory
-3. Ensure hook scripts are executable: `chmod +x scripts/*.sh`
-4. Check Claude Code logs for hook execution errors
+1. Verify installed: `claude plugin list`
+2. Check `hooks/hooks.json` exists
+3. Ensure scripts are executable: `chmod +x scripts/*.sh`
 
 ### Team size limits
 
-The default maximum is 4 teammates for mixed teams (implementers + reviewers). Up to 6 are allowed if the additional teammates beyond 4 are read-only (researchers, reviewers). If you need more, consider breaking the task into sequential phases.
+- **Max 4** for mixed teams (implementers + reviewers)
+- **Up to 6** if extras are read-only (researchers, reviewers)
+- Break larger tasks into sequential phases
 
 ## License
 
-MIT
+[MIT](LICENSE)
