@@ -4,6 +4,14 @@
   "description": "Claude Code plugin for orchestrating parallel work via Agent Teams",
   "license": "MIT",
   "keywords": ["claude-code", "plugin", "agent-team", "orchestration", "parallel"],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ducdmdev/agent-team-plugin.git"
+  },
+  "homepage": "https://github.com/ducdmdev/agent-team-plugin#readme",
+  "bugs": {
+    "url": "https://github.com/ducdmdev/agent-team-plugin/issues"
+  },
   "files": [
     ".claude-plugin/",
     "hooks/",
