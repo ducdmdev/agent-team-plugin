@@ -1,0 +1,11 @@
+{
+  "name": "agent-team-plugin",
+  "description": "Claude Code plugin for orchestrating parallel work via Agent Teams",
+  "plugins": [
+    {
+      "name": "agent-team",
+      "description": "Orchestrates parallel work via Agent Teams with automated coordination, workspace tracking, and hook enforcement",
+      "path": "."
+    }
+  ]
+}
