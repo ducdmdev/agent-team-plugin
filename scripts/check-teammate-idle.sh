@@ -18,10 +18,12 @@ if [ -z "$TEAMMATE" ] || [ -z "$TEAM" ]; then
   exit 0
 fi
 
-TASK_DIR="$HOME/.claude/tasks/$TEAM"
+# Check workspace tasks.md for in-progress tasks owned by this teammate.
+# Format: markdown table with columns: ID | Subject | Owner | Status | Blocked By | Notes
+TASKS_FILE=".agent-team/$TEAM/tasks.md"
 
-# Skip if task directory doesn't exist
-if [ ! -d "$TASK_DIR" ]; then
+# Skip if workspace tasks.md doesn't exist — graceful degradation
+if [ ! -f "$TASKS_FILE" ]; then
   exit 0
 fi
 
@@ -31,7 +33,8 @@ fi
 MAX_RETRIES=3
 COUNTER_DIR="/tmp/agent-team-idle-counters"
 mkdir -p "$COUNTER_DIR"
-COUNTER_FILE="$COUNTER_DIR/${TEAM}_${TEAMMATE}"
+chmod 700 "$COUNTER_DIR"
+COUNTER_FILE="$COUNTER_DIR/${TEAM}--${TEAMMATE}"
 
 RETRY_COUNT=0
 if [ -f "$COUNTER_FILE" ]; then
@@ -44,16 +47,9 @@ if [ "$RETRY_COUNT" -ge "$MAX_RETRIES" ]; then
   exit 0
 fi
 
-# Count in-progress tasks owned by this teammate
-IN_PROGRESS=0
-for task_file in "$TASK_DIR"/*.json; do
-  [ -f "$task_file" ] || continue
-  OWNER=$(jq -r '.owner // empty' "$task_file" 2>/dev/null)
-  STATUS=$(jq -r '.status // empty' "$task_file" 2>/dev/null)
-  if [ "$OWNER" = "$TEAMMATE" ] && [ "$STATUS" = "in_progress" ]; then
-    IN_PROGRESS=$((IN_PROGRESS + 1))
-  fi
-done
+# Count in-progress tasks owned by this teammate by parsing the markdown table.
+# Match Owner column (col 4) and Status column (col 5) in pipe-delimited table.
+IN_PROGRESS=$(awk -F'|' -v owner="$TEAMMATE" 'tolower($4) ~ tolower(owner) && tolower($5) ~ /in_progress/' "$TASKS_FILE" 2>/dev/null | wc -l | tr -d ' ')
 
 if [ "$IN_PROGRESS" -gt 0 ]; then
   # Increment retry counter

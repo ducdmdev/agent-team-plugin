@@ -5,20 +5,7 @@ description: >
   work streams that benefit from parallel execution with inter-agent communication.
   Triggers: "create a team", "work in parallel", "use agent team", "spawn teammates".
 argument-hint: "[task description]"
-allowed-tools:
-  - TeamCreate
-  - TeamDelete
-  - TaskCreate
-  - TaskUpdate
-  - TaskList
-  - TaskGet
-  - SendMessage
-  - Read
-  - Write
-  - Edit
-  - Glob
-  - Grep
-  - Bash
+allowed-tools: [TeamCreate, TeamDelete, TaskCreate, TaskUpdate, TaskList, TaskGet, SendMessage, AskUserQuestion, Read, Write, Edit, Glob, Grep, Bash]
 ---
 
 # Agent Team Orchestrator
@@ -210,7 +197,7 @@ Wait for user confirmation before proceeding.
    - Finalization (status updates, cleanup edits) — assign to the nearest teammate
    - If a phase seems too small for a dedicated teammate, bundle it into an adjacent teammate's task list
 
-8. **Delegate mode** — tell the user to press Shift+Tab to enable delegate mode, which restricts you to coordination-only tools. Until they do, enforce this yourself: do NOT write code or edit files directly.
+8. **Delegate mode** — tell the user to press Shift+Tab to enable delegate mode (Claude Code UI feature), which restricts you to coordination-only tools. Until they do, enforce this yourself: do NOT write code or edit files directly.
 
 ## Phase 4: Coordinate
 
@@ -282,6 +269,10 @@ When to tell teammates to check the workspace:
 
 Use `message` (1:1) for all task-specific communication. Reserve `broadcast` for blocking issues that affect every teammate.
 
+#### Plan Approval Handling
+
+When a teammate spawned with `mode: "plan"` finishes planning, they send a `plan_approval_request` message to the lead. You must respond via SendMessage with `type: "plan_approval_response"`, the teammate as `recipient`, the `request_id` from their request, and `approve: true` or `approve: false`. If rejecting, include `content` with specific feedback so the teammate can revise their plan. The teammate cannot proceed with implementation until the plan is approved.
+
 ### Coordination Patterns
 
 For detailed patterns on these scenarios, see [coordination-patterns.md](../../docs/coordination-patterns.md):
@@ -335,8 +326,9 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
    **Update workspace**: set `progress.md` status to `done`, record completion time
 
 8. **Cleanup**:
+   - **Only call TeamDelete after ALL teammates have confirmed shutdown.** TeamDelete may fail if teammates are still active — always wait for all shutdown confirmations first.
    - TeamDelete to remove ephemeral team resources (`~/.claude/teams/{team-name}/`). The workspace at `.agent-team/{team-name}/` is NOT deleted — it is the permanent record
-   - Clean up idle hook counters: `rm -f /tmp/agent-team-idle-counters/{team-name}_* 2>/dev/null || true`
+   - Clean up idle hook counters: `rm -f /tmp/agent-team-idle-counters/{team-name}--* 2>/dev/null || true`
 
 ## Reference
 
@@ -346,7 +338,7 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
 
 ## Anti-Patterns
 
-- **DO NOT implement or verify code yourself** — no editing files, no running build/test/lint. If it touches a file or runs a command, a teammate does it. Bundle small tasks into an adjacent teammate's scope
+- **DO NOT implement or verify code yourself** — no editing files, no running build/test/lint. If it touches a file or runs a command, a teammate does it. Bundle small tasks into an adjacent teammate's scope. Bash is for workspace init (`mkdir`) and cleanup only
 - **DO NOT let two teammates edit the same file** — guaranteed conflicts. Map every file to one owner in Phase 2
 - **DO NOT skip Phase 2** — present the plan and get user confirmation before creating anything. No exceptions
 - **DO NOT skip the workspace** — all 3 tracking files MUST be initialized before tasks are created
@@ -354,3 +346,4 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
 - **DO NOT assume task completion** — no COMPLETED message means the task is NOT done
 - **DO NOT exceed team size limits** — max 4 mixed, up to 6 if extras are read-only. Self-check required for N > 4
 - **DO NOT use broadcast for routine updates** — each broadcast = N messages. Use 1:1 messages by default
+- **DO NOT nest teams** — teammates cannot spawn their own teams. One team per session — clean up before starting a new one. `/resume` and `/rewind` do not restore teammates

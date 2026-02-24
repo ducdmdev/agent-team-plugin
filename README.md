@@ -78,10 +78,10 @@ Analyze    -->   Present Plan --> Create Team -->  Coordinate  -->  Synthesize
 
 | Role | Purpose | Tools |
 |------|---------|-------|
-| **Implementer** | Write code, create files, build features | Read, Write, Edit, Bash |
+| **Implementer** | Write code, create files, build features | Read, Write, Edit, Bash, Grep, Glob |
 | **Reviewer** | Validate quality, find issues | Read, Grep, Glob, Bash |
-| **Researcher** | Investigate, analyze, report findings | Read, Grep, WebSearch |
-| **Challenger** | Stress-test assumptions, find edge cases | Read, Grep, Bash |
+| **Researcher** | Investigate, analyze, report findings | Read, Grep, Glob, WebFetch, WebSearch |
+| **Challenger** | Stress-test assumptions, find edge cases | Read, Grep, Glob, Bash, WebSearch |
 
 ### Communication Protocol
 
@@ -127,7 +127,7 @@ Each team creates a persistent workspace at `.agent-team/{team-name}/` in your p
 
 - **Persists** after team deletion — it's the permanent record
 - **Shared** — all teammates can read for context
-- **Auto-gitignored** — coordination artifacts, not deliverables
+- **Gitignored** — coordination artifacts, not deliverables
 
 ## Plugin Structure
 
@@ -149,6 +149,7 @@ agent-team-plugin/
 │   ├── coordination-patterns.md # Conflict resolution and handoff patterns
 │   └── report-format.md         # Final report specification
 ├── package.json
+├── CLAUDE.md
 ├── LICENSE
 └── README.md
 ```

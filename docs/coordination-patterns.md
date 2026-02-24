@@ -4,7 +4,7 @@ Patterns for the lead to handle common coordination scenarios.
 
 ## Contents
 
-- [Communication Protocol](#communication-protocol) — structured messages and processing rules
+- [Communication Protocol](#communication-protocol) — structured messages, processing rules, and plan approval
 - [Batch Updates](#batch-updates) — efficient workspace writes
 - [First Contact Verification](#first-contact-verification) — confirming teammates are active
 - [Parallel Shutdown](#parallel-shutdown) — shutting down teammates efficiently
@@ -55,6 +55,10 @@ When to tell teammates to check the workspace:
 - Teammate asks about known issues -> "Check issues.md for known problems"
 - Teammate asks about a decision -> "Check progress.md Decision Log"
 
+### Plan Approval Handling
+
+When a teammate spawned with `mode: "plan"` finishes planning, they send a `plan_approval_request` message to the lead. You must respond via SendMessage with `type: "plan_approval_response"`, the teammate as `recipient`, the `request_id` from their request, and `approve: true` or `approve: false`. If rejecting, include `content` with specific feedback so the teammate can revise their plan. The teammate cannot proceed with implementation until the plan is approved.
+
 ### Proactive Check-ins
 
 The lead should proactively check in with teammates who haven't sent a message recently:
@@ -93,7 +97,7 @@ During Phase 5, shut down teammates in parallel — not sequentially:
 
 After shutdown, clean up idle hook counters:
 ```bash
-rm -f /tmp/agent-team-idle-counters/{team-name}_* 2>/dev/null || true
+rm -f /tmp/agent-team-idle-counters/{team-name}--* 2>/dev/null || true
 ```
 
 ## File Conflict Resolution

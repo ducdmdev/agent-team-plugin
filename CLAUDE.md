@@ -29,7 +29,7 @@ docs/                  Reference docs consumed by SKILL.md at runtime
 | `.claude-plugin/plugin.json` | Plugin identity | Bump version here on release |
 | `.claude-plugin/marketplace.json` | Marketplace registry | Bump version here too, keep in sync with plugin.json |
 | `hooks/hooks.json` | Hook registration | Only change timeout values or add new hooks |
-| `scripts/*.sh` | Hook enforcement logic | Must stay POSIX-compatible, degrade gracefully without `jq` |
+| `scripts/*.sh` | Hook enforcement logic | Written in bash (`#!/bin/bash`), degrade gracefully without `jq` |
 | `skills/agent-team/SKILL.md` | Core skill prompt | Most changes go here. Keep Phase 1-5 structure |
 | `docs/worker-roles.md` | Role definitions + spawn templates | Update when adding new roles |
 | `docs/coordination-patterns.md` | Conflict resolution, handoffs | Update when adding new coordination patterns |
