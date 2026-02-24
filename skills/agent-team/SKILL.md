@@ -5,7 +5,7 @@ description: >
   work streams that benefit from parallel execution with inter-agent communication.
   Triggers: "create a team", "work in parallel", "use agent team", "spawn teammates".
 argument-hint: "[task description]"
-allowed-tools: [TeamCreate, TeamDelete, TaskCreate, TaskUpdate, TaskList, TaskGet, SendMessage, AskUserQuestion, Read, Write, Edit, Glob, Grep, Bash]
+allowed-tools: TeamCreate, TeamDelete, TaskCreate, TaskUpdate, TaskList, TaskGet, SendMessage, AskUserQuestion, Read, Write, Edit, Glob, Grep, Bash
 ---
 
 # Agent Team Orchestrator
