@@ -8,6 +8,7 @@ Patterns for the lead to handle common coordination scenarios.
 - [Batch Updates](#batch-updates) — efficient workspace writes
 - [First Contact Verification](#first-contact-verification) — confirming teammates are active
 - [Parallel Shutdown](#parallel-shutdown) — shutting down teammates efficiently
+- [Pre-Shutdown Commit](#pre-shutdown-commit) — ensuring implementers commit before shutdown
 - [File Conflict Resolution](#file-conflict-resolution) — handling shared-file issues
 - [Stuck Dependency Resolution](#stuck-dependency-resolution) — unblocking task chains
 - [Result Handoff Between Teammates](#result-handoff-between-teammates) — cross-teammate transfers
@@ -99,6 +100,25 @@ After shutdown, clean up idle hook counters:
 ```bash
 rm -f /tmp/agent-team-idle-counters/{team-name}--* 2>/dev/null || true
 ```
+
+## Pre-Shutdown Commit
+
+Before sending shutdown requests, the lead must ensure all implementers have committed their owned files. This preserves git history and makes each teammate's contribution traceable.
+
+1. **Identify implementers** — only teammates with file ownership need to commit. Read-only roles (reviewers, researchers, challengers, testers) are exempt.
+2. **Message each implementer** in parallel:
+   ```
+   Commit your owned files before shutdown.
+   - Stage ONLY files in your owned area: git add <your owned files>
+   - Commit with a descriptive message following project conventions
+   - Send me the commit hash when done
+   - If the commit fails, fix the issue and retry.
+   ```
+3. **Wait for all commit confirmations** — each implementer sends a message with their commit hash.
+4. **If a commit fails**: the implementer must fix and retry. Log the failure in `issues.md` as **high** severity. Shutdown cannot proceed until all commits succeed.
+5. **Only after all commits confirmed**: proceed to the shutdown sequence.
+
+**Why**: Without this step, teammate work exists only as uncommitted changes on disk. If anything goes wrong during shutdown or cleanup, work is lost. Per-teammate commits also make `git log` useful for tracing who did what.
 
 ## File Conflict Resolution
 
