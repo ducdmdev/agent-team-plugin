@@ -331,14 +331,50 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
    - Write `.agent-team/{team-name}/report.md` using the format in [report-format.md](../../docs/report-format.md)
    - **Self-check**: "Does `.agent-team/{team-name}/report.md` exist and contain the executive summary?" If no, generate it now
 
-7. **Report to user**:
+7. **Remediation gate** — review `issues.md` for OPEN issues:
+   - Read `issues.md` and count issues with Status = OPEN
+   - If **0 OPEN issues**: skip to step 8
+   - If **OPEN issues exist**:
+     1. Check `progress.md` for `**Remediation cycle**` value
+        - If already `1` → this IS the remediation team. Do NOT spawn another. Include unresolved issues prominently in the user report (step 8) using the escalation format:
+          ```
+          Unresolved issues (require manual follow-up):
+          - Issue #N (severity): description
+          See .agent-team/{team-name}/issues.md for full details.
+          ```
+        - If `0` → proceed to present remediation proposal
+     2. Present OPEN issues to user and propose a remediation team:
+        ```
+        Open issues found after team completion:
+
+        | # | Severity | Description | Affected Tasks |
+        |---|----------|-------------|---------------|
+        | {n} | {level} | {description} | {task IDs} |
+
+        Proposed remediation team: {team-name}-fix
+        - [role]: [what they fix / verify]
+
+        Approve remediation? (The original team will be shut down first.)
+        ```
+     3. **If user declines**: skip remediation, include unresolved issues in user report (step 8) using the escalation format above
+     4. **If user approves**:
+        a. Shut down the original team (steps 9-10: shutdown sequence + cleanup)
+        b. Set `progress.md` `**Remediation cycle**` to `1`
+        c. Create remediation team: `{original-team-name}-fix`
+        d. Reuse the same workspace directory `.agent-team/{original-team-name}/`
+        e. Create tasks derived from the OPEN issues (each issue becomes a task)
+        f. Spawn teammates — typically 1-2 implementers + 1 tester if original plan was complex
+        g. Run Phases 3-5 for the remediation scope (skip Phase 1-2 decomposition — scope is already defined by the issues)
+        h. On remediation completion, return to step 6 (generate updated report) and continue
+
+8. **Report to user**:
    - Summary of all work completed
    - Files modified by each teammate
    - **Issues summary**: list any OPEN or MITIGATED issues from `issues.md` with their impact
    - Any open concerns or follow-up items
    - **Workspace path**: tell the user where the workspace is (`.agent-team/{team-name}/`)
 
-8. **Shutdown sequence** (parallel — do NOT wait for each one sequentially):
+9. **Shutdown sequence** (parallel — do NOT wait for each one sequentially):
    ```
    Send ALL shutdown_request messages in a single turn (parallel SendMessage calls)
    Wait for all approval responses
@@ -346,10 +382,10 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
    ```
    **Update workspace**: set `progress.md` status to `done`, record completion time
 
-9. **Cleanup**:
-   - **Only call TeamDelete after ALL teammates have confirmed shutdown.** TeamDelete may fail if teammates are still active — always wait for all shutdown confirmations first.
-   - TeamDelete to remove ephemeral team resources (`~/.claude/teams/{team-name}/`). The workspace at `.agent-team/{team-name}/` is NOT deleted — it is the permanent record
-   - Clean up idle hook counters: `rm -f /tmp/agent-team-idle-counters/{team-name}--* 2>/dev/null || true`
+10. **Cleanup**:
+    - **Only call TeamDelete after ALL teammates have confirmed shutdown.** TeamDelete may fail if teammates are still active — always wait for all shutdown confirmations first.
+    - TeamDelete to remove ephemeral team resources (`~/.claude/teams/{team-name}/`). The workspace at `.agent-team/{team-name}/` is NOT deleted — it is the permanent record
+    - Clean up idle hook counters: `rm -f /tmp/agent-team-idle-counters/{team-name}--* 2>/dev/null || true`
 
 ## Reference
 
