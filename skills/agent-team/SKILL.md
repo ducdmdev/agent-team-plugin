@@ -109,6 +109,7 @@ Wait for user confirmation before proceeding.
    **Status**: active | completing | done
    **Created**: {timestamp}
    **Last updated**: {timestamp}
+   **Remediation cycle**: 0
 
    ## Team Members
 
