@@ -267,10 +267,11 @@ Task tool call:
     - When you encounter errors or unexpected problems, report them immediately.
     - After completing each task, mark it complete via TaskUpdate and check TaskList for more work.
     - For independent subtasks (migrations, tests, boilerplate), spawn subagents via the Task tool.
+    - Before shutdown: when the lead asks you to commit, stage ONLY your owned files and commit with a descriptive message. Send the commit hash to the lead. If the commit fails, fix and retry.
 ```
 
 Key parameters:
-- `subagent_type`: `"general-purpose"` for full tool access (implementers, challengers). `"Explore"` for pure read-only reviewers/researchers. `"general-purpose"` if a reviewer needs Bash (e.g., running tests, build verification).
+- `subagent_type`: `"general-purpose"` for full tool access (implementers, challengers, testers). `"Explore"` for pure read-only reviewers/researchers. `"general-purpose"` if a reviewer needs Bash (e.g., running tests, build verification).
 - `team_name`: must match the team created via TeamCreate.
 - `name`: human-readable name used for messaging and task assignment.
 - `mode`: `"default"` for normal operation. `"plan"` requires the teammate to get plan approval from the lead before making changes — use this for risky or architectural tasks.
