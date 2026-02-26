@@ -9,6 +9,7 @@ Patterns for the lead to handle common coordination scenarios.
 - [First Contact Verification](#first-contact-verification) — confirming teammates are active
 - [Parallel Shutdown](#parallel-shutdown) — shutting down teammates efficiently
 - [Pre-Shutdown Commit](#pre-shutdown-commit) — ensuring implementers commit before shutdown
+- [Remediation Gate](#remediation-gate) — spawning a fix team for unresolved issues
 - [File Conflict Resolution](#file-conflict-resolution) — handling shared-file issues
 - [Stuck Dependency Resolution](#stuck-dependency-resolution) — unblocking task chains
 - [Result Handoff Between Teammates](#result-handoff-between-teammates) — cross-teammate transfers
@@ -119,6 +120,39 @@ Before sending shutdown requests, the lead must ensure all implementers have com
 5. **Only after all commits confirmed**: proceed to the shutdown sequence.
 
 **Why**: Without this step, teammate work exists only as uncommitted changes on disk. If anything goes wrong during shutdown or cleanup, work is lost. Per-teammate commits also make `git log` useful for tracing who did what.
+
+## Remediation Gate
+
+After generating the final report, the lead reviews `issues.md` for OPEN items. If unresolved issues exist, the lead can spawn a remediation team to fix them — with user approval.
+
+### Protocol
+
+1. **Count OPEN issues** — read `issues.md`, filter for Status = OPEN.
+2. **Check remediation cycle** — read `progress.md` for `**Remediation cycle**` value. If already `1`, this IS the remediation team — do not spawn another. Escalate to the user in the report instead.
+3. **Present to user** — list OPEN issues with severity and affected tasks. Propose a remediation team (`{team-name}-fix`) with role composition. Ask for approval.
+4. **If user approves**:
+   - Shut down the original team (parallel shutdown + cleanup)
+   - Set `progress.md` `**Remediation cycle**` to `1`
+   - Create remediation team: `{original-team-name}-fix`
+   - Reuse the same workspace directory — `issues.md` carries forward
+   - Create tasks from the OPEN issues (each issue becomes a task)
+   - Spawn teammates (typically 1-2 implementers + 1 tester if original was complex)
+   - Run Phases 3-5 for remediation scope
+5. **If user declines** — include unresolved issues in the user report with the escalation format:
+   ```
+   Unresolved issues (require manual follow-up):
+   - Issue #N (severity): description
+   See .agent-team/{team-name}/issues.md for full details.
+   ```
+
+### Remediation team conventions
+
+- **Team name**: `{original-team-name}-fix` (e.g., `refactor-auth-fix`)
+- **Workspace**: reuses `.agent-team/{original-team-name}/` — no new workspace directory
+- **Max 1 cycle**: if the remediation team also has OPEN issues, escalate to user instead of recursing
+- **Scope**: only the OPEN issues — tasks derive from the issue list, not a fresh decomposition
+
+**Why**: OPEN issues represent known problems that were logged but never resolved. Leaving them as "FYI" in the report means the user must manually investigate and fix. A remediation team gives the lead a structured way to close the loop while keeping the user in control.
 
 ## File Conflict Resolution
 

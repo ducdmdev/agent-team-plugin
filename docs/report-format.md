@@ -41,6 +41,13 @@ This file is generated during Phase 5, step 5. It is the last file written befor
 ### Issues Summary
 - **Resolved**: {count} — {one-line summary of significant ones}
 - **Open/Deferred**: {count} — {one-line each, these need user follow-up}
+- **Remediation**: {applied | declined | not needed}
+
+> **Unresolved issues (require manual follow-up):**
+> _(Include this block only if OPEN issues remain after remediation was declined or after a remediation cycle completed with remaining issues.)_
+> - Issue #N (severity): description
+> - Issue #N (severity): description
+> See `issues.md` for full details.
 
 ### Follow-up Items
 {Bulleted list of anything that needs attention after the team disbanded}
