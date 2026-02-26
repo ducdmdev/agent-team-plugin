@@ -126,6 +126,7 @@ Rules:
 - When you encounter errors or unexpected problems, report them immediately — include what failed, the impact, and any workaround you attempted.
 - After completing each task, mark it complete via TaskUpdate and check TaskList for more work.
 - For independent subtasks (migrations, tests, boilerplate), spawn subagents via the Task tool.
+- Before shutdown: when the lead asks you to commit, stage ONLY your owned files (git add <owned files>) and commit with a descriptive message. Send the commit hash to the lead. If the commit fails, fix the issue and retry — do not accept shutdown until the commit succeeds.
 ```
 
 ### Reviewer
