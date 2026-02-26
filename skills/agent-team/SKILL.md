@@ -45,6 +45,10 @@ Before creating the team, you MUST present the decomposition and wait for explic
 
 ```
 Team plan for: [task summary]
+Complexity: standard | complex
+  (if complex) Reason: [why — e.g., multi-module, risky refactor, security-sensitive]
+  (if complex) ✓ Dedicated reviewer included
+  (if complex) ✓ Dedicated tester included
 
 Teammates (N total):
 ⚠ Team size check: [default max 4 | up to 6 if extra are read-only]
@@ -60,13 +64,16 @@ Every phase has an owner (omit for pure review tasks):
 - Setup/config: [role]
 - Implementation: [role(s)]
 - Verification: [role]
+- Testing: [role] (required for complex plans)
 - Finalization: [role]
 
 Workspace: .agent-team/[team-name]/
 Estimated teammates: N
 ```
 
-**Self-check before proceeding**: "Have I presented this plan AND received user confirmation?" If no, STOP.
+**Self-check before proceeding**:
+1. "Is this plan complex? Complexity signals: multi-module/area changes, architectural decisions, risky refactors, multiple implementers with cross-dependencies, security-sensitive changes, new integrations. If yes, does the teammate list include a **dedicated reviewer** AND a **dedicated tester** (separate teammates, not combined)? If no, add them before presenting."
+2. "Have I presented this plan AND received user confirmation?" If no, STOP.
 
 Wait for user confirmation before proceeding.
 
