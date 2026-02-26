@@ -307,24 +307,37 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
    - Open concerns or follow-up items
    ```
 
-3. **Check integration** — do the pieces fit together? If issues found, assign fixes before wrapping up
+3. **Pre-shutdown commit** — message each **implementer** to commit their owned files:
+   ```
+   Commit your owned files before shutdown.
+   - Stage ONLY files in your owned area: git add <your owned files>
+   - Commit with a descriptive message following project conventions
+   - Send me the commit hash when done
+   - If the commit fails (e.g., pre-commit hook rejection), fix the issue and retry. Do NOT proceed without a successful commit.
+   ```
+   Wait for all implementers to confirm with commit hashes. If any commit fails:
+   - The implementer must fix and retry — shutdown cannot proceed until all commits succeed
+   - Log the failure in `issues.md` as **high** severity
+   - Only read-only teammates (reviewers, researchers, challengers, testers) are exempt — they have no files to commit
 
-4. **Update workspace**: set `progress.md` status to `completing`, update `tasks.md` with final states and teammate notes
+4. **Check integration** — do the pieces fit together? If issues found, assign fixes before wrapping up
 
-5. **Generate final report** (MANDATORY — do not skip):
+5. **Update workspace**: set `progress.md` status to `completing`, update `tasks.md` with final states and teammate notes
+
+6. **Generate final report** (MANDATORY — do not skip):
    - Read all workspace files for full history
    - Read TaskList for final task states
    - Write `.agent-team/{team-name}/report.md` using the format in [report-format.md](../../docs/report-format.md)
    - **Self-check**: "Does `.agent-team/{team-name}/report.md` exist and contain the executive summary?" If no, generate it now
 
-6. **Report to user**:
+7. **Report to user**:
    - Summary of all work completed
    - Files modified by each teammate
    - **Issues summary**: list any OPEN or MITIGATED issues from `issues.md` with their impact
    - Any open concerns or follow-up items
    - **Workspace path**: tell the user where the workspace is (`.agent-team/{team-name}/`)
 
-7. **Shutdown sequence** (parallel — do NOT wait for each one sequentially):
+8. **Shutdown sequence** (parallel — do NOT wait for each one sequentially):
    ```
    Send ALL shutdown_request messages in a single turn (parallel SendMessage calls)
    Wait for all approval responses
@@ -332,7 +345,7 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
    ```
    **Update workspace**: set `progress.md` status to `done`, record completion time
 
-8. **Cleanup**:
+9. **Cleanup**:
    - **Only call TeamDelete after ALL teammates have confirmed shutdown.** TeamDelete may fail if teammates are still active — always wait for all shutdown confirmations first.
    - TeamDelete to remove ephemeral team resources (`~/.claude/teams/{team-name}/`). The workspace at `.agent-team/{team-name}/` is NOT deleted — it is the permanent record
    - Clean up idle hook counters: `rm -f /tmp/agent-team-idle-counters/{team-name}--* 2>/dev/null || true`
