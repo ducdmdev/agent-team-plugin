@@ -82,6 +82,7 @@ Analyze    -->   Present Plan --> Create Team -->  Coordinate  -->  Synthesize
 | **Reviewer** | Validate quality, find issues | Read, Grep, Glob, Bash |
 | **Researcher** | Investigate, analyze, report findings | Read, Grep, Glob, WebFetch, WebSearch |
 | **Challenger** | Stress-test assumptions, find edge cases | Read, Grep, Glob, Bash, WebSearch |
+| **Tester** | Run tests, verify builds, check runtime behavior | Read, Grep, Glob, Bash |
 
 ### Communication Protocol
 
