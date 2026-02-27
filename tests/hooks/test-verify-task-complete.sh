@@ -146,5 +146,14 @@ assert_exit_code 2 "$HOOK_EXIT" "11: Legacy workspace fallback blocks when progr
 assert_stderr_contains "Workspace missing" "$HOOK_STDERR" "11: Legacy workspace fallback blocks (stderr)"
 cleanup_temp_dir
 
+# --- Test 12: Remediation team (-fix suffix) finds original workspace ---
+setup_temp_dir
+cd "$TEST_TEMP_DIR"
+setup_mock_workspace "my-project"   # workspace at .agent-team/my-project/
+setup_mock_git_repo "dirty"
+run_hook "$HOOK" '{"task_subject":"Fix README issues","team_name":"my-project-fix"}'
+assert_exit_code 0 "$HOOK_EXIT" "12: Remediation team (-fix suffix) finds original workspace"
+cleanup_temp_dir
+
 print_summary
 exit "$TESTS_FAILED"

@@ -19,10 +19,19 @@ fi
 
 # Check for workspace existence (if this is a team task)
 if [ -n "$TEAM_NAME" ]; then
-  # Check for workspace in project directory
+  # Check for workspace in project directory.
+  # Remediation teams use name {original}-fix but reuse workspace at .agent-team/{original}/.
   WORKSPACE_DIR=".agent-team/$TEAM_NAME"
+  if [ ! -d "$WORKSPACE_DIR" ]; then
+    # Try stripping -fix suffix (remediation team convention)
+    BASE_NAME="${TEAM_NAME%-fix}"
+    if [ "$BASE_NAME" != "$TEAM_NAME" ] && [ -d ".agent-team/$BASE_NAME" ]; then
+      WORKSPACE_DIR=".agent-team/$BASE_NAME"
+    fi
+  fi
+
   if [ -d "$WORKSPACE_DIR" ]; then
-    # Workspace exists in project — check for tracking files
+    # Workspace exists — check for tracking files
     for f in progress.md tasks.md issues.md; do
       if [ ! -f "$WORKSPACE_DIR/$f" ]; then
         echo "Workspace file missing: $WORKSPACE_DIR/$f. The lead must initialize all workspace files (Phase 3, step 3) before tasks can be completed." >&2
@@ -33,7 +42,7 @@ if [ -n "$TEAM_NAME" ]; then
     # Fallback: check legacy workspace location (pre-v1.2.0 used ~/.claude/teams/)
     WORKSPACE_FALLBACK="$HOME/.claude/teams/$TEAM_NAME/progress.md"
     if [ ! -f "$WORKSPACE_FALLBACK" ]; then
-      echo "Workspace missing at $WORKSPACE_DIR/. The lead must initialize the workspace (Phase 3, step 3) before any tasks can be completed." >&2
+      echo "Workspace missing at .agent-team/$TEAM_NAME/. The lead must initialize the workspace (Phase 3, step 3) before any tasks can be completed." >&2
       exit 2
     fi
   fi
