@@ -34,6 +34,7 @@ MAX_RETRIES=3
 COUNTER_DIR="/tmp/agent-team-idle-counters"
 mkdir -p "$COUNTER_DIR"
 chmod 700 "$COUNTER_DIR"
+# Counter file uses -- separator; Claude Code teammate names don't contain double-dashes
 COUNTER_FILE="$COUNTER_DIR/${TEAM}--${TEAMMATE}"
 
 RETRY_COUNT=0

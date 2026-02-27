@@ -30,7 +30,7 @@ if [ -n "$TEAM_NAME" ]; then
       fi
     done
   else
-    # Fallback: check legacy workspace location
+    # Fallback: check legacy workspace location (pre-v1.2.0 used ~/.claude/teams/)
     WORKSPACE_FALLBACK="$HOME/.claude/teams/$TEAM_NAME/progress.md"
     if [ ! -f "$WORKSPACE_FALLBACK" ]; then
       echo "Workspace missing at $WORKSPACE_DIR/. The lead must initialize the workspace (Phase 3, step 3) before any tasks can be completed." >&2
