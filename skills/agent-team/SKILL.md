@@ -284,12 +284,21 @@ When a teammate spawned with `mode: "plan"` finishes planning, they send a `plan
 ### Coordination Patterns
 
 For detailed patterns on these scenarios, see [coordination-patterns.md](../../docs/coordination-patterns.md):
+- **Batch updates** — collect pending updates and apply in a single pass per file
 - **First contact verification** — confirming teammates are active after spawn
+- **Parallel shutdown** — send all shutdown requests in a single turn, not sequentially
+- **Pre-shutdown commit** — ensure implementers commit owned files before shutdown
+- **Remediation gate** — spawn a fix team for unresolved issues (max 1 cycle)
 - **Idle teammates** — the TeammateIdle hook nudges automatically; assign new work or confirm done
 - **Blocked teammates** — log to `issues.md`, acknowledge, route to resolution
 - **File conflicts** — stop both teammates, reassign ownership, log as **high** issue
 - **Stuck dependencies** — check blocking task status, message assigned teammate, reassign if needed
+- **Result handoff between teammates** — lead summarizes and forwards cross-teammate outputs
+- **Teammate not responding** — status check, investigate, respawn if unrecoverable
 - **Scope creep** — redirect teammates to assigned tasks
+- **Synthesis pattern** — collect structured summaries from all teammates at completion
+- **Error recovery** — log to issues.md, acknowledge, assess and route to resolution
+- **Issue triage after context recovery** — review OPEN issues in issues.md after compaction
 
 **Periodic scan**: on every context recovery, check `issues.md` for OPEN items and address them before resuming normal coordination.
 
@@ -323,7 +332,7 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
 
 4. **Check integration** — do the pieces fit together? If issues found, assign fixes before wrapping up
 
-5. **Update workspace**: set `progress.md` status to `completing`, update `tasks.md` with final states and teammate notes
+5. **Update workspace**: set `progress.md` status to `completing`, update `tasks.md` with final states and teammate notes. See Workspace Update Protocol in Phase 4 for event-to-file mappings.
 
 6. **Generate final report** (MANDATORY — do not skip):
    - Read all workspace files for full history
@@ -337,11 +346,9 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
    - If **OPEN issues exist**:
      1. Check `progress.md` for `**Remediation cycle**` value
         - If already `1` → this IS the remediation team. Do NOT spawn another. Include unresolved issues prominently in the user report (step 8) using the escalation format:
-          ```
-          Unresolved issues (require manual follow-up):
-          - Issue #N (severity): description
-          See .agent-team/{team-name}/issues.md for full details.
-          ```
+          > **Unresolved issues (require manual follow-up):**
+          > - Issue #N (severity): description
+          > See `.agent-team/{team-name}/issues.md` for full details.
         - If `0` → proceed to present remediation proposal
      2. Present OPEN issues to user and propose a remediation team:
         ```
@@ -395,7 +402,7 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
 
 ## Anti-Patterns
 
-- **DO NOT implement or verify code yourself** — no editing files, no running build/test/lint. If it touches a file or runs a command, a teammate does it. Bundle small tasks into an adjacent teammate's scope. Bash is for workspace init (`mkdir`) and cleanup only
+- **DO NOT implement or verify code yourself** (the Zero-Code Rule) — no editing files, no running build/test/lint. If it touches a file or runs a command, a teammate does it. Bundle small tasks into an adjacent teammate's scope. Bash is for workspace init (`mkdir`) and cleanup only
 - **DO NOT let two teammates edit the same file** — guaranteed conflicts. Map every file to one owner in Phase 2
 - **DO NOT skip Phase 2** — present the plan and get user confirmation before creating anything. No exceptions
 - **DO NOT skip the workspace** — all 3 tracking files MUST be initialized before tasks are created

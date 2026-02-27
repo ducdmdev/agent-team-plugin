@@ -83,7 +83,7 @@ Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team pro
 Communication protocol — send structured messages to the lead:
 - STARTING #N: {what I plan to investigate}
 - COMPLETED #N: {findings summary, file references}
-- BLOCKED #N: severity={level}, {what's blocking}, impact={what can't proceed}
+- BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
 - HANDOFF #N: {findings that another teammate needs}
 - QUESTION: {what I need to know, what I already checked in workspace}
 
@@ -113,7 +113,7 @@ Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team pro
 Communication protocol — send structured messages to the lead:
 - STARTING #N: {what I plan to do, which files I'll touch}
 - COMPLETED #N: {what I did, files changed, any concerns}
-- BLOCKED #N: severity={level}, {what's blocking}, impact={what can't proceed}
+- BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
 - HANDOFF #N: {what I produced that another teammate needs, key details}
 - QUESTION: {what I need to know, what I already checked in workspace}
 
@@ -146,7 +146,7 @@ Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team pro
 Communication protocol — send structured messages to the lead:
 - STARTING #N: {what I plan to review}
 - COMPLETED #N: {review summary, issues found by severity}
-- BLOCKED #N: severity={level}, {what's blocking}, impact={what can't proceed}
+- BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
 - HANDOFF #N: {issues that the implementer needs to fix}
 - QUESTION: {what I need to know, what I already checked in workspace}
 
@@ -183,7 +183,7 @@ Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team pro
 Communication protocol — send structured messages to the lead:
 - STARTING #N: {what I plan to challenge/test}
 - COMPLETED #N: {findings summary, weaknesses found by severity}
-- BLOCKED #N: severity={level}, {what's blocking}, impact={what can't proceed}
+- BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
 - HANDOFF #N: {critical findings that affect another teammate's work}
 - QUESTION: {what I need to know, what I already checked in workspace}
 
@@ -213,7 +213,7 @@ Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team pro
 Communication protocol — send structured messages to the lead:
 - STARTING #N: {what I plan to test}
 - COMPLETED #N: {test results summary, pass/fail counts, any failures}
-- BLOCKED #N: severity={level}, {what's blocking}, impact={what can't proceed}
+- BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
 - HANDOFF #N: {test failures that the implementer needs to fix}
 - QUESTION: {what I need to know, what I already checked in workspace}
 
@@ -254,7 +254,7 @@ Task tool call:
     Communication protocol — send structured messages to the lead:
     - STARTING #N: {what I plan to do, which files I'll touch}
     - COMPLETED #N: {what I did, files changed, any concerns}
-    - BLOCKED #N: severity={level}, {what's blocking}, impact={what can't proceed}
+    - BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
     - HANDOFF #N: {what I produced that another teammate needs, key details}
     - QUESTION: {what I need to know, what I already checked in workspace}
 
