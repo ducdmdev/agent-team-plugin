@@ -28,7 +28,7 @@ docs/                  Reference docs consumed by SKILL.md at runtime
 |------|---------|----------------|
 | `.claude-plugin/plugin.json` | Plugin identity | Bump version here on release |
 | `.claude-plugin/marketplace.json` | Marketplace registry | Bump version here too, keep in sync with plugin.json |
-| `hooks/hooks.json` | Hook registration | Only change timeout values or add new hooks |
+| `hooks/hooks.json` | Hook registration | Update timeout values, add new hooks, or update hook command paths |
 | `scripts/*.sh` | Hook enforcement logic | Written in bash (`#!/bin/bash`), degrade gracefully without `jq` |
 | `skills/agent-team/SKILL.md` | Core skill prompt | Most changes go here. Keep Phase 1-5 structure |
 | `docs/worker-roles.md` | Role definitions + spawn templates | Update when adding new roles |
@@ -40,7 +40,7 @@ docs/                  Reference docs consumed by SKILL.md at runtime
 ### Versioning
 
 - Follow semver: `MAJOR.MINOR.PATCH`
-- Version must be updated in **both** `plugin.json` and `marketplace.json` (and `package.json` if publishing to npm)
+- Version must be updated in **all three**: `plugin.json`, `marketplace.json`, AND `package.json`
 - Use `claude plugin validate .` before releasing
 
 ### Commit Messages
@@ -99,6 +99,7 @@ Then trigger with: "use agent team to [task]"
 2. Make it executable
 3. Register it in `hooks/hooks.json` using `${CLAUDE_PLUGIN_ROOT}/scripts/your-script.sh`
 4. Document in SKILL.md Hooks section and README
+5. Test: run `claude plugin validate .` then test manually in a team session
 
 ### Adding a New Teammate Role
 

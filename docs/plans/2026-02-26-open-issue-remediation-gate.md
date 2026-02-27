@@ -1,5 +1,7 @@
 # Open Issue Remediation Gate — Implementation Plan
 
+**Status**: Implemented
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** After team completion, the lead reviews `issues.md` for OPEN items and can spawn a remediation team (max 1 cycle) with user approval before shutdown.

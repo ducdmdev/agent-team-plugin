@@ -1,5 +1,7 @@
 # Pre-Shutdown Commit & Complex Plan Enforcement — Implementation Plan
 
+**Status**: Implemented
+
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Add pre-shutdown commit enforcement for implementers and mandatory reviewer + tester roles for complex plans.

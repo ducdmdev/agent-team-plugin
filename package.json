@@ -18,6 +18,7 @@
     "scripts/",
     "skills/",
     "docs/",
+    "tests/",
     "README.md",
     "LICENSE"
   ]
