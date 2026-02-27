@@ -133,6 +133,20 @@ run_hook "$HOOK" 'not-json'
 assert_exit_code 0 "$HOOK_EXIT" "8: Malformed JSON degrades gracefully"
 cleanup_temp_dir
 
+# --- Test 9: Remediation team (-fix suffix) finds original workspace ---
+setup_temp_dir
+cd "$TEST_TEMP_DIR"
+# Create workspace at .agent-team/my-project/ (the original team)
+setup_mock_workspace "my-project"
+# Add an in-progress task owned by the teammate
+cat >> "$WORKSPACE_DIR/tasks.md" <<'TASKS'
+| 1 | Fix something | test-impl | in_progress | — | — |
+TASKS
+rm -f "$COUNTER_DIR/my-project-fix--test-impl"
+run_hook "$HOOK" '{"teammate_name":"test-impl","team_name":"my-project-fix"}'
+assert_exit_code 2 "$HOOK_EXIT" "9: Remediation team (-fix) finds original workspace and blocks idle"
+cleanup_temp_dir
+
 # Final cleanup
 rm -rf "$COUNTER_DIR"
 

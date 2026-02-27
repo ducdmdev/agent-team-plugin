@@ -20,11 +20,16 @@ fi
 
 # Check workspace tasks.md for in-progress tasks owned by this teammate.
 # Format: markdown table with columns: ID | Subject | Owner | Status | Blocked By | Notes
+# Remediation teams use name {original}-fix but reuse workspace at .agent-team/{original}/.
 TASKS_FILE=".agent-team/$TEAM/tasks.md"
-
-# Skip if workspace tasks.md doesn't exist — graceful degradation
 if [ ! -f "$TASKS_FILE" ]; then
-  exit 0
+  BASE_NAME="${TEAM%-fix}"
+  if [ "$BASE_NAME" != "$TEAM" ] && [ -f ".agent-team/$BASE_NAME/tasks.md" ]; then
+    TASKS_FILE=".agent-team/$BASE_NAME/tasks.md"
+  else
+    # Skip if workspace tasks.md doesn't exist — graceful degradation
+    exit 0
+  fi
 fi
 
 # --- Loop protection ---
