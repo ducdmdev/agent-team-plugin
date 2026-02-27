@@ -78,8 +78,9 @@ Analyze    -->   Present Plan --> Create Team -->  Coordinate  -->  Synthesize
 
 | Role | Purpose | Tools |
 |------|---------|-------|
+| **Leader** | Coordinate team, track progress, never writes code | TaskCreate, TaskUpdate, SendMessage, Read, Write (workspace only) |
 | **Implementer** | Write code, create files, build features | Read, Write, Edit, Bash, Grep, Glob |
-| **Reviewer** | Validate quality, find issues | Read, Grep, Glob, Bash |
+| **Reviewer** | Validate quality, find issues | Read, Grep, Glob, Bash (read-only) |
 | **Researcher** | Investigate, analyze, report findings | Read, Grep, Glob, WebFetch, WebSearch |
 | **Challenger** | Stress-test assumptions, find edge cases | Read, Grep, Glob, Bash, WebSearch |
 | **Tester** | Run tests, verify builds, check runtime behavior | Read, Grep, Glob, Bash |
@@ -128,7 +129,7 @@ Each team creates a persistent workspace at `.agent-team/{team-name}/` in your p
 
 - **Persists** after team deletion — it's the permanent record
 - **Shared** — all teammates can read for context
-- **Gitignored** — coordination artifacts, not deliverables
+- **Gitignored** — coordination artifacts, not deliverables. Automatically added to `.gitignore` during Phase 3 workspace setup if not already excluded.
 
 ## Plugin Structure
 
@@ -200,6 +201,12 @@ scoop install jq         # Windows
 - **Max 4** for mixed teams (implementers + reviewers)
 - **Up to 6** if extras are read-only (researchers, reviewers)
 - Break larger tasks into sequential phases
+
+For teams larger than 4, verify: (1) every stream has zero file overlap, (2) cross-communication is minimal, (3) workspace churn is manageable.
+
+## Planned Features
+
+See `docs/plans/` for approved designs and implementation plans for upcoming features.
 
 ## License
 
