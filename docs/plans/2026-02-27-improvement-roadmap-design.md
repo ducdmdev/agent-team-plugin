@@ -1,7 +1,7 @@
 # Agent Team Plugin Improvement Roadmap — Design
 
 **Date**: 2026-02-27
-**Status**: Approved
+**Status**: In Progress (v1.3.0 complete, v1.4.0–v2.0.0 not started)
 **Scope**: Full roadmap (Phase A+B+C) across 5 incremental releases
 **Strategy**: Layer by Risk — docs first, then prompts, then hooks, then structural, then major features
 

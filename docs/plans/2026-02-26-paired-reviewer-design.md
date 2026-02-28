@@ -2,7 +2,7 @@
 
 **Date**: 2026-02-26
 **Updated**: 2026-02-27
-**Status**: Approved (revised — now opt-in)
+**Status**: Not Started (approved design, not implemented)
 
 ## Problem
 

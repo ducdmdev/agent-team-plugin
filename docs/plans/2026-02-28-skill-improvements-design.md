@@ -1,7 +1,7 @@
 # SKILL.md Improvements — Design
 
 **Date**: 2026-02-28
-**Status**: Approved
+**Status**: Implemented
 **Scope**: Full sweep of SKILL.md (414 lines → ~340 lines) + new docs/workspace-templates.md
 **Approach**: Surgical edits — edit in-place, extract templates, tighten sections, add missing content. No structural reorganization.
 

@@ -1,6 +1,6 @@
 # Paired Reviewer + Hook Workspace Fix Implementation Plan
 
-**Status**: Draft
+**Status**: Draft (not started)
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 

@@ -2,6 +2,8 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
+**Status**: In Progress (v1.3.0 complete — tasks 1-9 done, v1.4.0–v2.0.0 not started — tasks 10-36 pending)
+
 **Goal:** Implement 21 improvements across 5 incremental releases (v1.3.0 through v2.0.0), layered by risk.
 
 **Architecture:** Each release builds on the previous. v1.3.0 is docs-only (zero risk), v1.4.0 changes prompts/templates, v1.5.0 adds new hooks, v1.6.0 adds structural features, v2.0.0 adds major features. All changes preserve backward compatibility — new features degrade gracefully when dependencies are missing.
