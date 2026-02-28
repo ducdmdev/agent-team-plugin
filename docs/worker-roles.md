@@ -23,7 +23,7 @@ The lead is the agent that invokes the `/agent-team` skill. It coordinates the t
 - Decompose the user's task into parallel work streams
 - Create and assign tasks with clear completion criteria
 - Spawn teammates with explicit role definitions and file ownership
-- Initialize and maintain the workspace (`.agent-team/{team-name}/`) as persistent shared state — see workspace templates in [SKILL.md](../skills/agent-team/SKILL.md) Phase 3
+- Initialize and maintain the workspace (`.agent-team/{team-name}/`) as persistent shared state — see [workspace-templates.md](workspace-templates.md)
 - Route messages between teammates (summarize and forward, don't relay verbatim)
 - Detect and resolve file conflicts, stuck dependencies, and scope creep
 - Collect results, verify integration, generate final report, and report to the user
