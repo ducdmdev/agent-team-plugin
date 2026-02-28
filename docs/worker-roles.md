@@ -89,6 +89,7 @@ Communication protocol — send structured messages to the lead:
 
 Rules:
 - Read and analyze only. Do not modify any files.
+- Before starting each new task, re-read workspace files (progress.md, tasks.md, issues.md) to ensure you have current state. This prevents context drift on long-running sessions.
 - Report findings with specific file references (path:line).
 - Read workspace files before asking the lead questions — the answer may already be there.
 - When blocked, message the lead immediately with the BLOCKED format above.
@@ -119,6 +120,7 @@ Communication protocol — send structured messages to the lead:
 
 Rules:
 - ONLY modify files in your owned area. If you need changes elsewhere, message the lead.
+- Before starting each new task, re-read workspace files (progress.md, tasks.md, issues.md) to ensure you have current state. This prevents context drift on long-running sessions.
 - Send STARTING before beginning each task. Send COMPLETED after finishing (include files changed).
 - Verify your work compiles/passes basic checks before marking tasks complete.
 - Read workspace files before asking the lead questions — the answer may already be there.
@@ -159,6 +161,7 @@ In COMPLETED messages, include total counts: "N issues: X high, Y medium, Z low"
 
 Rules:
 - Read and analyze only. Do not modify files.
+- Before starting each new task, re-read workspace files (progress.md, tasks.md, issues.md) to ensure you have current state. This prevents context drift on long-running sessions.
 - Include specific file:line references and fix suggestions for every high-severity issue.
 - Read workspace issues.md to avoid reporting known/duplicate issues.
 - When you find a cross-cutting issue that affects another teammate's scope, use HANDOFF.
@@ -189,6 +192,7 @@ Communication protocol — send structured messages to the lead:
 
 Rules:
 - Actively try to break or disprove what other teammates produce.
+- Before starting each new task, re-read workspace files (progress.md, tasks.md, issues.md) to ensure you have current state. This prevents context drift on long-running sessions.
 - Back every critique with evidence: specific code, concrete scenarios, or references.
 - Don't just criticize — propose alternatives when you find problems.
 - Read workspace files to understand what decisions were already made and why.
@@ -225,6 +229,7 @@ In COMPLETED messages, include total counts: "N tests: X passed, Y failed, Z ski
 
 Rules:
 - Run existing test suites and write new tests as needed to verify implementation correctness.
+- Before starting each new task, re-read workspace files (progress.md, tasks.md, issues.md) to ensure you have current state. This prevents context drift on long-running sessions.
 - Do not modify implementation code. If you find a bug, report it via HANDOFF to the lead.
 - Include reproduction steps for every failure.
 - Read workspace files before asking the lead questions — the answer may already be there.

@@ -52,6 +52,17 @@ This file is generated during Phase 5, step 6. It is the last file written befor
 ### Follow-up Items
 {Bulleted list of anything that needs attention after the team disbanded}
 
+### Team Metrics
+
+| Metric | Value |
+|--------|-------|
+| Tasks | {completed}/{total} |
+| Issues | {resolved}/{total} ({critical}C {high}H {medium}M {low}L) |
+| Handoffs | {count} |
+| Blocked events | {count} |
+| Remediation cycles | {0 or 1} |
+| Re-plans | {count, 0 if none} |
+
 ---
 
 ## Full Audit Trail
