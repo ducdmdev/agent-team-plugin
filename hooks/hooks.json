@@ -1,5 +1,5 @@
 {
-  "description": "Agent Team quality gates — prevents premature task completion and nudges idle teammates",
+  "description": "Agent Team quality gates — prevents premature task completion, nudges idle teammates, enforces file ownership, recovers context after compaction, and tracks teammate lifecycle",
   "hooks": {
     "TaskCompleted": [
       {
@@ -19,6 +19,52 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-teammate-idle.sh",
             "timeout": 15
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/recover-context.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-file-ownership.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/track-teammate-lifecycle.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/track-teammate-lifecycle.sh",
+            "timeout": 5
           }
         ]
       }
