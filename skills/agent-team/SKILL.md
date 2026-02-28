@@ -219,20 +219,6 @@ When receiving structured messages:
 | HANDOFF | Extract key details, forward to dependent teammate with actionable context. Log in `progress.md` Handoffs |
 | QUESTION | Check if answer is in workspace files. If yes, answer with file reference. If no, investigate |
 
-#### Shared Workspace as Bulletin Board
-
-The workspace at `.agent-team/{team-name}/` serves as the team's bulletin board:
-- **Teammates read** workspace files for self-service context before messaging the lead
-- **Lead writes** to workspace files after every significant event
-- This reduces "what's happening?" messages and gives teammates situational awareness
-
-When to tell teammates to check the workspace:
-- Teammate asks about another teammate's progress -> "Check tasks.md for current status"
-- Teammate asks about known issues -> "Check issues.md for known problems"
-- Teammate asks about a decision -> "Check progress.md Decision Log"
-
-Use `message` (1:1) for all task-specific communication. Reserve `broadcast` for blocking issues that affect every teammate.
-
 #### Plan Approval Handling
 
 When a teammate spawned with `mode: "plan"` finishes planning, they send a `plan_approval_request` message to the lead. You must respond via SendMessage with `type: "plan_approval_response"`, the teammate as `recipient`, the `request_id` from their request, and `approve: true` or `approve: false`. If rejecting, include `content` with specific feedback so the teammate can revise their plan. The teammate cannot proceed with implementation until the plan is approved.
