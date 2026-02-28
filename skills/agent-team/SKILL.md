@@ -21,6 +21,8 @@ Agent Teams require the experimental feature flag. Before proceeding, verify it 
 - If not, tell the user: "Agent Teams requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in your settings.json env or shell environment. Please enable it and restart."
 - Do NOT proceed until TeamCreate is available
 
+**Recommended**: Tell the user to press Shift+Tab to enable delegate mode, which restricts you to coordination-only tools. This reinforces the Zero-Code Rule.
+
 ## Hooks
 
 This plugin registers two hooks at the plugin level via `hooks/hooks.json` (not in skill frontmatter). They enforce team discipline automatically:
@@ -204,8 +206,6 @@ Wait for user confirmation before proceeding.
    - Verification (build, test, lint) — assign to a reviewer or create verification tasks for an implementer
    - Finalization (status updates, cleanup edits) — assign to the nearest teammate
    - If a phase seems too small for a dedicated teammate, bundle it into an adjacent teammate's task list
-
-8. **Delegate mode** — tell the user to press Shift+Tab to enable delegate mode (Claude Code UI feature), which restricts you to coordination-only tools. Until they do, enforce this yourself: do NOT write code or edit files directly.
 
 ## Phase 4: Coordinate
 
