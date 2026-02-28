@@ -53,9 +53,25 @@ Cross-teammate information transfers.
 
 **Last updated**: {timestamp}
 
-| ID | Subject | Owner | Status | Blocked By | Notes |
-|----|---------|-------|--------|-----------|-------|
-| {id} | {subject} | {owner} | pending / in_progress / completed | {IDs or "—"} | {brief notes} |
+## In Progress
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
+
+## Blocked
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+
+## Pending
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+
+## Completed
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
 ````
 
 ## issues.md

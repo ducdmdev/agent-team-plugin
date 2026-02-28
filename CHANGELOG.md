@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-02-28
+
+### Added
+- Re-read workspace instruction in all spawn templates (prevents context drift)
+- Team metrics section in final report template
+- Custom roles reference in Phase 1 decomposition
+
+### Changed
+- `tasks.md` workspace template now groups tasks by status (In Progress / Blocked / Pending / Completed)
+- TeammateIdle hook updated to parse grouped tasks.md format
+
 ## [1.3.0] - 2026-02-27
 
 ### Added

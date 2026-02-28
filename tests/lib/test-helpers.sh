@@ -61,8 +61,27 @@ EOF
   cat > "$WORKSPACE_DIR/tasks.md" <<'EOF'
 # Tasks: test
 
-| ID | Subject | Owner | Status | Blocked By | Notes |
-|----|---------|-------|--------|-----------|-------|
+**Last updated**: 2026-01-01
+
+## In Progress
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
+
+## Blocked
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+
+## Pending
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+
+## Completed
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
 EOF
 
   cat > "$WORKSPACE_DIR/issues.md" <<'EOF'

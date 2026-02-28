@@ -46,6 +46,7 @@ Analyze the user's task: $ARGUMENTS
    - **By layer**: data model vs API vs UI (best for full-stack features)
    - Avoid splits that create heavy cross-dependencies — if two streams need constant handoffs, merge them
 6. **Integration points** — for each pair of streams, identify where their outputs must connect (shared interfaces, API contracts, database schemas). These become explicit handoff points in Phase 2.
+7. **Check for custom roles** — if `docs/custom-roles.md` exists in the project, read it. Use custom roles alongside built-in roles when they match the task requirements.
 
 **Self-check**: "Do I have 2+ streams where each can make meaningful progress without waiting on the others? Are integration points identified?" If no, reconsider the split.
 

@@ -54,8 +54,13 @@ if [ "$RETRY_COUNT" -ge "$MAX_RETRIES" ]; then
 fi
 
 # Count in-progress tasks owned by this teammate by parsing the markdown table.
-# Match Owner column (col 4) and Status column (col 5) in pipe-delimited table.
-IN_PROGRESS=$(awk -F'|' -v owner="$TEAMMATE" 'tolower($4) ~ tolower(owner) && tolower($5) ~ /in_progress/' "$TASKS_FILE" 2>/dev/null | wc -l | tr -d ' ')
+# The grouped format uses section headers (## In Progress) as status indicators.
+# Match Owner column (col 4) within the "## In Progress" section.
+IN_PROGRESS=$(awk -F'|' -v owner="$TEAMMATE" '
+  /^## In Progress/ { in_progress=1; next }
+  /^## / { in_progress=0 }
+  in_progress && NF >= 4 && tolower($4) ~ tolower(owner)
+' "$TASKS_FILE" 2>/dev/null | wc -l | tr -d ' ')
 
 if [ "$IN_PROGRESS" -gt 0 ]; then
   # Increment retry counter
