@@ -84,11 +84,11 @@ jobs:
           CHANGELOG=""
 
           # Collect commits by type
-          FEATS=$(git log "$RANGE" --pretty=format:"%s" --no-merges | grep -E "^feat(\(.+\))?:" | sed 's/^feat\(([^)]*)\)\?: //' | sed 's/^feat: //' || true)
-          FIXES=$(git log "$RANGE" --pretty=format:"%s" --no-merges | grep -E "^fix(\(.+\))?:" | sed 's/^fix\(([^)]*)\)\?: //' | sed 's/^fix: //' || true)
-          REFACTORS=$(git log "$RANGE" --pretty=format:"%s" --no-merges | grep -E "^refactor(\(.+\))?:" | sed 's/^refactor\(([^)]*)\)\?: //' | sed 's/^refactor: //' || true)
-          DOCS=$(git log "$RANGE" --pretty=format:"%s" --no-merges | grep -E "^docs(\(.+\))?:" | sed 's/^docs\(([^)]*)\)\?: //' | sed 's/^docs: //' || true)
-          CHORES=$(git log "$RANGE" --pretty=format:"%s" --no-merges | grep -E "^chore(\(.+\))?:" | sed 's/^chore\(([^)]*)\)\?: //' | sed 's/^chore: //' || true)
+          FEATS=$(git log "$RANGE" --pretty=format:"%s" --no-merges | grep -E "^feat(\(.+\))?:" | sed -E 's/^feat(\([^)]*\))?: //' || true)
+          FIXES=$(git log "$RANGE" --pretty=format:"%s" --no-merges | grep -E "^fix(\(.+\))?:" | sed -E 's/^fix(\([^)]*\))?: //' || true)
+          REFACTORS=$(git log "$RANGE" --pretty=format:"%s" --no-merges | grep -E "^refactor(\(.+\))?:" | sed -E 's/^refactor(\([^)]*\))?: //' || true)
+          DOCS=$(git log "$RANGE" --pretty=format:"%s" --no-merges | grep -E "^docs(\(.+\))?:" | sed -E 's/^docs(\([^)]*\))?: //' || true)
+          CHORES=$(git log "$RANGE" --pretty=format:"%s" --no-merges | grep -E "^chore(\(.+\))?:" | sed -E 's/^chore(\([^)]*\))?: //' || true)
 
           if [ -n "$FEATS" ]; then
             CHANGELOG+=$'\n## Features\n\n'
