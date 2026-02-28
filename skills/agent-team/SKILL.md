@@ -40,6 +40,14 @@ Analyze the user's task: $ARGUMENTS
 2. **Identify sequential dependencies** — what MUST happen in order?
 3. **Determine if a team is warranted** — if fewer than 2 independent streams exist, tell the user a single session is more efficient and stop here.
 4. **Map file ownership** — each teammate owns distinct files. No two teammates edit the same file.
+5. **Decomposition strategies** — choose the split that maximizes parallelism:
+   - **By module/area**: frontend vs backend, auth vs payments (best for feature work)
+   - **By concern**: implementation vs verification vs research (best for quality-critical tasks)
+   - **By layer**: data model vs API vs UI (best for full-stack features)
+   - Avoid splits that create heavy cross-dependencies — if two streams need constant handoffs, merge them
+6. **Integration points** — for each pair of streams, identify where their outputs must connect (shared interfaces, API contracts, database schemas). These become explicit handoff points in Phase 2.
+
+**Self-check**: "Do I have 2+ streams where each can make meaningful progress without waiting on the others? Are integration points identified?" If no, reconsider the split.
 
 ## Phase 2: Present Plan to User (MANDATORY — DO NOT SKIP)
 
