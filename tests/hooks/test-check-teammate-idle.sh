@@ -45,9 +45,28 @@ mkdir -p ".agent-team/t"
 cat > ".agent-team/t/tasks.md" <<'EOF'
 # Tasks: t
 
-| ID | Subject | Owner | Status | Blocked By | Notes |
-|----|---------|-------|--------|-----------|-------|
-| 1 | Build feature | alice | in_progress | — | working on it |
+**Last updated**: 2026-01-01
+
+## In Progress
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
+| 1 | Build feature | alice | working on it |
+
+## Blocked
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+
+## Pending
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+
+## Completed
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
 EOF
 rm -f "$COUNTER_DIR/t--alice"
 run_hook "$HOOK" '{"teammate_name":"alice","team_name":"t"}'
@@ -62,9 +81,28 @@ mkdir -p ".agent-team/t"
 cat > ".agent-team/t/tasks.md" <<'EOF'
 # Tasks: t
 
-| ID | Subject | Owner | Status | Blocked By | Notes |
-|----|---------|-------|--------|-----------|-------|
-| 1 | Build feature | alice | completed | — | done |
+**Last updated**: 2026-01-01
+
+## In Progress
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
+
+## Blocked
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+
+## Pending
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+
+## Completed
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
+| 1 | Build feature | alice | done |
 EOF
 rm -f "$COUNTER_DIR/t--alice"
 run_hook "$HOOK" '{"teammate_name":"alice","team_name":"t"}'
@@ -78,9 +116,28 @@ mkdir -p ".agent-team/t"
 cat > ".agent-team/t/tasks.md" <<'EOF'
 # Tasks: t
 
-| ID | Subject | Owner | Status | Blocked By | Notes |
-|----|---------|-------|--------|-----------|-------|
-| 1 | Build feature | alice | in_progress | — | stuck |
+**Last updated**: 2026-01-01
+
+## In Progress
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
+| 1 | Build feature | alice | stuck |
+
+## Blocked
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+
+## Pending
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+
+## Completed
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
 EOF
 rm -f "$COUNTER_DIR/t--alice"
 
@@ -104,22 +161,60 @@ mkdir -p ".agent-team/t"
 cat > ".agent-team/t/tasks.md" <<'EOF'
 # Tasks: t
 
-| ID | Subject | Owner | Status | Blocked By | Notes |
-|----|---------|-------|--------|-----------|-------|
-| 1 | Build feature | alice | in_progress | — | stuck |
+**Last updated**: 2026-01-01
+
+## In Progress
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
+| 1 | Build feature | alice | stuck |
+
+## Blocked
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+
+## Pending
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+
+## Completed
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
 EOF
 rm -f "$COUNTER_DIR/t--alice"
 run_hook "$HOOK" '{"teammate_name":"alice","team_name":"t"}'
 # Counter file should exist now
 assert_true "7: Counter file created" "[ -f '$COUNTER_DIR/t--alice' ]"
 
-# Now change task to completed
+# Now change task to completed (move from In Progress to Completed section)
 cat > ".agent-team/t/tasks.md" <<'EOF'
 # Tasks: t
 
-| ID | Subject | Owner | Status | Blocked By | Notes |
-|----|---------|-------|--------|-----------|-------|
-| 1 | Build feature | alice | completed | — | done |
+**Last updated**: 2026-01-01
+
+## In Progress
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
+
+## Blocked
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+
+## Pending
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+
+## Completed
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
+| 1 | Build feature | alice | done |
 EOF
 run_hook "$HOOK" '{"teammate_name":"alice","team_name":"t"}'
 assert_exit_code 0 "$HOOK_EXIT" "7: Counter reset — allows idle"
@@ -138,10 +233,33 @@ setup_temp_dir
 cd "$TEST_TEMP_DIR"
 # Create workspace at .agent-team/my-project/ (the original team)
 setup_mock_workspace "my-project"
-# Add an in-progress task owned by the teammate
-cat >> "$WORKSPACE_DIR/tasks.md" <<'TASKS'
-| 1 | Fix something | test-impl | in_progress | — | — |
-TASKS
+# Overwrite tasks.md with an in-progress task owned by the teammate
+cat > "$WORKSPACE_DIR/tasks.md" <<'EOF'
+# Tasks: test
+
+**Last updated**: 2026-01-01
+
+## In Progress
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
+| 1 | Fix something | test-impl | — |
+
+## Blocked
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+
+## Pending
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+
+## Completed
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
+EOF
 rm -f "$COUNTER_DIR/my-project-fix--test-impl"
 run_hook "$HOOK" '{"teammate_name":"test-impl","team_name":"my-project-fix"}'
 assert_exit_code 2 "$HOOK_EXIT" "9: Remediation team (-fix) finds original workspace and blocks idle"
