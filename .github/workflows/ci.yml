@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get install -q -y jq
+
+      - name: Ensure scripts are executable
+        run: |
+          chmod +x scripts/*.sh
+          find tests -name '*.sh' -exec chmod +x {} +
+
+      - name: Run tests
+        run: bash tests/run-tests.sh
+
+      - name: Check version sync
+        run: |
+          V_PKG=$(jq -r .version package.json)
+          V_PLUGIN=$(jq -r .version .claude-plugin/plugin.json)
+          V_MKT=$(jq -r '.plugins[0].version' .claude-plugin/marketplace.json)
+          echo "package.json=$V_PKG plugin.json=$V_PLUGIN marketplace.json=$V_MKT"
+          if [ "$V_PKG" != "$V_PLUGIN" ] || [ "$V_PKG" != "$V_MKT" ]; then
+            echo "::error::Version mismatch across files"
+            exit 1
+          fi
+          echo "All versions in sync: $V_PKG"
