@@ -1,4 +1,5 @@
 {
+  "description": "Agent Team quality gates — prevents premature task completion and nudges idle teammates",
   "hooks": {
     "TaskCompleted": [
       {
