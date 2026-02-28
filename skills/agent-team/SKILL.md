@@ -153,6 +153,16 @@ Wait for user confirmation before proceeding.
    - Finalization (status updates, cleanup edits) — assign to the nearest teammate
    - If a phase seems too small for a dedicated teammate, bundle it into an adjacent teammate's task list
 
+### Setup Failures
+
+| Failure | Recovery |
+|---------|----------|
+| TeamCreate fails (name collision) | Append a suffix: `{team-name}-2`. If that also fails, ask the user for a name |
+| TeamCreate fails (feature not enabled) | Tell the user to enable `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` and restart |
+| Workspace directory already exists | Read `progress.md` — if status is `done`, it's stale: ask user to confirm reuse or clean up. If status is `active`, another session may be using it: ask user |
+| Teammate fails to spawn | Check the error. Common causes: tool not available, permission denied. Retry once. If still failing, log to `issues.md`, continue with remaining teammates, reassign orphaned tasks |
+| Context compaction during Phase 3 | On recovery, read workspace files. If they exist but tasks/teammates are incomplete, resume from where you left off. If workspace doesn't exist yet, restart Phase 3 |
+
 ## Phase 4: Coordinate
 
 ### Context Recovery
