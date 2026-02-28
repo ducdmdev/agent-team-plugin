@@ -322,10 +322,7 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
 
 - **DO NOT implement or verify code yourself** (the Zero-Code Rule) — no editing files, no running build/test/lint. If it touches a file or runs a command, a teammate does it. Bundle small tasks into an adjacent teammate's scope. Bash is for workspace init (`mkdir`) and cleanup only
 - **DO NOT let two teammates edit the same file** — guaranteed conflicts. Map every file to one owner in Phase 2
-- **DO NOT skip Phase 2** — present the plan and get user confirmation before creating anything. No exceptions
-- **DO NOT skip the workspace** — all 3 tracking files MUST be initialized before tasks are created
 - **DO NOT skip the report** — `.agent-team/{team-name}/report.md` MUST exist before shutdown
 - **DO NOT assume task completion** — no COMPLETED message means the task is NOT done
-- **DO NOT exceed team size limits** — max 4 mixed, up to 6 if extras are read-only. Self-check required for N > 4
 - **DO NOT use broadcast for routine updates** — each broadcast = N messages. Use 1:1 messages by default
 - **DO NOT nest teams** — teammates cannot spawn their own teams. One team per session — clean up before starting a new one. `/resume` and `/rewind` do not restore teammates
