@@ -18,6 +18,10 @@ Patterns for the lead to handle common coordination scenarios.
 - [Synthesis Pattern](#synthesis-pattern) — collecting final results
 - [Error Recovery](#error-recovery) — handling teammate errors
 - [Issue Triage After Context Recovery](#issue-triage-after-context-recovery) — post-compaction review
+- [Re-plan on Block](#re-plan-on-block) — revising the plan when a critical block invalidates it
+- [Adversarial Review Rounds](#adversarial-review-rounds) — multi-round cross-review for critical changes
+- [Quality Gate](#quality-gate) — final validation pass before synthesis
+- [Auto-Block on Repeated Failures](#auto-block-on-repeated-failures) — escalation after repeated failures
 
 ## Communication Protocol
 
@@ -257,3 +261,140 @@ When the lead recovers from context compaction:
    - Can it be resolved now with information from other teammates?
 4. Address critical/high issues before resuming normal coordination
 5. Update `issues.md` rows as issues are resolved
+
+## Re-plan on Block
+
+When a critical or high-severity BLOCKED message arrives and the original plan may no longer be viable:
+
+### Detection
+
+The lead should consider re-planning when:
+- A critical BLOCKED affects 2+ tasks or teammates
+- A key assumption in the original Phase 2 plan turns out to be wrong
+- An external dependency (API, library, service) is unavailable
+- The blocking issue requires a fundamentally different approach
+
+### Protocol
+
+1. **Assess viability** — can the original plan still work with minor adjustments?
+   - If yes: resolve the block normally (stuck dependency resolution, reassignment)
+   - If no: proceed to re-plan
+2. **Pause affected work** — message affected teammates: "Pause work on [tasks]. Re-planning in progress."
+3. **Draft revised plan** — identify what changes: task decomposition, file ownership, teammate roles, dependencies
+4. **Present to user** — this is a mandatory gate, same as Phase 2:
+   ```
+   Re-plan needed: [reason]
+
+   Original plan: [summary]
+   Revised plan: [summary of changes]
+
+   Changes:
+   - [task/role/ownership changes]
+
+   Approve revised plan?
+   ```
+5. **If approved**: update workspace (tasks.md, progress.md Decision Log), reassign tasks, message affected teammates with new scope
+6. **If declined**: user provides alternative direction. Adjust accordingly.
+
+### Logging
+
+- Log re-plan decision in `progress.md` Decision Log with reasoning
+- Update `tasks.md` with any new/modified/removed tasks
+- Log the block that triggered re-planning in `issues.md`
+
+## Adversarial Review Rounds
+
+When review quality is critical (security-sensitive code, architectural decisions, complex refactors), use multi-round adversarial review instead of single-pass:
+
+### When to Use
+
+- Security-sensitive changes
+- Architectural decisions with long-term implications
+- Complex refactors touching multiple modules
+- When the first reviewer's findings seem superficially clean (early agreement is suspicious)
+
+### Protocol
+
+1. **Round 1 — Primary review**: Reviewer A reviews the implementation and reports findings using the standard findings format (H/M/L severity with file:line references)
+2. **Round 2 — Cross-review**: Reviewer B receives Reviewer A's findings and is tasked with:
+   - Verifying each finding (agree/disagree with evidence)
+   - Finding issues Reviewer A missed
+   - Challenging any "PASS" assessments that seem too lenient
+3. **Round 3 — Synthesis**: Lead collects both reviews and:
+   - Identifies agreements (high confidence findings)
+   - Identifies disagreements (need resolution)
+   - For disagreements: asks the dissenting reviewer to provide specific evidence
+4. **Resolution**: If disagreements persist after Round 3, escalate to user with both positions and evidence
+
+### Lead Coordination
+
+- Route findings between reviewers via summarized messages (don't relay verbatim — extract actionable points)
+- Log the review rounds in `progress.md` Decision Log: "Adversarial review: Round N complete, X agreements, Y disagreements"
+- Create separate review tasks for each round (e.g., #5 "Primary security review", #6 "Cross-review of #5 findings")
+- Reviewers can use subagents (Task tool with Explore) to parallelize file reads within their review scope
+
+### Team Composition
+
+- Minimum: 2 reviewers + lead
+- Reviewers should have different review lenses when possible (e.g., security + performance, correctness + maintainability)
+- Do NOT have the original implementer serve as a reviewer in adversarial rounds
+
+## Quality Gate
+
+A final validation pass before Phase 5 synthesis. Catches integration issues that per-task checks miss.
+
+### When to Use
+
+- Complex plans with 3+ implementers
+- Cross-module changes where integration bugs are likely
+- Plans marked as "complex" in Phase 2
+
+### Protocol
+
+1. **Trigger**: All implementation tasks are completed. Before starting Phase 5.
+2. **Assign quick verification tasks** to remaining active teammates:
+   - Build verification: "Run `[build command]` and report result"
+   - Test verification: "Run `[test command]` and report result"
+   - Integration check: "Verify [module A] correctly calls [module B] after both teammates' changes"
+   - Lint/format check: "Run linter and report any new warnings"
+3. **Gate decision**:
+   - All checks pass → proceed to Phase 5
+   - Failures found → create fix tasks, assign to relevant implementers, re-run gate after fixes
+4. **Log**: Record gate result in `progress.md` Decision Log: "Quality gate: PASS" or "Quality gate: FAIL — [issues], fix tasks created"
+
+### Implementation
+
+The lead creates verification tasks with clear pass/fail criteria:
+
+```
+Task: "Quality gate — build verification"
+Description: Run the project build command. Report PASS if it succeeds, FAIL with error output if it fails.
+Completion criteria: Build exits 0 with no errors.
+```
+
+Assign to the nearest available teammate (reviewer or tester preferred, implementer if no others are available).
+
+## Auto-Block on Repeated Failures
+
+Prevents teammates from spinning on the same error. Escalates automatically after repeated failures.
+
+### Protocol
+
+1. **Track blocked count per task** — when receiving a BLOCKED message, check `issues.md` for previous BLOCKED entries on the same task
+2. **Threshold: 3 attempts** — if a teammate has reported BLOCKED on the same task 3 times:
+   - Do NOT let them retry
+   - Mark the task as blocked in `tasks.md`
+   - Escalate immediately: either reassign to a different teammate or escalate to the user
+3. **Log**: Update `issues.md` with the escalation: "Auto-blocked after 3 attempts. Reassigned to [teammate] / Escalated to user."
+
+### Lead Check
+
+When processing a BLOCKED message:
+```
+1. Read issues.md — count OPEN entries for this task ID
+2. If count >= 2 (this is the 3rd block):
+   a. Message teammate: "This task has been blocked 3 times. Pausing your work on it."
+   b. Decide: reassign or escalate
+3. If count < 2:
+   a. Acknowledge and route to resolution as normal
+```
