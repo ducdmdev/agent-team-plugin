@@ -285,38 +285,12 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
    - **Self-check**: "Does `.agent-team/{team-name}/report.md` exist and contain the executive summary?" If no, generate it now
 
 7. **Remediation gate** — review `issues.md` for OPEN issues:
-   - Read `issues.md` and count issues with Status = OPEN
    - If **0 OPEN issues**: skip to step 8
-   - If **OPEN issues exist**:
-     1. Check `progress.md` for `**Remediation cycle**` value
-        - If already `1` → this IS the remediation team. Do NOT spawn another. Include unresolved issues prominently in the user report (step 8) using the escalation format:
-          > **Unresolved issues (require manual follow-up):**
-          > - Issue #N (severity): description
-          > See `.agent-team/{team-name}/issues.md` for full details.
-        - If `0` → proceed to present remediation proposal
-     2. Present OPEN issues to user and propose a remediation team:
-        ```
-        Open issues found after team completion:
-
-        | # | Severity | Description | Affected Tasks |
-        |---|----------|-------------|---------------|
-        | {n} | {level} | {description} | {task IDs} |
-
-        Proposed remediation team: {team-name}-fix
-        - [role]: [what they fix / verify]
-
-        Approve remediation? (The original team will be shut down first.)
-        ```
-     3. **If user declines**: skip remediation, include unresolved issues in user report (step 8) using the escalation format above
-     4. **If user approves**:
-        a. Shut down the original team (steps 9-10: shutdown sequence + cleanup)
-        b. Set `progress.md` `**Remediation cycle**` to `1`
-        c. Create remediation team: `{original-team-name}-fix`
-        d. Reuse the same workspace directory `.agent-team/{original-team-name}/`
-        e. Create tasks derived from the OPEN issues (each issue becomes a task)
-        f. Spawn teammates — typically 1-2 implementers + 1 tester if original plan was complex
-        g. Run Phases 3-5 for the remediation scope (skip Phase 1-2 decomposition — scope is already defined by the issues)
-        h. On remediation completion, return to step 6 (generate updated report) and continue
+   - If **OPEN issues exist** and `progress.md` remediation cycle is already `1`: do NOT spawn another team. Include unresolved issues in the user report (step 8):
+     > **Unresolved issues (require manual follow-up):**
+     > - Issue #N (severity): description
+     > See `.agent-team/{team-name}/issues.md` for full details.
+   - If **OPEN issues exist** and remediation cycle is `0`: present issues to the user and propose a remediation team. Follow the full protocol in [coordination-patterns.md](../../docs/coordination-patterns.md#remediation-gate).
 
 8. **Report to user**:
    - Summary of all work completed
