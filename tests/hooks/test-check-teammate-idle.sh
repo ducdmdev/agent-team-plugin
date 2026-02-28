@@ -265,6 +265,120 @@ run_hook "$HOOK" '{"teammate_name":"test-impl","team_name":"my-project-fix"}'
 assert_exit_code 2 "$HOOK_EXIT" "9: Remediation team (-fix) finds original workspace and blocks idle"
 cleanup_temp_dir
 
+# --- Test 10: Multiple in-progress tasks by same owner counts correctly ---
+setup_temp_dir
+cd "$TEST_TEMP_DIR"
+mkdir -p ".agent-team/t"
+cat > ".agent-team/t/tasks.md" <<'EOF'
+# Tasks: t
+
+**Last updated**: 2026-01-01
+
+## In Progress
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
+| 1 | Build auth | alice | working |
+| 2 | Build API | alice | started |
+| 3 | Build UI | bob | working |
+
+## Blocked
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+
+## Pending
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+
+## Completed
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
+EOF
+rm -f "$COUNTER_DIR/t--alice"
+run_hook "$HOOK" '{"teammate_name":"alice","team_name":"t"}'
+assert_exit_code 2 "$HOOK_EXIT" "10: Multiple in-progress tasks blocks"
+assert_stderr_contains "2 task" "$HOOK_STDERR" "10: Reports 2 tasks (not 1 or 3)"
+cleanup_temp_dir
+
+# --- Test 11: Tasks in Blocked/Pending/Completed sections are ignored ---
+setup_temp_dir
+cd "$TEST_TEMP_DIR"
+mkdir -p ".agent-team/t"
+cat > ".agent-team/t/tasks.md" <<'EOF'
+# Tasks: t
+
+**Last updated**: 2026-01-01
+
+## In Progress
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
+
+## Blocked
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+| 1 | Fix auth | alice | 2 | waiting |
+
+## Pending
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+| 2 | Write tests | alice | — | not started |
+
+## Completed
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
+| 3 | Setup config | alice | done |
+EOF
+rm -f "$COUNTER_DIR/t--alice"
+run_hook "$HOOK" '{"teammate_name":"alice","team_name":"t"}'
+assert_exit_code 0 "$HOOK_EXIT" "11: Tasks in Blocked/Pending/Completed sections allow idle"
+cleanup_temp_dir
+
+# --- Test 12: Mixed sections — only In Progress counts ---
+setup_temp_dir
+cd "$TEST_TEMP_DIR"
+mkdir -p ".agent-team/t"
+cat > ".agent-team/t/tasks.md" <<'EOF'
+# Tasks: t
+
+**Last updated**: 2026-01-01
+
+## In Progress
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
+| 1 | Build auth | alice | working |
+
+## Blocked
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+| 2 | Fix bug | alice | 3 | waiting on bob |
+
+## Pending
+
+| ID | Subject | Owner | Blocked By | Notes |
+|----|---------|-------|-----------|-------|
+| 3 | Deploy | alice | 1 | not started |
+
+## Completed
+
+| ID | Subject | Owner | Notes |
+|----|---------|-------|-------|
+| 4 | Setup env | alice | done |
+EOF
+rm -f "$COUNTER_DIR/t--alice"
+run_hook "$HOOK" '{"teammate_name":"alice","team_name":"t"}'
+assert_exit_code 2 "$HOOK_EXIT" "12: Mixed sections — only In Progress blocks (exit code)"
+assert_stderr_contains "1 task" "$HOOK_STDERR" "12: Reports 1 task (ignores Blocked/Pending/Completed)"
+cleanup_temp_dir
+
 # Final cleanup
 rm -rf "$COUNTER_DIR"
 
