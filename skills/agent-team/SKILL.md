@@ -118,17 +118,28 @@ Wait for user confirmation before proceeding.
    - **Update workspace**: record all tasks in `tasks.md`
    - **Self-check**: "Does every task have a verifiable completion criterion — something a teammate can confirm as done or not done?" If any task says just "implement X" without a success condition, rewrite it.
 
-5. **Spawn teammates** using the Task tool with `team_name`, `name`, and `subagent_type` parameters. See [worker-roles.md](../../docs/worker-roles.md) for role-specific spawn templates. Use `subagent_type: "general-purpose"` for teammates that need full tool access (Write, Edit, Bash) — implementers, challengers, testers. Use `subagent_type: "Explore"` for read-only research teammates. Use `general-purpose` if a reviewer needs to run commands (tests, builds). Optionally set `mode: "plan"` to require plan approval before a teammate implements anything — useful for risky or architectural tasks. Each spawn prompt MUST include:
-   - Their role and responsibilities
-   - Which tasks are assigned to them (reference task IDs)
-   - Which files/areas they own exclusively
-   - **Workspace path**: `.agent-team/{team-name}/` — tell them to read these files for context. Teammates should write any output artifacts (reports, findings) to this directory so all outputs are co-located
-   - **Communication protocol** (see Phase 4 section below — include the structured message format)
-   - What to do when blocked: message the lead with severity and impact, do not wait silently
-   - Instruction to mark tasks complete immediately after verification
-   - Instruction to check TaskList after completing each task and self-claim next available
-   - Instruction to use subagents (Task tool) for focused subtasks that don't need teammate communication
-   - **Update workspace**: record each teammate in `progress.md` Team Members table
+5. **Spawn teammates** using the Task tool with `team_name`, `name`, and `subagent_type` parameters. See [worker-roles.md](../../docs/worker-roles.md) for role-specific spawn templates.
+
+   **subagent_type**: `"general-purpose"` for full tool access (implementers, challengers, testers). `"Explore"` for read-only research teammates. `"general-purpose"` if a reviewer needs Bash. Optionally set `mode: "plan"` for risky or architectural tasks.
+
+   Every spawn prompt MUST include:
+
+   Identity:
+   1. Role and responsibilities
+   2. Assigned task IDs
+   3. Owned files/areas (exclusive — no overlap with other teammates)
+
+   Context:
+   4. Workspace path: `.agent-team/{team-name}/` — read for team state, write output artifacts here
+   5. Communication protocol (STARTING/COMPLETED/BLOCKED/HANDOFF/QUESTION — see Phase 4)
+
+   Behavior:
+   6. When blocked: message the lead with severity and impact, do not wait silently
+   7. After completing a task: mark complete via TaskUpdate, check TaskList, self-claim next available
+   8. Use subagents (Task tool) for focused subtasks that don't need teammate communication
+   9. Write output artifacts to the workspace directory
+
+   **Update workspace**: record each teammate in `progress.md` Team Members table
 
 6. **Team size gate** — explicitly count before spawning: "I am spawning N teammates: [list names]."
    - **Default max: 4** for mixed teams (implementers + reviewers/challengers)
