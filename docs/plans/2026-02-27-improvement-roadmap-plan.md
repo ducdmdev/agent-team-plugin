@@ -2,11 +2,11 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Implement 24 improvements across 5 incremental releases (v1.3.0 through v2.0.0), layered by risk.
+**Goal:** Implement 21 improvements across 5 incremental releases (v1.3.0 through v2.0.0), layered by risk.
 
 **Architecture:** Each release builds on the previous. v1.3.0 is docs-only (zero risk), v1.4.0 changes prompts/templates, v1.5.0 adds new hooks, v1.6.0 adds structural features, v2.0.0 adds major features. All changes preserve backward compatibility — new features degrade gracefully when dependencies are missing.
 
-**Tech Stack:** Bash scripts (hooks), Markdown (SKILL.md, docs), JSON (hooks.json, file-locks.json), HTML/CSS/JS (dashboard in v2.0.0)
+**Tech Stack:** Bash scripts (hooks), Markdown (SKILL.md, docs), JSON (hooks.json, file-locks.json)
 
 **Design doc:** `docs/plans/2026-02-27-improvement-roadmap-design.md`
 
@@ -16,7 +16,7 @@
 
 ## Release 1: v1.3.0 — Documentation & Patterns (Zero Risk)
 
-Files changed: `docs/coordination-patterns.md`, `docs/custom-roles.md` (new), `hooks/hooks.json`, `README.md`, `CHANGELOG.md` (new)
+Files changed: `docs/coordination-patterns.md`, `docs/custom-roles.md` (new), `hooks/hooks.json`, `CHANGELOG.md` (new)
 
 ### Task 1: Add Re-plan on Block coordination pattern
 
@@ -348,46 +348,7 @@ git commit -m "docs: add custom role definitions template"
 
 ---
 
-### Task 6: Add companion plugins and MCP documentation to README
-
-**Files:**
-- Modify: `README.md` (add two new sections before "Troubleshooting")
-
-**Step 1: Add Companion Plugins section**
-
-Insert before the `## Troubleshooting` section in `README.md`:
-
-```markdown
-## Companion Plugins
-
-These plugins pair well with Agent Team for enhanced safety and observability:
-
-| Plugin | Purpose | Install |
-|--------|---------|---------|
-| [claude-code-safety-net](https://github.com/kenryu42/claude-code-safety-net) | Blocks destructive bash commands (`rm -rf`, `git reset --hard`, etc.) — recommended when spawning implementers with Bash access | `claude plugin install claude-code-safety-net` |
-| [claude-code-hooks-multi-agent-observability](https://github.com/disler/claude-code-hooks-multi-agent-observability) | Real-time monitoring dashboard for multi-agent sessions — captures 12 hook events with timeline visualization | See repo for setup |
-
-## MCP Tool Extension
-
-MCP (Model Context Protocol) servers configured in your project are automatically available to all team members. This means:
-
-- Teammates can use any MCP-provided tools (database queries, API calls, custom tools)
-- No additional configuration needed per teammate
-- The lead should note available MCP tools in the Phase 2 plan so teammates know what's available
-
-To configure MCP servers, add them to your project's `.mcp.json` file. See the [Claude Code MCP documentation](https://code.claude.com/docs/en/mcp) for details.
-```
-
-**Step 2: Commit**
-
-```bash
-git add README.md
-git commit -m "docs: add companion plugins and MCP tool extension sections to README"
-```
-
----
-
-### Task 7: Add description field to hooks.json
+### Task 6: Add description field to hooks.json
 
 **Files:**
 - Modify: `hooks/hooks.json`
@@ -423,7 +384,7 @@ git commit -m "docs: add description field to hooks.json"
 
 ---
 
-### Task 8: Create CHANGELOG.md
+### Task 7: Create CHANGELOG.md
 
 **Files:**
 - Create: `CHANGELOG.md`
@@ -446,8 +407,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Quality Gate** coordination pattern — final validation pass before Phase 5 synthesis
 - **Auto-Block on Repeated Failures** coordination pattern — auto-escalation after 3 blocked attempts on the same task
 - Custom role definitions template (`docs/custom-roles.md`) — project-specific roles alongside built-in ones
-- Companion plugins documentation in README (safety-net, observability)
-- MCP tool extension documentation in README
 - `description` field in `hooks/hooks.json` for better UX in `/hooks` menu
 
 ## [1.2.0] - 2026-02-26
@@ -492,7 +451,7 @@ git commit -m "docs: add CHANGELOG.md with retroactive history"
 
 ---
 
-### Task 9: Update SKILL.md Table of Contents reference for new patterns
+### Task 8: Update SKILL.md Table of Contents reference for new patterns
 
 **Files:**
 - Modify: `skills/agent-team/SKILL.md` (Phase 4 coordination patterns list)
@@ -522,7 +481,7 @@ git commit -m "docs: reference new coordination patterns in SKILL.md"
 
 ---
 
-### Task 10: Bump version to 1.3.0 and validate
+### Task 9: Bump version to 1.3.0 and validate
 
 **Files:**
 - Modify: `.claude-plugin/plugin.json` — version to "1.3.0"
@@ -557,7 +516,7 @@ git tag v1.3.0
 
 Files changed: `skills/agent-team/SKILL.md`, `docs/worker-roles.md`, `docs/report-format.md`
 
-### Task 11: Add re-read workspace instruction to spawn templates
+### Task 10: Add re-read workspace instruction to spawn templates
 
 **Files:**
 - Modify: `docs/worker-roles.md` (all 5 spawn prompt templates)
@@ -586,43 +545,7 @@ git commit -m "feat: add re-read workspace instruction to all spawn templates"
 
 ---
 
-### Task 12: Add memory persistence step to Phase 5
-
-**Files:**
-- Modify: `skills/agent-team/SKILL.md` (Phase 5, after step 6 "Generate final report")
-
-**Step 1: Insert new step**
-
-After step 6 (Generate final report) and before step 7 (Remediation gate), insert:
-
-```markdown
-7. **Persist team learnings** (if `.claude/memory/` exists):
-   - Read the final report and workspace files
-   - Save key patterns to `.claude/memory/`:
-     - Decisions that would apply to future similar tasks
-     - Coordination patterns that worked well or poorly
-     - File ownership mappings that resolved conflicts
-   - Keep entries concise (2-3 sentences each) and link to the workspace for details
-   - Skip this step if no `.claude/memory/` directory exists
-```
-
-Renumber subsequent steps (old 7 → 8, old 8 → 9, old 9 → 10, old 10 → 11).
-
-**Step 2: Validate plugin**
-
-Run: `claude plugin validate .`
-Expected: No errors
-
-**Step 3: Commit**
-
-```bash
-git add skills/agent-team/SKILL.md
-git commit -m "feat: add memory persistence step to Phase 5"
-```
-
----
-
-### Task 13: Add team metrics to final report template
+### Task 11: Add team metrics to final report template
 
 **Files:**
 - Modify: `docs/report-format.md` (Template section, after "### Follow-up Items")
@@ -653,7 +576,7 @@ git commit -m "feat: add team metrics section to report format"
 
 ---
 
-### Task 14: Update tasks.md template to group by status
+### Task 12: Update tasks.md template to group by status
 
 **Files:**
 - Modify: `skills/agent-team/SKILL.md` (Phase 3, tasks.md workspace template)
@@ -753,7 +676,7 @@ git commit -m "feat: group tasks.md by status sections"
 
 ---
 
-### Task 15: Add Phase 1 custom roles reference
+### Task 13: Add Phase 1 custom roles reference
 
 **Files:**
 - Modify: `skills/agent-team/SKILL.md` (Phase 1)
@@ -775,7 +698,7 @@ git commit -m "feat: add custom roles reference to Phase 1"
 
 ---
 
-### Task 16: Bump version to 1.4.0, validate, and tag
+### Task 14: Bump version to 1.4.0, validate, and tag
 
 **Files:**
 - Modify: `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `package.json` — version to "1.4.0"
@@ -790,7 +713,6 @@ Add at the top of the changelog (after the header, before `## [1.3.0]`):
 
 ### Added
 - Re-read workspace instruction in all spawn templates (prevents context drift)
-- Memory persistence step in Phase 5 (saves team learnings to `.claude/memory/`)
 - Team metrics section in final report template
 - Custom roles reference in Phase 1 decomposition
 
@@ -827,7 +749,7 @@ git tag v1.4.0
 
 Files changed: `hooks/hooks.json`, `scripts/` (3 new, 1 modified), `skills/agent-team/SKILL.md`, `tests/hooks/` (3 new test files)
 
-### Task 17: Write tests for SessionStart(compact) hook
+### Task 15: Write tests for SessionStart(compact) hook
 
 **Files:**
 - Create: `tests/hooks/test-recover-context.sh`
@@ -916,7 +838,7 @@ Expected: FAIL (script doesn't exist yet)
 
 ---
 
-### Task 18: Implement SessionStart(compact) hook
+### Task 16: Implement SessionStart(compact) hook
 
 **Files:**
 - Create: `scripts/recover-context.sh`
@@ -993,7 +915,7 @@ git commit -m "feat: add SessionStart(compact) hook for context recovery"
 
 ---
 
-### Task 19: Write tests for PreToolUse file ownership hook
+### Task 17: Write tests for PreToolUse file ownership hook
 
 **Files:**
 - Create: `tests/hooks/test-check-file-ownership.sh`
@@ -1108,7 +1030,7 @@ Expected: FAIL (script doesn't exist yet)
 
 ---
 
-### Task 20: Implement PreToolUse file ownership hook
+### Task 18: Implement PreToolUse file ownership hook
 
 **Files:**
 - Create: `scripts/check-file-ownership.sh`
@@ -1226,7 +1148,7 @@ git commit -m "feat: add PreToolUse file ownership hook (warn-then-block)"
 
 ---
 
-### Task 21: Write tests for SubagentStart/Stop lifecycle hook
+### Task 19: Write tests for SubagentStart/Stop lifecycle hook
 
 **Files:**
 - Create: `tests/hooks/test-track-teammate-lifecycle.sh`
@@ -1299,7 +1221,7 @@ Expected: FAIL
 
 ---
 
-### Task 22: Implement SubagentStart/Stop lifecycle hook
+### Task 20: Implement SubagentStart/Stop lifecycle hook
 
 **Files:**
 - Create: `scripts/track-teammate-lifecycle.sh`
@@ -1372,7 +1294,7 @@ git commit -m "feat: add SubagentStart/Stop lifecycle tracking hook"
 
 ---
 
-### Task 23: Enhance TaskCompleted hook with task_id and teammate_name
+### Task 21: Enhance TaskCompleted hook with task_id and teammate_name
 
 **Files:**
 - Modify: `scripts/verify-task-complete.sh`
@@ -1461,7 +1383,7 @@ git commit -m "feat: enhance TaskCompleted hook with task_id and teammate-scoped
 
 ---
 
-### Task 24: Register new hooks in hooks.json
+### Task 22: Register new hooks in hooks.json
 
 **Files:**
 - Modify: `hooks/hooks.json`
@@ -1560,7 +1482,7 @@ git commit -m "feat: register new hooks (SessionStart, PreToolUse, SubagentStart
 
 ---
 
-### Task 25: Add file-locks.json to SKILL.md workspace and update Hooks section
+### Task 23: Add file-locks.json to SKILL.md workspace and update Hooks section
 
 **Files:**
 - Modify: `skills/agent-team/SKILL.md`
@@ -1627,7 +1549,7 @@ git commit -m "feat: add file-locks.json workspace file and update Hooks section
 
 ---
 
-### Task 26: Bump version to 1.5.0, validate, and tag
+### Task 24: Bump version to 1.5.0, validate, and tag
 
 **Files:**
 - Modify: `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `package.json` — version to "1.5.0"
@@ -1677,7 +1599,7 @@ git tag v1.5.0
 
 Files changed: `skills/agent-team/SKILL.md`, `docs/worker-roles.md`, `docs/coordination-patterns.md`
 
-### Task 27: Add auto-branch per teammate to spawn templates
+### Task 25: Add auto-branch per teammate to spawn templates
 
 **Files:**
 - Modify: `docs/worker-roles.md` (Implementer spawn template)
@@ -1728,7 +1650,7 @@ git commit -m "feat: add auto-branch per teammate"
 
 ---
 
-### Task 28: Add event log file to workspace
+### Task 26: Add event log file to workspace
 
 **Files:**
 - Modify: `skills/agent-team/SKILL.md` (Phase 3, Phase 4)
@@ -1772,7 +1694,7 @@ git commit -m "feat: add events.log to workspace and update protocol"
 
 ---
 
-### Task 29: Add Direct Handoff coordination pattern
+### Task 27: Add Direct Handoff coordination pattern
 
 **Files:**
 - Modify: `docs/coordination-patterns.md`
@@ -1828,7 +1750,7 @@ git commit -m "feat: add Direct Handoff coordination pattern"
 
 ---
 
-### Task 30: Bump version to 1.6.0, validate, and tag
+### Task 28: Bump version to 1.6.0, validate, and tag
 
 **Files:**
 - Modify: `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `package.json` — version to "1.6.0"
@@ -1860,7 +1782,7 @@ git tag v1.6.0
 
 Files changed: `skills/agent-team/SKILL.md`, `scripts/` (2 new), `docs/worker-roles.md`
 
-### Task 31: Write tests for worktree setup script
+### Task 29: Write tests for worktree setup script
 
 **Files:**
 - Create: `tests/hooks/test-setup-worktree.sh`
@@ -1914,7 +1836,7 @@ exit "$TESTS_FAILED"
 
 ---
 
-### Task 32: Implement worktree setup script
+### Task 30: Implement worktree setup script
 
 **Files:**
 - Create: `scripts/setup-worktree.sh`
@@ -1963,7 +1885,7 @@ git commit -m "feat: add worktree setup script"
 
 ---
 
-### Task 33: Write tests for worktree merge script
+### Task 31: Write tests for worktree merge script
 
 **Files:**
 - Create: `tests/hooks/test-merge-worktrees.sh`
@@ -2009,7 +1931,7 @@ exit "$TESTS_FAILED"
 
 ---
 
-### Task 34: Implement worktree merge script
+### Task 32: Implement worktree merge script
 
 **Files:**
 - Create: `scripts/merge-worktrees.sh`
@@ -2085,7 +2007,7 @@ git commit -m "feat: add worktree merge script"
 
 ---
 
-### Task 35: Add worktree isolation to SKILL.md
+### Task 33: Add worktree isolation to SKILL.md
 
 **Files:**
 - Modify: `skills/agent-team/SKILL.md` (Phase 2, Phase 3, Phase 5)
@@ -2132,7 +2054,7 @@ git commit -m "feat: add opt-in worktree isolation to Phase 2/3/5"
 
 ---
 
-### Task 36: Add nested task decomposition to SKILL.md and worker-roles
+### Task 34: Add nested task decomposition to SKILL.md and worker-roles
 
 **Files:**
 - Modify: `skills/agent-team/SKILL.md` (Phase 3)
@@ -2179,130 +2101,7 @@ git commit -m "feat: add nested task decomposition for senior implementers"
 
 ---
 
-### Task 37: Add HTML progress dashboard generation
-
-**Files:**
-- Create: `scripts/generate-dashboard.sh`
-
-**Step 1: Write the script**
-
-This script reads workspace files and generates a self-contained HTML dashboard.
-
-```bash
-#!/bin/bash
-# Generates a static HTML dashboard from workspace files.
-# Usage: generate-dashboard.sh <team-name>
-# Output: .agent-team/<team-name>/dashboard.html
-
-set -euo pipefail
-
-TEAM_NAME="${1:-}"
-
-if [ -z "$TEAM_NAME" ]; then
-  echo "Usage: generate-dashboard.sh <team-name>" >&2
-  exit 1
-fi
-
-WORKSPACE_DIR=".agent-team/$TEAM_NAME"
-if [ ! -d "$WORKSPACE_DIR" ]; then
-  echo "Workspace not found: $WORKSPACE_DIR" >&2
-  exit 1
-fi
-
-DASHBOARD="$WORKSPACE_DIR/dashboard.html"
-
-# Read workspace files
-PROGRESS=$(cat "$WORKSPACE_DIR/progress.md" 2>/dev/null || echo "")
-TASKS=$(cat "$WORKSPACE_DIR/tasks.md" 2>/dev/null || echo "")
-ISSUES=$(cat "$WORKSPACE_DIR/issues.md" 2>/dev/null || echo "")
-EVENTS=""
-if [ -f "$WORKSPACE_DIR/events.log" ]; then
-  EVENTS=$(cat "$WORKSPACE_DIR/events.log")
-fi
-
-# Escape for HTML embedding
-escape_html() {
-  echo "$1" | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/"/\&quot;/g'
-}
-
-PROGRESS_HTML=$(escape_html "$PROGRESS")
-TASKS_HTML=$(escape_html "$TASKS")
-ISSUES_HTML=$(escape_html "$ISSUES")
-EVENTS_HTML=$(escape_html "$EVENTS")
-
-cat > "$DASHBOARD" <<HTMLEOF
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Team Dashboard: $TEAM_NAME</title>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #c9d1d9; padding: 20px; }
-  h1 { color: #58a6ff; margin-bottom: 20px; }
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 16px; }
-  .card h2 { color: #58a6ff; font-size: 14px; text-transform: uppercase; margin-bottom: 12px; }
-  pre { white-space: pre-wrap; word-wrap: break-word; font-size: 12px; line-height: 1.5; color: #8b949e; }
-  .events pre { font-size: 11px; }
-  .full-width { grid-column: 1 / -1; }
-  .timestamp { color: #484f58; font-size: 11px; }
-</style>
-</head>
-<body>
-<h1>Team: $TEAM_NAME</h1>
-<p class="timestamp">Generated: $(date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date)</p>
-<br>
-<div class="grid">
-  <div class="card">
-    <h2>Progress</h2>
-    <pre>$PROGRESS_HTML</pre>
-  </div>
-  <div class="card">
-    <h2>Tasks</h2>
-    <pre>$TASKS_HTML</pre>
-  </div>
-  <div class="card">
-    <h2>Issues</h2>
-    <pre>$ISSUES_HTML</pre>
-  </div>
-  <div class="card events">
-    <h2>Events</h2>
-    <pre>${EVENTS_HTML:-No events logged yet.}</pre>
-  </div>
-</div>
-</body>
-</html>
-HTMLEOF
-
-echo "$DASHBOARD"
-```
-
-**Step 2: Make executable**
-
-Run: `chmod +x scripts/generate-dashboard.sh`
-
-**Step 3: Add brief note to SKILL.md**
-
-In Phase 4 coordination section, add:
-
-```markdown
-### Progress Dashboard (Optional)
-
-To generate a visual dashboard for the team, run `scripts/generate-dashboard.sh {team-name}`. This creates `.agent-team/{team-name}/dashboard.html` — a static file that can be opened in a browser. Useful for complex teams with many tasks and events.
-```
-
-**Step 4: Commit**
-
-```bash
-git add scripts/generate-dashboard.sh skills/agent-team/SKILL.md
-git commit -m "feat: add HTML progress dashboard generation"
-```
-
----
-
-### Task 38: Update README for v2.0.0 features
+### Task 35: Update README for v2.0.0 features
 
 **Files:**
 - Modify: `README.md`
@@ -2313,7 +2112,7 @@ Update the README Hooks section to list all hooks (now 5+).
 
 **Step 2: Update Workspace section**
 
-Add `file-locks.json`, `events.log`, `dashboard.html` to the workspace structure.
+Add `file-locks.json` and `events.log` to the workspace structure.
 
 **Step 3: Update Plugin Structure**
 
@@ -2328,7 +2127,7 @@ git commit -m "docs: update README for v2.0.0 features"
 
 ---
 
-### Task 39: Bump version to 2.0.0, validate, and tag
+### Task 36: Bump version to 2.0.0, validate, and tag
 
 **Files:**
 - Modify: `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `package.json` — version to "2.0.0"
@@ -2342,7 +2141,6 @@ git commit -m "docs: update README for v2.0.0 features"
 ### Added
 - **Git worktree isolation** (opt-in) — `isolation: worktree` in Phase 2 plan gives each implementer a dedicated worktree
 - **Nested task decomposition** — senior implementers can create sub-tasks and spawn sub-agents
-- **HTML progress dashboard** — `scripts/generate-dashboard.sh` generates visual team dashboard
 - Worktree setup and merge scripts (`scripts/setup-worktree.sh`, `scripts/merge-worktrees.sh`)
 
 ### Changed
@@ -2365,10 +2163,10 @@ git tag v2.0.0
 
 | Release | Tasks | New Files | Modified Files |
 |---------|-------|-----------|----------------|
-| v1.3.0 | 1-10 | `docs/custom-roles.md`, `CHANGELOG.md` | `docs/coordination-patterns.md`, `hooks/hooks.json`, `README.md`, `SKILL.md`, `package.json`, plugin.json, marketplace.json |
-| v1.4.0 | 11-16 | — | `docs/worker-roles.md`, `docs/report-format.md`, `SKILL.md`, `scripts/check-teammate-idle.sh`, `tests/lib/test-helpers.sh` |
-| v1.5.0 | 17-26 | `scripts/recover-context.sh`, `scripts/check-file-ownership.sh`, `scripts/track-teammate-lifecycle.sh`, 3 test files | `hooks/hooks.json`, `scripts/verify-task-complete.sh`, `SKILL.md` |
-| v1.6.0 | 27-30 | — | `docs/worker-roles.md`, `docs/coordination-patterns.md`, `SKILL.md` |
-| v2.0.0 | 31-39 | `scripts/setup-worktree.sh`, `scripts/merge-worktrees.sh`, `scripts/generate-dashboard.sh`, 2 test files | `docs/worker-roles.md`, `SKILL.md`, `README.md` |
+| v1.3.0 | 1-9 | `docs/custom-roles.md`, `CHANGELOG.md` | `docs/coordination-patterns.md`, `hooks/hooks.json`, `SKILL.md`, `package.json`, plugin.json, marketplace.json |
+| v1.4.0 | 10-14 | — | `docs/worker-roles.md`, `docs/report-format.md`, `SKILL.md`, `scripts/check-teammate-idle.sh`, `tests/lib/test-helpers.sh` |
+| v1.5.0 | 15-24 | `scripts/recover-context.sh`, `scripts/check-file-ownership.sh`, `scripts/track-teammate-lifecycle.sh`, 3 test files | `hooks/hooks.json`, `scripts/verify-task-complete.sh`, `SKILL.md` |
+| v1.6.0 | 25-28 | — | `docs/worker-roles.md`, `docs/coordination-patterns.md`, `SKILL.md` |
+| v2.0.0 | 29-36 | `scripts/setup-worktree.sh`, `scripts/merge-worktrees.sh`, 2 test files | `docs/worker-roles.md`, `SKILL.md`, `README.md` |
 
-**Total: 39 tasks, 10 new files, ~15 modified files.**
+**Total: 36 tasks, 8 new files, ~15 modified files.**

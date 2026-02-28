@@ -9,7 +9,7 @@
 
 ## Context
 
-Research across 3 streams identified 24 improvement opportunities:
+Research across 3 streams identified 21 improvement opportunities:
 
 - **Docs research**: 12 gaps, 10 recommendations from Claude Code official documentation
 - **Competitor research**: 12+ tools analyzed, 7 strengths confirmed, 13 improvement opportunities
@@ -44,7 +44,7 @@ Research artifacts:
 
 ### v1.3.0 — Documentation & Patterns (Zero Risk)
 
-**Files changed**: `docs/coordination-patterns.md`, `docs/custom-roles.md` (new), `hooks/hooks.json` (description field), `README.md`, `CHANGELOG.md` (new)
+**Files changed**: `docs/coordination-patterns.md`, `docs/custom-roles.md` (new), `hooks/hooks.json` (description field), `CHANGELOG.md` (new)
 
 | # | Item | Source | File |
 |---|------|--------|------|
@@ -53,10 +53,8 @@ Research artifacts:
 | 3 | Quality gate before Phase 5 | GitHub G3 | docs/coordination-patterns.md |
 | 4 | Auto-block on repeated failures | GitHub G5 | docs/coordination-patterns.md |
 | 5 | Custom role definitions template | Competitor 4.7 | docs/custom-roles.md (new) |
-| 6 | Companion plugins documentation | GitHub G4 | README.md |
-| 7 | MCP tool extension documentation | Competitor 4.10 | README.md |
-| 8 | hooks.json description field | Docs R2 | hooks/hooks.json |
-| 9 | CHANGELOG.md | Docs R5 | CHANGELOG.md (new) |
+| 6 | hooks.json description field | Docs R2 | hooks/hooks.json |
+| 7 | CHANGELOG.md | Docs R5 | CHANGELOG.md (new) |
 
 **Details:**
 
@@ -94,15 +92,7 @@ New file `docs/custom-roles.md` with a template:
 ```
 Lead reads this during Phase 1 and uses custom roles alongside built-in ones. Inspired by Roo Code's Custom Modes.
 
-#### 6. Companion Plugins Documentation
-New README section:
-- `claude-code-safety-net`: Blocks destructive bash commands during team sessions
-- `claude-code-hooks-multi-agent-observability`: Real-time monitoring dashboard
-
-#### 7. MCP Tool Extension Documentation
-README note that MCP-provided tools are automatically available to all team members. No plugin changes needed.
-
-#### 8. hooks.json Description
+#### 6. hooks.json Description
 ```json
 {
   "description": "Agent Team quality gates — prevents premature task completion and nudges idle teammates",
@@ -110,7 +100,7 @@ README note that MCP-provided tools are automatically available to all team memb
 }
 ```
 
-#### 9. CHANGELOG.md
+#### 7. CHANGELOG.md
 Initial changelog covering v1.0.0 through v1.3.0.
 
 ---
@@ -122,10 +112,9 @@ Initial changelog covering v1.0.0 through v1.3.0.
 | # | Item | Source | File |
 |---|------|--------|------|
 | 1 | Re-read workspace in spawn templates | GitHub G6 | docs/worker-roles.md |
-| 2 | Memory persistence step (Phase 5) | Competitor 4.4, GitHub G9 | skills/agent-team/SKILL.md |
-| 3 | Team metrics in final report | Competitor 4.9 | docs/report-format.md |
-| 4 | Grouped tasks.md by status | GitHub G10 | skills/agent-team/SKILL.md |
-| 5 | Phase 1 custom roles reference | Competitor 4.7 | skills/agent-team/SKILL.md |
+| 2 | Team metrics in final report | Competitor 4.9 | docs/report-format.md |
+| 3 | Grouped tasks.md by status | GitHub G10 | skills/agent-team/SKILL.md |
+| 4 | Phase 1 custom roles reference | Competitor 4.7 | skills/agent-team/SKILL.md |
 
 **Details:**
 
@@ -135,13 +124,7 @@ Add to all role spawn templates in `docs/worker-roles.md`:
 
 Prevents context drift. Inspired by Flow-Next's re-anchoring pattern.
 
-#### 2. Memory Persistence Step
-New step 5.5 in SKILL.md Phase 5:
-> "Save key decisions, architectural patterns, and lessons learned to `.claude/memory/` for future team sessions."
-
-Bridges the session memory gap (Windsurf and Augment Code have persistent memories).
-
-#### 3. Team Metrics in Final Report
+#### 2. Team Metrics in Final Report
 New section in `docs/report-format.md` template:
 ```markdown
 ### Team Metrics
@@ -152,7 +135,7 @@ New section in `docs/report-format.md` template:
 - Remediation cycles: {count}
 ```
 
-#### 4. Grouped tasks.md by Status
+#### 3. Grouped tasks.md by Status
 Update workspace template in SKILL.md Phase 3:
 ```markdown
 ## In Progress
@@ -165,7 +148,7 @@ Update workspace template in SKILL.md Phase 3:
 | ID | Subject | Owner | Notes |
 ```
 
-#### 5. Phase 1 Custom Roles Reference
+#### 4. Phase 1 Custom Roles Reference
 Add to Phase 1:
 > "Check for `docs/custom-roles.md` in the project. If it exists, read it and include custom roles in the decomposition alongside built-in roles."
 
@@ -291,7 +274,7 @@ Document all hooks (now 5 total): TaskCompleted, TeammateIdle, SessionStart(comp
   ```
 - Lead appends during Phase 4 (workspace update protocol gets new rows)
 - SubagentStart/Stop hooks (v1.5.0) also append
-- Data source for team metrics and future dashboard
+- Data source for team metrics and post-mortem analysis
 
 #### 3. Direct Agent Communication (Optional)
 - New section in `docs/coordination-patterns.md`: "Direct Handoff"
@@ -309,7 +292,6 @@ Document all hooks (now 5 total): TaskCompleted, TeammateIdle, SessionStart(comp
 |---|------|--------|------|
 | 1 | Git worktree isolation (opt-in) | Competitor 4.1 | SKILL.md, scripts/ |
 | 2 | Nested task decomposition | GitHub G11 | SKILL.md, worker-roles.md |
-| 3 | HTML progress dashboard | Competitor 4.8, GitHub G12 | scripts/ or skill |
 
 **Details:**
 
@@ -331,13 +313,6 @@ Document all hooks (now 5 total): TaskCompleted, TeammateIdle, SessionStart(comp
 - One level of nesting max
 - Spawn prompt permission: "You may create sub-tasks and spawn subagents for independent portions of your work"
 - Lead sees sub-tasks in TaskList but interacts at parent level
-
-#### 3. HTML Progress Dashboard
-- Generates `.agent-team/{team}/dashboard.html` — static, single file
-- Reads workspace files, renders: team composition, task kanban, event timeline, issue tracker
-- Inline CSS/JS, no server needed
-- Generated on demand by the lead
-- Could be a separate skill or a script
 
 ---
 
