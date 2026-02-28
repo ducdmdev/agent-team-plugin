@@ -241,6 +241,10 @@ For detailed patterns on these scenarios, see [coordination-patterns.md](../../d
 - **Synthesis pattern** — collect structured summaries from all teammates at completion
 - **Error recovery** — log to issues.md, acknowledge, assess and route to resolution
 - **Issue triage after context recovery** — review OPEN issues in issues.md after compaction
+- **Re-plan on Block** — when a critical blocker invalidates the original plan, re-plan with user approval
+- **Adversarial review rounds** — multi-round cross-review for high-stakes changes
+- **Quality gate** — final validation pass before Phase 5 synthesis
+- **Auto-block on repeated failures** — auto-escalation after 3 blocked attempts
 
 **Periodic scan**: on every context recovery, check `issues.md` for OPEN items and address them before resuming normal coordination.
 
