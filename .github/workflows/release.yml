@@ -1,0 +1,144 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get install -q -y jq
+
+      - name: Ensure scripts are executable
+        run: |
+          chmod +x scripts/*.sh
+          find tests -name '*.sh' -exec chmod +x {} +
+
+      - name: Extract tag version
+        id: tag
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$TAG_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Tag version: $TAG_VERSION"
+
+      - name: Check versions match tag
+        run: |
+          TAG_VERSION="${{ steps.tag.outputs.version }}"
+          V_PKG=$(jq -r .version package.json)
+          V_PLUGIN=$(jq -r .version .claude-plugin/plugin.json)
+          V_MKT=$(jq -r '.plugins[0].version' .claude-plugin/marketplace.json)
+          echo "tag=$TAG_VERSION package.json=$V_PKG plugin.json=$V_PLUGIN marketplace.json=$V_MKT"
+          MISMATCH=false
+          if [ "$V_PKG" != "$TAG_VERSION" ]; then
+            echo "::error::package.json ($V_PKG) does not match tag ($TAG_VERSION)"
+            MISMATCH=true
+          fi
+          if [ "$V_PLUGIN" != "$TAG_VERSION" ]; then
+            echo "::error::plugin.json ($V_PLUGIN) does not match tag ($TAG_VERSION)"
+            MISMATCH=true
+          fi
+          if [ "$V_MKT" != "$TAG_VERSION" ]; then
+            echo "::error::marketplace.json ($V_MKT) does not match tag ($TAG_VERSION)"
+            MISMATCH=true
+          fi
+          if [ "$MISMATCH" = "true" ]; then
+            exit 1
+          fi
+          echo "All versions match tag: $TAG_VERSION"
+
+      - name: Run tests
+        run: bash tests/run-tests.sh
+
+  release:
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Find previous tag
+          PREV_TAG=$(git tag --sort=-v:refname | grep '^v' | sed -n '2p')
+          if [ -z "$PREV_TAG" ]; then
+            # First release — use all commits
+            RANGE="HEAD"
+          else
+            RANGE="${PREV_TAG}..HEAD"
+          fi
+
+          echo "Generating changelog for $RANGE"
+
+          CHANGELOG=""
+
+          # Collect commits by type
+          FEATS=$(git log "$RANGE" --pretty=format:"%s" --no-merges | grep -E "^feat(\(.+\))?:" | sed 's/^feat\(([^)]*)\)\?: //' | sed 's/^feat: //' || true)
+          FIXES=$(git log "$RANGE" --pretty=format:"%s" --no-merges | grep -E "^fix(\(.+\))?:" | sed 's/^fix\(([^)]*)\)\?: //' | sed 's/^fix: //' || true)
+          REFACTORS=$(git log "$RANGE" --pretty=format:"%s" --no-merges | grep -E "^refactor(\(.+\))?:" | sed 's/^refactor\(([^)]*)\)\?: //' | sed 's/^refactor: //' || true)
+          DOCS=$(git log "$RANGE" --pretty=format:"%s" --no-merges | grep -E "^docs(\(.+\))?:" | sed 's/^docs\(([^)]*)\)\?: //' | sed 's/^docs: //' || true)
+          CHORES=$(git log "$RANGE" --pretty=format:"%s" --no-merges | grep -E "^chore(\(.+\))?:" | sed 's/^chore\(([^)]*)\)\?: //' | sed 's/^chore: //' || true)
+
+          if [ -n "$FEATS" ]; then
+            CHANGELOG+=$'\n## Features\n\n'
+            while IFS= read -r line; do
+              CHANGELOG+="- $line"$'\n'
+            done <<< "$FEATS"
+          fi
+
+          if [ -n "$FIXES" ]; then
+            CHANGELOG+=$'\n## Fixes\n\n'
+            while IFS= read -r line; do
+              CHANGELOG+="- $line"$'\n'
+            done <<< "$FIXES"
+          fi
+
+          if [ -n "$REFACTORS" ]; then
+            CHANGELOG+=$'\n## Refactors\n\n'
+            while IFS= read -r line; do
+              CHANGELOG+="- $line"$'\n'
+            done <<< "$REFACTORS"
+          fi
+
+          if [ -n "$DOCS" ]; then
+            CHANGELOG+=$'\n## Documentation\n\n'
+            while IFS= read -r line; do
+              CHANGELOG+="- $line"$'\n'
+            done <<< "$DOCS"
+          fi
+
+          if [ -n "$CHORES" ]; then
+            CHANGELOG+=$'\n## Maintenance\n\n'
+            while IFS= read -r line; do
+              CHANGELOG+="- $line"$'\n'
+            done <<< "$CHORES"
+          fi
+
+          if [ -z "$CHANGELOG" ]; then
+            CHANGELOG=$'\nNo categorized changes in this release.\n'
+          fi
+
+          # Write to file (multi-line output is easier via file)
+          echo "$CHANGELOG" > /tmp/changelog.md
+          echo "Changelog generated:"
+          cat /tmp/changelog.md
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file /tmp/changelog.md \
+            --latest
