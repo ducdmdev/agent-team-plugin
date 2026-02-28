@@ -1,6 +1,6 @@
 # Paired Reviewer + Hook Workspace Fix Implementation Plan
 
-**Status**: Draft (not started)
+**Status**: In Progress (tasks 1-2 complete — hook fixes already merged; tasks 3-14 pending — line numbers refreshed 2026-02-28)
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -16,6 +16,10 @@
 ---
 
 ### Task 1: Fix verify-task-complete.sh remediation workspace lookup
+
+**Status**: Implemented
+
+This task was completed as part of the v1.4.0 release. The changes are already in the codebase.
 
 **Files:**
 - Modify: `scripts/verify-task-complete.sh:21-39`
@@ -120,6 +124,10 @@ git commit -m "fix: handle remediation team workspace lookup in TaskCompleted ho
 
 ### Task 2: Fix check-teammate-idle.sh remediation workspace lookup
 
+**Status**: Implemented
+
+This task was completed as part of the v1.4.0 release. The changes are already in the codebase.
+
 **Files:**
 - Modify: `scripts/check-teammate-idle.sh:21-28`
 - Test: `tests/hooks/test-check-teammate-idle.sh`
@@ -202,11 +210,11 @@ git commit -m "fix: handle remediation team workspace lookup in TeammateIdle hoo
 ### Task 3: Update Reviewer spawn template in worker-roles.md
 
 **Files:**
-- Modify: `docs/worker-roles.md:132-167` (Reviewer section)
+- Modify: `docs/worker-roles.md:134-170` (Reviewer section)
 
 **Step 1: Replace the Reviewer section**
 
-Replace lines 132-167 with:
+Replace lines 134-170 with:
 
 ```markdown
 ### Reviewer
@@ -254,7 +262,7 @@ Rules:
 
 **Step 2: Verify the edit**
 
-Read `docs/worker-roles.md:132-172` to confirm the Reviewer section is correct and the Challenger section (starting with `### Challenger`) follows immediately after.
+Read `docs/worker-roles.md:134-175` to confirm the Reviewer section is correct and the Challenger section (starting with `### Challenger`) follows immediately after.
 
 **Step 3: Commit**
 
@@ -268,11 +276,11 @@ git commit -m "feat: update reviewer role to paired 1:1 mode with REVIEW-PASS/FA
 ### Task 4: Update Role Selection Guide + Team Size Limits in worker-roles.md
 
 **Files:**
-- Modify: `docs/worker-roles.md:279-296` (Role Selection Guide + Team Size Limits)
+- Modify: `docs/worker-roles.md:284-301` (Role Selection Guide + Team Size Limits)
 
 **Step 1: Replace the Role Selection Guide table**
 
-Replace lines 281-290 (the table body) with:
+Replace lines 286-295 (the table body) with:
 
 ```markdown
 | Task Type | Recommended Roles | Typical Size | Paired Review |
@@ -289,7 +297,7 @@ Replace lines 281-290 (the table body) with:
 
 **Step 2: Replace Team Size Limits**
 
-Replace lines 292-296 with:
+Replace lines 297-301 with:
 
 ```markdown
 ### Team Size Limits
@@ -302,7 +310,7 @@ Replace lines 292-296 with:
 
 **Step 3: Verify the edit**
 
-Read `docs/worker-roles.md:279-300`.
+Read `docs/worker-roles.md:284-305`.
 
 **Step 4: Commit**
 
@@ -316,11 +324,11 @@ git commit -m "feat: update role selection guide and team size limits for paired
 ### Task 5: Add paired reviewer spawn example in worker-roles.md
 
 **Files:**
-- Modify: `docs/worker-roles.md:236-277` (Spawn Example section)
+- Modify: `docs/worker-roles.md:241-282` (Spawn Example section)
 
 **Step 1: Add paired reviewer spawn example**
 
-After line 271 (end of the implementer spawn example's closing triple-backtick block), insert:
+After line 276 (end of the implementer spawn example's closing triple-backtick block), insert:
 
 ```markdown
 
@@ -358,7 +366,7 @@ Task tool call:
 
 **Step 2: Update Key parameters note**
 
-Replace lines 273-277 with:
+Replace lines 278-282 with:
 
 ```markdown
 Key parameters:
@@ -370,7 +378,7 @@ Key parameters:
 
 **Step 3: Verify the edit**
 
-Read `docs/worker-roles.md:236-320` to confirm the example and parameters are correct.
+Read `docs/worker-roles.md:241-325` to confirm the example and parameters are correct.
 
 **Step 4: Commit**
 
@@ -384,13 +392,44 @@ git commit -m "feat: add paired reviewer spawn example to worker-roles.md"
 ### Task 6: Update Phase 2 plan format in SKILL.md
 
 **Files:**
-- Modify: `skills/agent-team/SKILL.md:46-78` (Phase 2 plan template + self-check)
+- Modify: `skills/agent-team/SKILL.md:57-87` (Phase 2 plan template + self-check)
 
 **Step 1: Replace the plan template code block**
 
-Replace lines 46-72 (the plan template code block) with:
+Find (lines 57-83):
+````
+```
+Team plan for: [task summary]
+Complexity: standard | complex
+  (if complex) Reason: [why — e.g., multi-module, risky refactor, security-sensitive]
+  (if complex) ✓ Dedicated reviewer included
+  (if complex) ✓ Dedicated tester included
 
-````markdown
+Teammates (N total):
+⚠ Team size check: [default max 4 | up to 6 if extra are read-only]
+- [role-name]: [what they do] -> owns [files/area]
+- [role-name]: [what they do] -> owns [files/area]
+
+Task breakdown:
+1. [task] -> assigned to [role]
+2. [task] -> assigned to [role]
+3. [task] -> assigned to [role] (blocked by #1)
+
+Every phase has an owner (omit for pure review tasks):
+- Setup/config: [role]
+- Implementation: [role(s)]
+- Verification: [role]
+- Testing: [role] (required for complex plans)
+- Finalization: [role]
+
+Workspace: .agent-team/[team-name]/
+Estimated teammates: N
+```
+````
+
+Replace with:
+
+````
 ```
 Team plan for: [task summary]
 Complexity: standard | complex
@@ -424,8 +463,14 @@ Estimated teammates: N
 
 **Step 2: Replace the self-check**
 
-Replace lines 74-78 with:
+Find (lines 85-87):
+```markdown
+**Self-check before proceeding**:
+1. "Is this plan complex? Complexity signals: multi-module/area changes, architectural decisions, risky refactors, multiple implementers with cross-dependencies, security-sensitive changes, new integrations. If yes, does the teammate list include a **dedicated reviewer** AND a **dedicated tester** (separate teammates, not combined)? If no, add them before presenting."
+2. "Have I presented this plan AND received user confirmation?" If no, STOP.
+```
 
+Replace with:
 ```markdown
 **Self-check before proceeding**:
 1. "Is this plan complex? Complexity signals: multi-module/area changes, architectural decisions, risky refactors, multiple implementers with cross-dependencies, security-sensitive changes, new integrations. If yes, does the teammate list include a **dedicated tester** (separate from reviewers)? If no, add one before presenting."
@@ -436,7 +481,7 @@ Replace lines 74-78 with:
 
 **Step 3: Verify the edit**
 
-Read `skills/agent-team/SKILL.md:42-85`.
+Read `skills/agent-team/SKILL.md:53-92`.
 
 **Step 4: Commit**
 
@@ -450,12 +495,37 @@ git commit -m "feat: update Phase 2 plan format with opt-in paired review"
 ### Task 7: Update Phase 3 spawn rules + team size gate in SKILL.md
 
 **Files:**
-- Modify: `skills/agent-team/SKILL.md:184-200` (Phase 3 steps 5-6)
+- Modify: `skills/agent-team/SKILL.md:122-149` (Phase 3 steps 5-6)
 
 **Step 1: Replace spawn instructions (step 5)**
 
-Replace lines 184-194 with:
+Find (lines 122-143):
+```markdown
+5. **Spawn teammates** using the Task tool with `team_name`, `name`, and `subagent_type` parameters. See [worker-roles.md](../../docs/worker-roles.md) for role-specific spawn templates.
 
+   **subagent_type**: `"general-purpose"` for full tool access (implementers, challengers, testers). `"Explore"` for read-only research teammates. `"general-purpose"` if a reviewer needs Bash. Optionally set `mode: "plan"` for risky or architectural tasks.
+
+   Every spawn prompt MUST include:
+
+   Identity:
+   1. Role and responsibilities
+   2. Assigned task IDs
+   3. Owned files/areas (exclusive — no overlap with other teammates)
+
+   Context:
+   4. Workspace path: `.agent-team/{team-name}/` — read for team state, write output artifacts here
+   5. Communication protocol (STARTING/COMPLETED/BLOCKED/HANDOFF/QUESTION — see Phase 4)
+
+   Behavior:
+   6. When blocked: message the lead with severity and impact, do not wait silently
+   7. After completing a task: mark complete via TaskUpdate, check TaskList, self-claim next available
+   8. Use subagents (Task tool) for focused subtasks that don't need teammate communication
+   9. Write output artifacts to the workspace directory
+
+   **Update workspace**: record each teammate in `progress.md` Team Members table
+```
+
+Replace with:
 ```markdown
 5. **Spawn teammates** using the Task tool with `team_name`, `name`, and `subagent_type` parameters. See [worker-roles.md](../../docs/worker-roles.md) for role-specific spawn templates. Use `subagent_type: "general-purpose"` for teammates that need full tool access (Write, Edit, Bash) — implementers, challengers, testers. Use `subagent_type: "Explore"` for read-only teammates (paired reviewers, researchers). Use `general-purpose` if a reviewer needs to run commands (tests, builds). Optionally set `mode: "plan"` to require plan approval before a teammate implements anything — useful for risky or architectural tasks.
 
@@ -481,8 +551,16 @@ Replace lines 184-194 with:
 
 **Step 2: Replace team size gate (step 6)**
 
-Replace lines 196-200 with:
+Find (lines 145-149):
+```markdown
+6. **Team size gate** — explicitly count before spawning: "I am spawning N teammates: [list names]."
+   - **Default max: 4** for mixed teams (implementers + reviewers/challengers)
+   - **Up to 6** if the additional teammates beyond 4 are **read-only** (researchers, reviewers using `subagent_type: "Explore"`) — read-only agents have zero file conflict risk and minimal coordination cost
+   - **Self-check for N > 4**: (1) every stream has zero file overlap, (2) cross-communication between teammates is minimal, (3) the lead can track all streams without excessive workspace churn
+   - If the self-check fails on any point, merge roles until it passes
+```
 
+Replace with:
 ```markdown
 6. **Team size gate** — explicitly count before spawning: "I am spawning N teammates: [list names]."
    - **Default max: 6** for mixed teams (implementers + their paired reviewers + other roles)
@@ -494,7 +572,7 @@ Replace lines 196-200 with:
 
 **Step 3: Verify the edit**
 
-Read `skills/agent-team/SKILL.md:184-210`.
+Read `skills/agent-team/SKILL.md:122-160`.
 
 **Step 4: Commit**
 
@@ -508,13 +586,23 @@ git commit -m "feat: update Phase 3 spawn rules to require paired reviewer per i
 ### Task 8: Update Phase 4 Communication Protocol + Lead Processing Rules in SKILL.md
 
 **Files:**
-- Modify: `skills/agent-team/SKILL.md:242-264` (Communication Protocol + Lead Processing Rules)
+- Modify: `skills/agent-team/SKILL.md:199-221` (Communication Protocol + Lead Processing Rules)
 
 **Step 1: Update the structured message format block**
 
-Replace lines 246-252 (the message format code block content) with:
+Find (lines 203-209):
+````
+```
+STARTING #N: {what I plan to do, which files I'll touch}
+COMPLETED #N: {what I did, files changed, any concerns}
+BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
+HANDOFF #N: {what I produced that another teammate needs, key details}
+QUESTION: {what I need to know, what I already checked}
+```
+````
 
-````markdown
+Replace with:
+````
 ```
 STARTING #N: {what I plan to do, which files I'll touch}
 COMPLETED #N: {what I did, files changed, any concerns}
@@ -530,8 +618,18 @@ REVIEW-FAIL #N: {issues found — H1: ..., M1: ..., L1: ...}
 
 **Step 2: Replace the Lead Processing Rules table**
 
-Replace lines 258-264 with:
+Find (lines 215-221):
+```markdown
+| Prefix | Lead Action |
+|--------|--------------|
+| STARTING | Update `tasks.md` status to `in_progress`, add note |
+| COMPLETED | Update `tasks.md` status to `completed`, add file list and notes. Check: does this unblock other tasks? If yes, message the dependent teammate |
+| BLOCKED | Add row to `issues.md` immediately. Acknowledge the teammate. Route to resolution |
+| HANDOFF | Extract key details, forward to dependent teammate with actionable context. Log in `progress.md` Handoffs |
+| QUESTION | Check if answer is in workspace files. If yes, answer with file reference. If no, investigate |
+```
 
+Replace with:
 ```markdown
 | Prefix | Lead Action |
 |--------|--------------|
@@ -546,7 +644,7 @@ Replace lines 258-264 with:
 
 **Step 3: Verify the edit**
 
-Read `skills/agent-team/SKILL.md:242-280`.
+Read `skills/agent-team/SKILL.md:199-230`.
 
 **Step 4: Commit**
 
@@ -560,13 +658,33 @@ git commit -m "feat: update Phase 4 lead processing rules with conditional revie
 ### Task 9: Update Workspace Update Protocol in SKILL.md
 
 **Files:**
-- Modify: `skills/agent-team/SKILL.md:228-240` (Workspace Update Protocol table)
+- Modify: `skills/agent-team/SKILL.md:183-197` (Workspace Update Protocol table)
 
 **Step 1: Replace the table**
 
-Replace lines 228-240 with:
-
+Find (lines 183-197):
 ```markdown
+#### Workspace Update Protocol
+
+| Event | File | What to update |
+|-------|------|---------------|
+| Team created | All 3 files | Initialize from templates |
+| Tasks created | tasks.md | Fill task ledger |
+| Teammate spawned | progress.md | Add row to Team Members |
+| Task started | tasks.md | Status -> `in_progress` |
+| Task completed | tasks.md | Status -> `completed`, add notes |
+| Decision made | progress.md | Append to Decision Log |
+| Handoff occurs | progress.md | Append to Handoffs |
+| Issue found | issues.md | Append row, update Open count |
+| Issue resolved | issues.md | Status -> RESOLVED/MITIGATED, update counts |
+| Teammate status change | progress.md | Update Team Members table |
+| All work done | progress.md | Status -> `done` |
+```
+
+Replace with:
+```markdown
+#### Workspace Update Protocol
+
 | Event | File | What to update |
 |-------|------|---------------|
 | Team created | All files (3 base + review-log.md if paired review) | Initialize from templates |
@@ -588,7 +706,7 @@ Replace lines 228-240 with:
 
 **Step 2: Verify the edit**
 
-Read `skills/agent-team/SKILL.md:226-245`.
+Read `skills/agent-team/SKILL.md:181-205`.
 
 **Step 3: Commit**
 
@@ -599,89 +717,101 @@ git commit -m "feat: add review events to workspace update protocol"
 
 ---
 
-### Task 10: Add review-log.md workspace template + conditional init + paired review field to SKILL.md
+### Task 10: Add review-log.md workspace template + conditional init + paired review field to SKILL.md and workspace-templates.md
 
 **Files:**
-- Modify: `skills/agent-team/SKILL.md:89-95` (Phase 3 workspace init)
-- Modify: `skills/agent-team/SKILL.md:106-112` (progress.md template — add Paired review field)
-- Modify: `skills/agent-team/SKILL.md` (insert new template after issues.md template, before step 4)
+- Modify: `skills/agent-team/SKILL.md:100-111` (Phase 3 workspace init)
+- Modify: `docs/workspace-templates.md:13-47` (progress.md template — add Paired review field)
+- Modify: `docs/workspace-templates.md` (insert new template after issues.md template)
+- Modify: `skills/agent-team/SKILL.md` (insert new template reference — after issues.md mention, before step 4)
 
 **Context:** The review-log.md tracks every review cycle when paired review is enabled. The lead appends a row on every REVIEW-PASS and REVIEW-FAIL, creating a full audit trail. When paired review is disabled, this file is not created. The progress.md template gets a new `**Paired review**` field so the lead (and hooks/coordination logic) can check whether paired review is active.
 
-**Step 0: Add Paired review field to progress.md template**
+**Step 0: Add Paired review field to progress.md template in workspace-templates.md**
 
-In the progress.md template, after the `**Remediation cycle**` line, add:
+In `docs/workspace-templates.md`, find the progress.md template (lines 13-47). After the `**Remediation cycle**: 0` line (line 20), add:
 
 ```
-   **Paired review**: enabled | disabled
+**Paired review**: enabled | disabled
 ```
 
 This field is set during Phase 3 workspace init based on the user's Phase 2 choice.
 
-**Step 1: Update the workspace init step**
+**Step 1: Update the workspace init step in SKILL.md**
 
-In Phase 3 step 3 (lines 89-95), update the init instructions to conditionally include review-log.md:
-
-Replace:
-```
+Find (lines 100-107):
+```markdown
+3. **Initialize workspace** — immediately after TeamCreate, create the workspace directory and all 3 tracking files:
+   ```
    mkdir -p .agent-team/{team-name}
-   Write: .agent-team/{team-name}/progress.md
-   Write: .agent-team/{team-name}/tasks.md
-   Write: .agent-team/{team-name}/issues.md
+   ```
+   Use the templates from [workspace-templates.md](../../docs/workspace-templates.md) to create:
+   - `.agent-team/{team-name}/progress.md` — team status, members, decisions, handoffs
+   - `.agent-team/{team-name}/tasks.md` — task ledger with status tracking
+   - `.agent-team/{team-name}/issues.md` — issue tracker with severity and impact
 ```
 
-With:
-```
+Replace with:
+```markdown
+3. **Initialize workspace** — immediately after TeamCreate, create the workspace directory and all 3 tracking files (+ review-log.md if paired review is enabled):
+   ```
    mkdir -p .agent-team/{team-name}
-   Write: .agent-team/{team-name}/progress.md
-   Write: .agent-team/{team-name}/tasks.md
-   Write: .agent-team/{team-name}/issues.md
-   Write: .agent-team/{team-name}/review-log.md  ← only if paired review is enabled
+   ```
+   Use the templates from [workspace-templates.md](../../docs/workspace-templates.md) to create:
+   - `.agent-team/{team-name}/progress.md` — team status, members, decisions, handoffs
+   - `.agent-team/{team-name}/tasks.md` — task ledger with status tracking
+   - `.agent-team/{team-name}/issues.md` — issue tracker with severity and impact
+   - `.agent-team/{team-name}/review-log.md` — review cycle audit trail (only if paired review is enabled)
 ```
 
-**Step 2: Update "all 3 tracking files" references**
+**Step 2: Add review-log.md template to workspace-templates.md**
 
-Search SKILL.md for "all 3 tracking files" and replace with "all 3 tracking files (+ review-log.md if paired review is enabled)". Also update "Use the following templates" paragraph at line 97 if it mentions 3 files.
-
-**Step 3: Add review-log.md template**
-
-Insert the following template block after the issues.md template closing (after the `## Impact Categories` section and its closing triple-backtick, before step 4 "Create ALL tasks upfront"):
+Insert after the issues.md template closing (after line 99 of `docs/workspace-templates.md`, the closing `````), add:
 
 ```markdown
-   #### review-log.md
 
-   ` ` `markdown
-   # Review Log: {team-name}
+## review-log.md
 
-   **Last updated**: {timestamp}
+````markdown
+# Review Log: {team-name}
 
-   | Task | Implementer | Reviewer | Cycle | Result | Findings | Notes |
-   |------|-------------|----------|-------|--------|----------|-------|
+**Last updated**: {timestamp}
 
-   ## Column Guide
-   - **Task**: Task ID being reviewed (e.g., #3)
-   - **Implementer**: Name of the implementer whose work is reviewed
-   - **Reviewer**: Name of the paired reviewer
-   - **Cycle**: Review cycle number (1 = first review, 2 = re-review after fixes, etc.)
-   - **Result**: PASS or FAIL
-   - **Findings**: Count summary (e.g., "0H 2M 1L" or "—" for PASS)
-   - **Notes**: Brief summary of key issues or "clean"
-   ` ` `
+| Task | Implementer | Reviewer | Cycle | Result | Findings | Notes |
+|------|-------------|----------|-------|--------|----------|-------|
+
+## Column Guide
+- **Task**: Task ID being reviewed (e.g., #3)
+- **Implementer**: Name of the implementer whose work is reviewed
+- **Reviewer**: Name of the paired reviewer
+- **Cycle**: Review cycle number (1 = first review, 2 = re-review after fixes, etc.)
+- **Result**: PASS or FAIL
+- **Findings**: Count summary (e.g., "0H 2M 1L" or "—" for PASS)
+- **Notes**: Brief summary of key issues or "clean"
+````
 ```
 
-(Note: `` ` ` ` `` represents triple backticks.)
+**Step 3: Update "all 3 tracking files" references**
 
-**Step 4: Verify the edit**
+Search SKILL.md for "all 3 tracking files" and replace with "all 3 tracking files (+ review-log.md if paired review is enabled)". This was already done in Step 1 above — verify no other references remain.
 
-Read `skills/agent-team/SKILL.md:89-180` to confirm:
-- progress.md template has `**Paired review**: enabled | disabled` field
-- Workspace init conditionally lists review-log.md
-- The review-log.md template has the correct table structure
+**Step 4: Update workspace-templates.md Contents list**
 
-**Step 5: Commit**
+In `docs/workspace-templates.md`, find the Contents list (lines 7-9). After the issues.md entry, add:
+
+```markdown
+- [review-log.md](#review-logmd) — review cycle audit trail (paired review only)
+```
+
+**Step 5: Verify the edits**
+
+Read `skills/agent-team/SKILL.md:98-115` to confirm the workspace init step.
+Read `docs/workspace-templates.md` to confirm the new template and updated contents.
+
+**Step 6: Commit**
 
 ```bash
-git add skills/agent-team/SKILL.md
+git add skills/agent-team/SKILL.md docs/workspace-templates.md
 git commit -m "feat: add review-log.md template, paired review field to progress.md"
 ```
 
@@ -690,13 +820,13 @@ git commit -m "feat: add review-log.md template, paired review field to progress
 ### Task 11: Update Anti-Patterns in SKILL.md
 
 **Files:**
-- Modify: `skills/agent-team/SKILL.md` (Anti-Patterns section — line numbers will shift after Task 10 inserts the review-log.md template)
+- Modify: `skills/agent-team/SKILL.md` (Anti-Patterns section — line numbers will shift after Task 9/10 inserts; locate by searching for "## Anti-Patterns")
 
 **Step 1: Replace the team size limit anti-pattern and add new ones**
 
-Find the line:
+Find the line (currently line 333):
 ```
-- **DO NOT exceed team size limits** — max 4 mixed, up to 6 if extras are read-only. Self-check required for N > 4
+- **DO NOT nest teams** — teammates cannot spawn their own teams. One team per session — clean up before starting a new one. `/resume` and `/rewind` do not restore teammates
 ```
 
 Replace with:
@@ -705,6 +835,7 @@ Replace with:
 - **DO NOT skip paired reviewers when enabled** — if the user approved paired review, every implementer MUST have a paired reviewer. Do not mark implementer tasks complete without a REVIEW-PASS from the paired reviewer
 - **DO NOT write issues to issues.md without auditing** — when a reviewer sends REVIEW-FAIL, the lead must validate each finding before writing to issues.md
 - **DO NOT force paired review on the user** — always present it as an option with a recommendation. The user decides
+- **DO NOT nest teams** — teammates cannot spawn their own teams. One team per session — clean up before starting a new one. `/resume` and `/rewind` do not restore teammates
 ```
 
 **Step 2: Verify the edit**
@@ -723,19 +854,29 @@ git commit -m "feat: add paired reviewer anti-patterns to SKILL.md"
 ### Task 12: Add Review Loop section to coordination-patterns.md
 
 **Files:**
-- Modify: `docs/coordination-patterns.md:6-20` (Contents), `docs/coordination-patterns.md:40-46` (Lead Processing), insert new section
+- Modify: `docs/coordination-patterns.md:5-24` (Contents), `docs/coordination-patterns.md:44-50` (Lead Processing), insert new section
 
 **Step 1: Add Review Loop to the Contents list**
 
-After line 12 (the Remediation Gate entry), add:
+After line 12 (the Remediation Gate entry `- [Remediation Gate](#remediation-gate) — spawning a fix team for unresolved issues`), add:
 ```
 - [Review Loop](#review-loop) — paired reviewer continuous review cycle with lead audit
 ```
 
 **Step 2: Update the Lead Processing table**
 
-Replace lines 40-46 with:
+Find (lines 44-50):
+```markdown
+| Prefix | Lead Action |
+|--------|--------------|
+| STARTING | Update `tasks.md` status to `in_progress`, add note |
+| COMPLETED | Update `tasks.md` status to `completed`, add file list and notes. Check: does this unblock other tasks? If yes, message the dependent teammate |
+| BLOCKED | Add row to `issues.md` immediately. Acknowledge the teammate. Route to resolution |
+| HANDOFF | Extract key details, forward to dependent teammate with actionable context. Log in `progress.md` Handoffs |
+| QUESTION | Check if answer is in workspace files. If yes, answer with file reference. If no, investigate |
+```
 
+Replace with:
 ```markdown
 | Prefix | Lead Action |
 |--------|--------------|
@@ -750,9 +891,10 @@ Replace lines 40-46 with:
 
 **Step 3: Add the Review Loop section**
 
-Insert after the Pre-Shutdown Commit section (after line 122, before the `## Remediation Gate` heading at line 124):
+Insert after the Pre-Shutdown Commit section (after line 127 — the `**Why**: Without this step...` paragraph — and before the `## Remediation Gate` heading at line 128):
 
 ```markdown
+
 ## Review Loop
 
 Paired review is an opt-in feature — the user approves it during Phase 2. When enabled, every implementer has a paired reviewer. When an implementer completes a task, the lead routes it to the paired reviewer before marking it complete. This creates a continuous review cycle with a blocking gate. Every cycle is logged in `review-log.md`. When paired review is disabled, this loop does not apply — COMPLETED goes straight to task completion.
@@ -807,7 +949,7 @@ If the implementer disputes a reviewer's finding:
 
 **Step 4: Verify the edit**
 
-Read `docs/coordination-patterns.md:1-20` to verify Contents. Read the new Review Loop section.
+Read `docs/coordination-patterns.md:1-24` to verify Contents. Read the new Review Loop section.
 
 **Step 5: Commit**
 
@@ -821,11 +963,16 @@ git commit -m "feat: add Review Loop coordination pattern for paired reviewers"
 ### Task 13: Update SKILL.md coordination patterns list
 
 **Files:**
-- Modify: `skills/agent-team/SKILL.md` (Coordination Patterns bullet list — line numbers will shift after Task 10)
+- Modify: `skills/agent-team/SKILL.md` (Coordination Patterns bullet list — line numbers will shift after Tasks 7-10; locate by searching for "### Coordination Patterns")
 
 **Step 1: Add Review Loop to the list**
 
-Find the Remediation gate bullet in the coordination patterns list and add after it:
+Find the line (currently line 234):
+```
+- **Remediation gate** — spawn a fix team for unresolved issues (max 1 cycle)
+```
+
+After it, insert:
 ```
 - **Review loop** (when paired review enabled) — paired reviewer reviews each task, lead audits findings, blocking gate until REVIEW-PASS
 ```
@@ -858,7 +1005,7 @@ Read all modified files and check:
 5. Phase 2 self-check includes paired review opt-in validation
 6. Phase 3 spawn instructions conditionally require paired reviewers (only when user approved)
 7. Phase 3 workspace init conditionally creates review-log.md (only if paired review enabled)
-8. The review-log.md template exists in SKILL.md with correct table columns
+8. The review-log.md template exists in workspace-templates.md with correct table columns
 9. Workspace Update Protocol has both paths: "Task completed (no paired review)" and "Task sent to reviewer (paired review)"
 10. Lead Processing Rules COMPLETED row has conditional: route to reviewer if enabled, mark complete if disabled
 11. Anti-patterns include the new rules: no skip reviewers when enabled, no unaudited issues, no forcing review on user
@@ -905,7 +1052,7 @@ Task 6 (SKILL.md: Phase 2 plan format)            ─┤
 Task 7 (SKILL.md: Phase 3 spawn rules)            ─┤
 Task 8 (SKILL.md: Phase 4 protocol + rules)       ─┤
 Task 9 (SKILL.md: workspace update protocol)      ─┤
-Task 10 (SKILL.md: review-log.md template + init) ─┤
+Task 10 (SKILL.md + templates: review-log.md)     ─┤
 Task 11 (SKILL.md: anti-patterns)                 ─┤
 Task 12 (coordination-patterns.md: review loop)   ─┤
 Task 13 (SKILL.md: patterns list)                 ─┘
@@ -924,10 +1071,11 @@ All tasks 1-13 are independent of each other (different sections of different fi
 | `docs/worker-roles.md` | Tasks 3, 4, 5 (sequential — same file) |
 | `skills/agent-team/SKILL.md` | Tasks 6, 7, 8, 9, 10, 11, 13 (sequential — same file) |
 | `docs/coordination-patterns.md` | Task 12 |
+| `docs/workspace-templates.md` | Task 10 |
 
 Parallel streams:
-- **Stream A**: Tasks 1 → 2 (hook scripts + tests)
+- **Stream A**: Tasks 1 → 2 (hook scripts + tests) — already complete
 - **Stream B**: Tasks 3 → 4 → 5 (worker-roles.md, sequential)
-- **Stream C**: Tasks 6 → 7 → 8 → 9 → 10 → 11 → 13 (SKILL.md, sequential)
+- **Stream C**: Tasks 6 → 7 → 8 → 9 → 10 → 11 → 13 (SKILL.md + workspace-templates.md, sequential)
 - **Stream D**: Task 12 (coordination-patterns.md)
 - **Final**: Task 14 (verification, after all streams complete)

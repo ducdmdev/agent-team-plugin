@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Status**: In Progress (v1.3.0 complete — tasks 1-9 done, v1.4.0–v2.0.0 not started — tasks 10-36 pending)
+**Status**: In Progress (v1.3.0 + v1.4.0 complete — tasks 1-14 done, v1.5.0–v2.0.0 not started — tasks 15-36 pending)
 
 **Goal:** Implement 21 improvements across 5 incremental releases (v1.3.0 through v2.0.0), layered by risk.
 
