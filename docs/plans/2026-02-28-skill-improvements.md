@@ -10,6 +10,8 @@
 
 **Design doc:** `docs/plans/2026-02-28-skill-improvements-design.md`
 
+**Task ordering:** Tasks MUST execute in order 1→12. Key dependencies: Task 4 requires Task 1 (creates the file it references), Task 7 requires Task 2 (removes step 8 that sits between step 7 and Phase 4).
+
 ---
 
 ### Task 1: Create `docs/workspace-templates.md`
@@ -107,7 +109,7 @@ Cross-teammate information transfers.
 ```​
 ```
 
-Note: The triple-backtick fences inside the file use the actual markdown code fence syntax. Be careful with nesting — the outer template fences and inner markdown fences must not collide. Use the exact content from the current SKILL.md lines 105-175.
+Note: The file contains markdown code fences nested inside markdown sections. Use **4-backtick outer fences** (``````) for each template section, with standard 3-backtick inner fences for the template content. This prevents the inner fences from closing the outer ones. Extract the template content verbatim from SKILL.md lines 105-175.
 
 **Step 2: Verify the file**
 
@@ -146,17 +148,18 @@ Replace with:
 
 **Step 2: Remove Phase 3 step 8**
 
-Find and remove this entire line:
+Find and remove this block (including the blank line before the step — this prevents a double-blank-line gap between step 7 and Phase 4):
 
 ```
+
 8. **Delegate mode** — tell the user to press Shift+Tab to enable delegate mode (Claude Code UI feature), which restricts you to coordination-only tools. Until they do, enforce this yourself: do NOT write code or edit files directly.
 ```
 
-Replace with empty string (delete the line).
+Replace with empty string (delete the block).
 
 **Step 3: Verify**
 
-Read the Prerequisites section — should end with the delegate mode recommendation. Read Phase 3 — step 7 (assign all work) should be the last numbered step.
+Read the Prerequisites section — should end with the delegate mode recommendation. Read Phase 3 — step 7 (assign all work) should be the last numbered step. Verify there is exactly one blank line between step 7's last bullet and `## Phase 4: Coordinate`.
 
 **Step 4: Commit**
 
@@ -641,12 +644,23 @@ git commit -m "refactor: condense remediation gate to decision logic with doc re
 
 **Step 1: Remove 3 redundant items**
 
-Find the Anti-Patterns section and remove these 3 lines that duplicate earlier hard gates:
+The 3 items to remove are **non-contiguous** — lines 409-410 (kept items) sit between lines 407-408 and 411. Find the full contiguous block of 5 items and replace with only the 2 that should remain:
+
+Find:
 
 ```
 - **DO NOT skip Phase 2** — present the plan and get user confirmation before creating anything. No exceptions
 - **DO NOT skip the workspace** — all 3 tracking files MUST be initialized before tasks are created
+- **DO NOT skip the report** — `.agent-team/{team-name}/report.md` MUST exist before shutdown
+- **DO NOT assume task completion** — no COMPLETED message means the task is NOT done
 - **DO NOT exceed team size limits** — max 4 mixed, up to 6 if extras are read-only. Self-check required for N > 4
+```
+
+Replace with (keeping only the 2 items that add unique value):
+
+```
+- **DO NOT skip the report** — `.agent-team/{team-name}/report.md` MUST exist before shutdown
+- **DO NOT assume task completion** — no COMPLETED message means the task is NOT done
 ```
 
 The remaining 6 anti-patterns stay (Zero-Code Rule, same-file conflict, skip report, assume completion, broadcast misuse, nest teams).
@@ -688,6 +702,7 @@ Read `skills/agent-team/SKILL.md` in full and check:
 - Phase 5 step 4: includes integration self-check
 - Phase 5 step 7: condensed remediation gate (5 lines, not 32)
 - Anti-Patterns: 6 items (not 9)
+- `docs/worker-roles.md` line 26: references `workspace-templates.md` directly (not SKILL.md Phase 3)
 
 **Step 3: Verify doc reference**
 
@@ -696,6 +711,20 @@ Read `docs/workspace-templates.md` and confirm it contains all 3 templates with 
 **Step 4: Verify cross-references**
 
 Check that the workspace-templates.md reference path in SKILL.md (`../../docs/workspace-templates.md`) resolves correctly from `skills/agent-team/SKILL.md`.
+
+**Step 4b: Update stale reference in worker-roles.md**
+
+`docs/worker-roles.md` line 26 references "see workspace templates in [SKILL.md](...) Phase 3". After Task 4, the templates live in `docs/workspace-templates.md`. Update the reference to point directly to workspace-templates.md:
+
+Find in `docs/worker-roles.md`:
+```
+see workspace templates in [SKILL.md](../skills/agent-team/SKILL.md) Phase 3
+```
+
+Replace with:
+```
+see [workspace-templates.md](workspace-templates.md)
+```
 
 **Step 5: Run plugin validation**
 
@@ -710,6 +739,6 @@ Expected: validation passes.
 If any issues found in steps 1-5:
 
 ```bash
-git add skills/agent-team/SKILL.md docs/workspace-templates.md
+git add skills/agent-team/SKILL.md docs/workspace-templates.md docs/worker-roles.md
 git commit -m "fix: address review findings from final verification"
 ```
