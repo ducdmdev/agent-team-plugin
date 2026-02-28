@@ -20,6 +20,7 @@
     "docs/",
     "tests/",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ]
 }
