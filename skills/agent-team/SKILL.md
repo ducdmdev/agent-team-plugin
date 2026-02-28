@@ -274,6 +274,8 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
 
 4. **Check integration** — do the pieces fit together? If issues found, assign fixes before wrapping up
 
+   **Self-check**: "Did I verify that the pieces integrate? If issues were found, have I assigned fixes before proceeding?" If no, STOP — do not generate the report until integration is confirmed.
+
 5. **Update workspace**: set `progress.md` status to `completing`, update `tasks.md` with final states and teammate notes. See Workspace Update Protocol in Phase 4 for event-to-file mappings.
 
 6. **Generate final report** (MANDATORY — do not skip):
