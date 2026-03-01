@@ -120,6 +120,17 @@ Wait for user confirmation before proceeding.
 
    Populated from the Phase 2 plan's file ownership mapping. Used by the PreToolUse hook to enforce ownership.
 
+   #### events.log
+
+   Initially empty. Append-only, one JSON line per event. The SubagentStart/Stop hooks write to this file automatically. The lead also appends events during Phase 4 coordination.
+
+   Event types: `spawn`, `stop`, `task_start`, `task_complete`, `blocked`, `handoff`, `decision`, `replan`.
+
+   Format:
+   ```json
+   {"ts":"2026-02-27T10:30:00Z","type":"spawn","agent":"backend-impl","role":"implementer"}
+   ```
+
    The workspace is your persistent memory AND the team's shared state. It MUST exist before any tasks are created.
 
    If a `.gitignore` exists and doesn't already exclude `.agent-team/`, add it. Workspace files are coordination artifacts, not project deliverables.
@@ -210,6 +221,12 @@ When multiple events arrive close together, batch them into a single edit per fi
 | Issue resolved | issues.md | Status -> RESOLVED/MITIGATED, update counts |
 | Teammate status change | progress.md | Update Team Members table |
 | All work done | progress.md | Status -> `done` |
+| Teammate spawned | events.log | Append spawn event (also auto-logged by SubagentStart hook) |
+| Task started | events.log | Append task_start event |
+| Task completed | events.log | Append task_complete event |
+| Blocked event | events.log | Append blocked event |
+| Handoff occurs | events.log | Append handoff event |
+| Decision made | events.log | Append decision event |
 
 ### Communication Protocol
 
