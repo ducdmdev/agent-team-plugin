@@ -153,6 +153,7 @@ Wait for user confirmation before proceeding.
    7. After completing a task: mark complete via TaskUpdate, check TaskList, self-claim next available
    8. Use subagents (Task tool) for focused subtasks that don't need teammate communication
    9. Write output artifacts to the workspace directory
+   - **Branch instruction** (implementers only): "Create branch `{team-name}/{your-name}` before starting work. If git is unavailable, skip."
 
    **Update workspace**: record each teammate in `progress.md` Team Members table
 
@@ -291,42 +292,49 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
    - Log the failure in `issues.md` as **high** severity
    - Only read-only teammates (reviewers, researchers, challengers, testers) are exempt — they have no files to commit
 
-4. **Check integration** — do the pieces fit together? If issues found, assign fixes before wrapping up
+4. **Merge branches** (if auto-branching was used):
+   - List all teammate branches: `git branch --list '{team-name}/*'`
+   - For each branch, merge into the base branch: `git merge --no-ff {team-name}/{teammate-name}`
+   - If merge conflicts occur: log in `issues.md`, assign the relevant implementer to resolve before shutdown
+   - Clean up branches after merge: `git branch -d {team-name}/{teammate-name}`
+   - If git is not available or no teammate branches exist, skip this step
+
+5. **Check integration** — do the pieces fit together? If issues found, assign fixes before wrapping up
 
    **Self-check**: "Did I verify that the pieces integrate? If issues were found, have I assigned fixes before proceeding?" If no, STOP — do not generate the report until integration is confirmed.
 
-5. **Update workspace**: set `progress.md` status to `completing`, update `tasks.md` with final states and teammate notes. See Workspace Update Protocol in Phase 4 for event-to-file mappings.
+6. **Update workspace**: set `progress.md` status to `completing`, update `tasks.md` with final states and teammate notes. See Workspace Update Protocol in Phase 4 for event-to-file mappings.
 
-6. **Generate final report** (MANDATORY — do not skip):
+7. **Generate final report** (MANDATORY — do not skip):
    - Read all workspace files for full history
    - Read TaskList for final task states
    - Write `.agent-team/{team-name}/report.md` using the format in [report-format.md](../../docs/report-format.md)
    - **Self-check**: "Does `.agent-team/{team-name}/report.md` exist and contain the executive summary?" If no, generate it now
 
-7. **Remediation gate** — review `issues.md` for OPEN issues:
-   - If **0 OPEN issues**: skip to step 8
-   - If **OPEN issues exist** and `progress.md` remediation cycle is already `1`: do NOT spawn another team. Include unresolved issues in the user report (step 8):
+8. **Remediation gate** — review `issues.md` for OPEN issues:
+   - If **0 OPEN issues**: skip to step 9
+   - If **OPEN issues exist** and `progress.md` remediation cycle is already `1`: do NOT spawn another team. Include unresolved issues in the user report (step 9):
      > **Unresolved issues (require manual follow-up):**
      > - Issue #N (severity): description
      > See `.agent-team/{team-name}/issues.md` for full details.
    - If **OPEN issues exist** and remediation cycle is `0`: present issues to the user and propose a remediation team. Follow the full protocol in [coordination-patterns.md](../../docs/coordination-patterns.md#remediation-gate).
 
-8. **Report to user**:
+9. **Report to user**:
    - Summary of all work completed
    - Files modified by each teammate
    - **Issues summary**: list any OPEN or MITIGATED issues from `issues.md` with their impact
    - Any open concerns or follow-up items
    - **Workspace path**: tell the user where the workspace is (`.agent-team/{team-name}/`)
 
-9. **Shutdown sequence** (parallel — do NOT wait for each one sequentially):
-   ```
-   Send ALL shutdown_request messages in a single turn (parallel SendMessage calls)
-   Wait for all approval responses
-   If a teammate rejects: check their reason, resolve, then re-request
-   ```
-   **Update workspace**: set `progress.md` status to `done`, record completion time
+10. **Shutdown sequence** (parallel — do NOT wait for each one sequentially):
+    ```
+    Send ALL shutdown_request messages in a single turn (parallel SendMessage calls)
+    Wait for all approval responses
+    If a teammate rejects: check their reason, resolve, then re-request
+    ```
+    **Update workspace**: set `progress.md` status to `done`, record completion time
 
-10. **Cleanup**:
+11. **Cleanup**:
     - **Only call TeamDelete after ALL teammates have confirmed shutdown.** TeamDelete may fail if teammates are still active — always wait for all shutdown confirmations first.
     - TeamDelete to remove ephemeral team resources (`~/.claude/teams/{team-name}/`). The workspace at `.agent-team/{team-name}/` is NOT deleted — it is the permanent record
     - Clean up idle hook counters: `rm -f /tmp/agent-team-idle-counters/{team-name}--* 2>/dev/null || true`

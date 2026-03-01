@@ -119,6 +119,7 @@ Communication protocol — send structured messages to the lead:
 - QUESTION: {what I need to know, what I already checked in workspace}
 
 Rules:
+- At the start of your first task, create a feature branch: `git checkout -b {team-name}/{your-name}`. All your work goes on this branch. If git is not available, skip branching and work directly.
 - ONLY modify files in your owned area. If you need changes elsewhere, message the lead.
 - Before starting each new task, re-read workspace files (progress.md, tasks.md, issues.md) to ensure you have current state. This prevents context drift on long-running sessions.
 - Send STARTING before beginning each task. Send COMPLETED after finishing (include files changed).
