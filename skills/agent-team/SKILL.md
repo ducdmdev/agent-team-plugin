@@ -25,12 +25,15 @@ Agent Teams require the experimental feature flag. Before proceeding, verify it 
 
 ## Hooks
 
-This plugin registers two hooks at the plugin level via `hooks/hooks.json` (not in skill frontmatter). They enforce team discipline automatically:
+This plugin registers hooks at the plugin level via `hooks/hooks.json`. They enforce team discipline automatically:
 
-- **TaskCompleted** (`scripts/verify-task-complete.sh`): Blocks premature task completion — checks that workspace files exist and that implementation tasks have actual file changes. Requires `jq` (gracefully skips if missing); uses `git` for change detection (skips if not a repo).
+- **TaskCompleted** (`scripts/verify-task-complete.sh`): Blocks premature task completion — checks workspace files exist and implementation tasks have actual file changes. Uses `teammate_name` and `file-locks.json` to scope git checks to the teammate's owned files when available. Requires `jq`.
 - **TeammateIdle** (`scripts/check-teammate-idle.sh`): Nudges idle teammates that still have in-progress tasks. Includes loop protection (allows idle after 3 blocked attempts). Requires `jq`.
+- **SessionStart(compact)** (`scripts/recover-context.sh`): After context compaction, automatically outputs active workspace paths and recovery instructions. Non-blocking.
+- **PreToolUse(Write|Edit)** (`scripts/check-file-ownership.sh`): Enforces file ownership via `file-locks.json`. Warn-then-block: first violation warns, second blocks. Workspace files (`.agent-team/`) always allowed. Requires `jq`.
+- **SubagentStart / SubagentStop** (`scripts/track-teammate-lifecycle.sh`): Logs teammate spawn and stop events to `.agent-team/{team}/events.log`. Non-blocking.
 
-Both hooks exit 0 (allow) if their dependencies are missing — they degrade gracefully. Hook paths use `${CLAUDE_PLUGIN_ROOT}` so they resolve correctly regardless of install location.
+All hooks exit 0 (allow) if their dependencies are missing — they degrade gracefully. Hook paths use `${CLAUDE_PLUGIN_ROOT}`.
 
 ## Phase 1: Analyze and Decompose
 
@@ -105,6 +108,17 @@ Wait for user confirmation before proceeding.
    - `.agent-team/{team-name}/progress.md` — team status, members, decisions, handoffs
    - `.agent-team/{team-name}/tasks.md` — task ledger with status tracking
    - `.agent-team/{team-name}/issues.md` — issue tracker with severity and impact
+
+   #### file-locks.json
+
+   ```json
+   {
+     "{teammate-name}": ["{owned-directory}/", "{owned-file}"],
+     "{teammate-name}": ["{owned-directory}/"]
+   }
+   ```
+
+   Populated from the Phase 2 plan's file ownership mapping. Used by the PreToolUse hook to enforce ownership.
 
    The workspace is your persistent memory AND the team's shared state. It MUST exist before any tasks are created.
 
@@ -316,6 +330,7 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
     - **Only call TeamDelete after ALL teammates have confirmed shutdown.** TeamDelete may fail if teammates are still active — always wait for all shutdown confirmations first.
     - TeamDelete to remove ephemeral team resources (`~/.claude/teams/{team-name}/`). The workspace at `.agent-team/{team-name}/` is NOT deleted — it is the permanent record
     - Clean up idle hook counters: `rm -f /tmp/agent-team-idle-counters/{team-name}--* 2>/dev/null || true`
+    - Clean up ownership violation tracking: `rm -rf /tmp/agent-team-ownership-violations 2>/dev/null || true`
 
 ## Reference
 
