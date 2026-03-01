@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-03-01
+
+### Added
+- **Git worktree isolation** (opt-in) — `isolation: worktree` in Phase 2 plan gives each implementer a dedicated worktree
+- **Nested task decomposition** — senior implementers can create sub-tasks and spawn sub-agents
+- Worktree setup and merge scripts (`scripts/setup-worktree.sh`, `scripts/merge-worktrees.sh`)
+
+### Changed
+- Major version bump: nested decomposition changes the team coordination model
+
 ## [1.6.0] - 2026-03-01
 
 ### Added
