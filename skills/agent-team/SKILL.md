@@ -256,6 +256,8 @@ When receiving structured messages:
 
 When a teammate spawned with `mode: "plan"` finishes planning, they send a `plan_approval_request` message to the lead. You must respond via SendMessage with `type: "plan_approval_response"`, the teammate as `recipient`, the `request_id` from their request, and `approve: true` or `approve: false`. If rejecting, include `content` with specific feedback so the teammate can revise their plan. The teammate cannot proceed with implementation until the plan is approved.
 
+For high-frequency handoffs between specific teammates, you may authorize direct communication — see the Direct Handoff pattern in [coordination-patterns.md](../../docs/coordination-patterns.md). The audit trail must still be maintained in `progress.md`.
+
 ### Coordination Patterns
 
 For detailed patterns on these scenarios, see [coordination-patterns.md](../../docs/coordination-patterns.md):
@@ -278,6 +280,7 @@ For detailed patterns on these scenarios, see [coordination-patterns.md](../../d
 - **Adversarial review rounds** — multi-round cross-review for high-stakes changes
 - **Quality gate** — final validation pass before Phase 5 synthesis
 - **Auto-block on repeated failures** — auto-escalation after 3 blocked attempts
+- **Direct handoff** — authorized peer-to-peer messaging with audit trail
 
 **Periodic scan**: on every context recovery, check `issues.md` for OPEN items and address them before resuming normal coordination.
 

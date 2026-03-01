@@ -22,6 +22,7 @@ Patterns for the lead to handle common coordination scenarios.
 - [Adversarial Review Rounds](#adversarial-review-rounds) — multi-round cross-review for critical changes
 - [Quality Gate](#quality-gate) — final validation pass before synthesis
 - [Auto-Block on Repeated Failures](#auto-block-on-repeated-failures) — escalation after repeated failures
+- [Direct Handoff](#direct-handoff) — authorized peer-to-peer messaging with audit trail
 
 ## Communication Protocol
 
@@ -398,3 +399,30 @@ When processing a BLOCKED message:
 3. If count < 2:
    a. Acknowledge and route to resolution as normal
 ```
+
+## Direct Handoff
+
+For pre-approved information transfers between specific teammates, bypassing the lead for efficiency.
+
+### When to Use
+
+- Two teammates have a clear dependency (A produces -> B consumes)
+- The handoff content is straightforward (file paths, interface definitions)
+- The lead has explicitly authorized the direct channel in their spawn prompts
+
+### When NOT to Use
+
+- The handoff requires interpretation or decision-making (route through lead)
+- The information needs to be visible to multiple teammates (use lead routing)
+- First-time handoffs between teammates who haven't worked together in this session
+
+### Protocol
+
+1. **Lead authorizes** in spawn prompts: "For handoffs to [teammate-name], you may message them directly. Include the lead in a summary."
+2. **Sender** messages the recipient directly using SendMessage with `type: "message"` and the recipient's name
+3. **Sender also messages the lead** with a brief summary: "HANDOFF #N: Sent [details] directly to [recipient]"
+4. **Lead logs** the handoff in `progress.md` Handoffs section (audit trail preserved)
+
+### Key Rule
+
+The audit trail MUST be maintained. Direct handoffs save time but must still be logged via the lead's workspace updates.
