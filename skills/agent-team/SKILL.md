@@ -81,6 +81,9 @@ Every phase has an owner (omit for pure review tasks):
 - Testing: [role] (required for complex plans)
 - Finalization: [role]
 
+Isolation: shared (default) | worktree
+  (if worktree) Each implementer gets a git worktree with a dedicated branch. Zero conflict risk.
+
 Workspace: .agent-team/[team-name]/
 Estimated teammates: N
 ```
@@ -167,6 +170,12 @@ Wait for user confirmation before proceeding.
    - **Branch instruction** (implementers only): "Create branch `{team-name}/{your-name}` before starting work. If git is unavailable, skip."
 
    **Update workspace**: record each teammate in `progress.md` Team Members table
+
+5b. **Create worktrees** (if `isolation: worktree`):
+    - For each implementer, run `scripts/setup-worktree.sh {team-name} {teammate-name}`
+    - Include the worktree path in the implementer's spawn prompt as their working directory
+    - If worktree creation fails for any teammate, fall back to shared mode for that teammate and log a warning in `issues.md`
+    - File ownership hook (PreToolUse) is redundant in worktree mode but remains active as a safety net
 
 6. **Team size gate** — explicitly count before spawning: "I am spawning N teammates: [list names]."
    - **Default max: 4** for mixed teams (implementers + reviewers/challengers)
@@ -312,12 +321,11 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
    - Log the failure in `issues.md` as **high** severity
    - Only read-only teammates (reviewers, researchers, challengers, testers) are exempt — they have no files to commit
 
-4. **Merge branches** (if auto-branching was used):
-   - List all teammate branches: `git branch --list '{team-name}/*'`
-   - For each branch, merge into the base branch: `git merge --no-ff {team-name}/{teammate-name}`
-   - If merge conflicts occur: log in `issues.md`, assign the relevant implementer to resolve before shutdown
-   - Clean up branches after merge: `git branch -d {team-name}/{teammate-name}`
-   - If git is not available or no teammate branches exist, skip this step
+4. **Merge branches** (if auto-branching or worktree isolation was used):
+   - If worktree isolation: run `scripts/merge-worktrees.sh {team-name}` to merge all teammate branches and clean up worktrees
+   - If auto-branching only: for each branch, `git merge --no-ff {team-name}/{teammate-name}`
+   - If merge conflicts: log in `issues.md`, assign the relevant implementer to resolve
+   - If neither branching nor worktrees were used, skip this step
 
 5. **Check integration** — do the pieces fit together? If issues found, assign fixes before wrapping up
 
