@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-03-01
+
+### Added
+- **SessionStart(compact) hook** — auto-recovers workspace context after compaction
+- **PreToolUse(Write|Edit) hook** — enforces file ownership (warn-then-block)
+- **SubagentStart/SubagentStop hooks** — tracks teammate lifecycle in events.log
+- `file-locks.json` workspace file — maps teammates to owned files/directories
+
+### Changed
+- TaskCompleted hook now uses `task_id` and `teammate_name` for scoped git checks
+- Hooks section in SKILL.md updated to document all 5 hooks
+
 ## [1.4.0] - 2026-02-28
 
 ### Added
