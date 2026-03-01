@@ -168,6 +168,7 @@ Wait for user confirmation before proceeding.
    8. Use subagents (Task tool) for focused subtasks that don't need teammate communication
    9. Write output artifacts to the workspace directory
    - **Branch instruction** (implementers only): "Create branch `{team-name}/{your-name}` before starting work. If git is unavailable, skip."
+   - **Nested decomposition** (optional): For large tasks, tell senior implementers: "You may create sub-tasks and spawn subagents for independent portions of your work. Report rolled-up results to me. One level of nesting max."
 
    **Update workspace**: record each teammate in `progress.md` Team Members table
 

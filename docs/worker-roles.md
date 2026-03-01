@@ -303,4 +303,18 @@ Key parameters:
 
 ## Subagent Usage Within Teammates
 
-Teammates can spawn subagents (Task tool) for self-contained subtasks that don't need cross-teammate communication. Use them to parallelize within your own scope — e.g., writing tests while implementing, or reading multiple files simultaneously. Do NOT use subagents when the subtask needs input from another teammate or requires back-and-forth iteration.
+Teammates can spawn subagents (Task tool) for self-contained subtasks that don't need cross-teammate communication.
+
+### Standard Usage
+Use subagents to parallelize within your own scope — e.g., writing tests while implementing, or reading multiple files simultaneously. Do NOT use subagents when the subtask needs input from another teammate.
+
+### Nested Task Decomposition (Senior Implementers)
+When explicitly authorized by the lead in the spawn prompt, senior implementers may:
+- Create sub-tasks using TaskCreate with IDs prefixed by their parent task (e.g., if working on task #3, create sub-tasks described as "#3.1 — [subject]", "#3.2 — [subject]")
+- Spawn subagents to work on sub-tasks in parallel
+- Report rolled-up results to the lead (the lead sees sub-tasks in TaskList but only interacts at the parent level)
+
+**Limits:**
+- One level of nesting max — sub-subagents cannot create further sub-tasks
+- Sub-tasks must be within the teammate's owned file scope
+- The teammate is responsible for coordinating their sub-agents (the lead does not manage them)
