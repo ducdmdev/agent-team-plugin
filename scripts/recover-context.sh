@@ -20,8 +20,7 @@ for progress_file in "$SEARCH_DIR"/.agent-team/*/progress.md; do
   [ -f "$progress_file" ] || continue
 
   # Check if workspace is active (not done)
-  STATUS=$(grep -oP '\*\*Status\*\*:\s*\K\S+' "$progress_file" 2>/dev/null || \
-           grep '^\*\*Status\*\*:' "$progress_file" | sed 's/.*: *//' | tr -d ' ')
+  STATUS=$(sed -n 's/^\*\*Status\*\*: *//p' "$progress_file" | tr -d ' ')
   if [ "$STATUS" = "done" ]; then
     continue
   fi
