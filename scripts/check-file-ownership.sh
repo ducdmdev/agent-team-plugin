@@ -18,8 +18,15 @@ if [ -z "$TEAMMATE" ] || [ -z "$TEAM" ] || [ -z "$FILE_PATH" ]; then
   exit 0
 fi
 
+# Normalize FILE_PATH to relative (strip git repo root prefix)
+# Claude Code tools may provide absolute paths; ownership checks use relative paths.
+GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+if [ -n "$GIT_ROOT" ]; then
+  FILE_PATH="${FILE_PATH#$GIT_ROOT/}"
+fi
+
 # Always allow workspace file writes
-if echo "$FILE_PATH" | grep -q '^\.agent-team/'; then
+if echo "$FILE_PATH" | grep -qE '(^|/)\.agent-team/'; then
   exit 0
 fi
 

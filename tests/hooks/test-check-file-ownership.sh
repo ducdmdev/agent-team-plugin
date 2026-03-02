@@ -91,6 +91,41 @@ run_hook "$HOOK" '{"tool_name":"Edit","tool_input":{"file_path":"src/auth/middle
 assert_exit_code 0 "$HOOK_EXIT" "7: File inside owned directory is allowed"
 cleanup_temp_dir
 
+# --- Test 8: Absolute path to workspace file is exempted ---
+setup_temp_dir
+cd "$TEST_TEMP_DIR"
+setup_mock_git_repo
+setup_mock_workspace "test"
+create_file_locks "$WORKSPACE_DIR"
+ABS_WORKSPACE_PATH="$TEST_TEMP_DIR/.agent-team/test/progress.md"
+run_hook "$HOOK" "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"$ABS_WORKSPACE_PATH\"},\"teammate_name\":\"backend-impl\",\"team_name\":\"test\"}"
+assert_exit_code 0 "$HOOK_EXIT" "8: Absolute path to workspace file is exempted"
+cleanup_temp_dir
+
+# --- Test 9: Absolute path to owned file matches ownership ---
+setup_temp_dir
+cd "$TEST_TEMP_DIR"
+setup_mock_git_repo
+setup_mock_workspace "test"
+create_file_locks "$WORKSPACE_DIR"
+ABS_OWNED_PATH="$TEST_TEMP_DIR/src/auth/login.ts"
+run_hook "$HOOK" "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"$ABS_OWNED_PATH\"},\"teammate_name\":\"backend-impl\",\"team_name\":\"test\"}"
+assert_exit_code 0 "$HOOK_EXIT" "9: Absolute path to owned file matches ownership"
+cleanup_temp_dir
+
+# --- Test 10: Absolute path to unowned file still triggers violation ---
+setup_temp_dir
+cd "$TEST_TEMP_DIR"
+setup_mock_git_repo
+setup_mock_workspace "test"
+create_file_locks "$WORKSPACE_DIR"
+rm -rf /tmp/agent-team-ownership-violations 2>/dev/null
+ABS_UNOWNED_PATH="$TEST_TEMP_DIR/src/components/Button.tsx"
+run_hook "$HOOK" "{\"tool_name\":\"Write\",\"tool_input\":{\"file_path\":\"$ABS_UNOWNED_PATH\"},\"teammate_name\":\"backend-impl\",\"team_name\":\"test\"}"
+assert_exit_code 0 "$HOOK_EXIT" "10: Absolute path to unowned file — first violation warns"
+assert_stderr_contains "ownership" "$HOOK_STDERR" "10: Warning message mentions ownership"
+cleanup_temp_dir
+
 # Cleanup violation counters
 rm -rf /tmp/agent-team-ownership-violations 2>/dev/null
 
