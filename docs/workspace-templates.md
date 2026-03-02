@@ -119,8 +119,8 @@ Created during Phase 3 after spawning teammates. Maps each teammate to their own
 Created by the SubagentStart/SubagentStop hooks during Phase 4. Each line is a JSON object recording teammate spawn and stop events. Used for post-mortem analysis.
 
 ```json
-{"event":"spawn","teammate":"backend-impl","timestamp":"2026-03-01T00:00:00Z","team":"my-team"}
-{"event":"stop","teammate":"backend-impl","timestamp":"2026-03-01T01:00:00Z","team":"my-team"}
+{"ts":"2026-03-01T00:00:00Z","type":"spawn","agent":"backend-impl","agent_type":"general-purpose"}
+{"ts":"2026-03-01T01:00:00Z","type":"stop","agent":"backend-impl"}
 ```
 
 ### report.md

@@ -131,7 +131,7 @@ Wait for user confirmation before proceeding.
 
    Format:
    ```json
-   {"ts":"2026-02-27T10:30:00Z","type":"spawn","agent":"backend-impl","role":"implementer"}
+   {"ts":"2026-02-27T10:30:00Z","type":"spawn","agent":"backend-impl","agent_type":"general-purpose"}
    ```
 
    The workspace is your persistent memory AND the team's shared state. It MUST exist before any tasks are created.
