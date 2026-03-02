@@ -176,7 +176,9 @@ agent-team-plugin/
 ├── docs/
 │   ├── worker-roles.md          # Role definitions and spawn templates
 │   ├── coordination-patterns.md # Conflict resolution and handoff patterns
-│   └── report-format.md         # Final report specification
+│   ├── workspace-templates.md   # Workspace file templates for Phase 3
+│   ├── report-format.md         # Final report specification
+│   └── custom-roles.md          # Template for project-specific roles
 ├── package.json
 ├── CLAUDE.md
 ├── LICENSE
@@ -231,9 +233,9 @@ scoop install jq         # Windows
 
 For teams larger than 4, verify: (1) every stream has zero file overlap, (2) cross-communication is minimal, (3) workspace churn is manageable.
 
-## Planned Features
+## Changelog
 
-See `docs/plans/` for approved designs and implementation plans for upcoming features.
+See [CHANGELOG.md](CHANGELOG.md) for a detailed version history.
 
 ## License
 

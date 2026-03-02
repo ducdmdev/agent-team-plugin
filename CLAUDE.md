@@ -28,12 +28,17 @@ docs/                  Reference docs consumed by SKILL.md at runtime
 |------|---------|----------------|
 | `.claude-plugin/plugin.json` | Plugin identity | Bump version here on release |
 | `.claude-plugin/marketplace.json` | Marketplace registry | Bump version here too, keep in sync with plugin.json |
-| `hooks/hooks.json` | Hook registration | Update timeout values, add new hooks, or update hook command paths |
-| `scripts/*.sh` | Hook enforcement logic | Written in bash (`#!/bin/bash`), degrade gracefully without `jq` |
+| `hooks/hooks.json` | Hook registration (6 hooks) | Update timeout values, add new hooks, or update hook command paths |
+| `scripts/*.sh` | Hook enforcement logic (7 scripts) | Written in bash (`#!/bin/bash`), degrade gracefully without `jq` |
 | `skills/agent-team/SKILL.md` | Core skill prompt | Most changes go here. Keep Phase 1-5 structure |
 | `docs/worker-roles.md` | Role definitions + spawn templates | Update when adding new roles |
 | `docs/coordination-patterns.md` | Conflict resolution, handoffs | Update when adding new coordination patterns |
+| `docs/workspace-templates.md` | Workspace file templates | Update when adding new workspace files |
 | `docs/report-format.md` | Final report template | Update when changing report structure |
+| `docs/custom-roles.md` | Project-specific role template | Reference for users creating custom roles |
+| `CHANGELOG.md` | Version history | Add entry for each release |
+| `README.md` | User-facing documentation | Keep in sync with feature changes |
+| `tests/` | Hook and structure tests | `hooks/` for hook tests, `structure/` for plugin validation |
 
 ## Conventions
 
@@ -71,6 +76,14 @@ chore:    maintenance (package.json, CI, dependencies)
 
 ## Testing
 
+### Run Full Test Suite
+
+```bash
+bash tests/run-tests.sh
+```
+
+Runs 9 test files (78 assertions) covering all hooks and plugin structure.
+
 ### Validate Plugin
 
 ```bash
@@ -87,9 +100,14 @@ Then trigger with: "use agent team to [task]"
 
 ### Verify Hooks
 
-1. Start a team session
-2. Try marking a task complete without file changes — TaskCompleted hook should block
-3. Let a teammate go idle with in-progress tasks — TeammateIdle hook should nudge
+Six hooks registered in `hooks/hooks.json`:
+
+1. **TaskCompleted** — try marking a task complete without file changes (should block)
+2. **TeammateIdle** — let a teammate go idle with in-progress tasks (should nudge)
+3. **SessionStart(compact)** — compact context in a team session (should recover workspace)
+4. **PreToolUse(Write|Edit)** — have a teammate edit another's file (should warn, then block)
+5. **SubagentStart** — spawn a teammate (should log to events.log)
+6. **SubagentStop** — teammate shuts down (should log to events.log)
 
 ## Common Tasks
 
@@ -109,9 +127,11 @@ Then trigger with: "use agent team to [task]"
 
 ### Releasing a New Version
 
-1. Update version in `.claude-plugin/plugin.json`
-2. Update version in `.claude-plugin/marketplace.json`
-3. Update version in `package.json`
-4. Run `claude plugin validate .`
-5. Commit with `chore: bump version to X.Y.Z`
-6. Tag with `git tag vX.Y.Z`
+1. Run `bash tests/run-tests.sh` — all tests must pass
+2. Update version in `.claude-plugin/plugin.json`
+3. Update version in `.claude-plugin/marketplace.json`
+4. Update version in `package.json`
+5. Add entry to `CHANGELOG.md`
+6. Run `claude plugin validate .`
+7. Commit with `chore: bump version to X.Y.Z`
+8. Tag with `git tag vX.Y.Z`
