@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-03-01
+
+### Added
+- **Git worktree isolation** (opt-in) — `isolation: worktree` in Phase 2 plan gives each implementer a dedicated worktree
+- **Nested task decomposition** — senior implementers can create sub-tasks and spawn sub-agents
+- Worktree setup and merge scripts (`scripts/setup-worktree.sh`, `scripts/merge-worktrees.sh`)
+
+### Changed
+- Major version bump: nested decomposition changes the team coordination model
+
+## [1.6.0] - 2026-03-01
+
+### Added
+- Auto-branch per teammate — implementers create `{team-name}/{name}` branches, merged in Phase 5
+- `events.log` workspace file — structured JSON event log for post-mortem analysis
+- Direct Handoff coordination pattern — authorized peer-to-peer messaging with audit trail
+- Branch Merge step in Phase 5
+
+## [1.5.0] - 2026-03-01
+
+### Added
+- **SessionStart(compact) hook** — auto-recovers workspace context after compaction
+- **PreToolUse(Write|Edit) hook** — enforces file ownership (warn-then-block)
+- **SubagentStart/SubagentStop hooks** — tracks teammate lifecycle in events.log
+- `file-locks.json` workspace file — maps teammates to owned files/directories
+
+### Changed
+- TaskCompleted hook now uses `task_id` and `teammate_name` for scoped git checks
+- Hooks section in SKILL.md updated to document all 5 hooks
+
 ## [1.4.0] - 2026-02-28
 
 ### Added

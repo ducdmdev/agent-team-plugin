@@ -155,5 +155,22 @@ run_hook "$HOOK" '{"task_subject":"Fix README issues","team_name":"my-project-fi
 assert_exit_code 0 "$HOOK_EXIT" "12: Remediation team (-fix suffix) finds original workspace"
 cleanup_temp_dir
 
+# --- Test 13: teammate_name scopes git check to owned files ---
+setup_temp_dir
+cd "$TEST_TEMP_DIR"
+setup_mock_workspace "test"
+# Create file-locks.json
+cat > "$WORKSPACE_DIR/file-locks.json" <<'LOCKS'
+{"backend-impl": ["src/auth/"]}
+LOCKS
+setup_mock_git_repo "dirty"
+# Add a dirty file inside the owned path so scoped check finds changes
+mkdir -p src/auth
+echo "change" > src/auth/login.ts
+run_hook "$HOOK" '{"task_subject":"Implement auth","team_name":"test","task_id":"task-001","teammate_name":"backend-impl"}'
+# Should pass because there are dirty files in the owned path (src/auth/)
+assert_exit_code 0 "$HOOK_EXIT" "13: Enhanced hook reads task_id and teammate_name"
+cleanup_temp_dir
+
 print_summary
 exit "$TESTS_FAILED"

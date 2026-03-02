@@ -99,13 +99,14 @@ QUESTION:      what I need to know
 
 ## Hooks
 
-Two hooks enforce team discipline automatically:
+Five hooks enforce team discipline automatically:
 
 ### TaskCompleted
 
 Blocks premature task completion by checking:
 - Workspace exists with all tracking files (`progress.md`, `tasks.md`, `issues.md`)
 - Implementation tasks have actual file changes (via `git status`)
+- Supports scoped checks using `task_id` and `teammate_name`
 
 ### TeammateIdle
 
@@ -113,7 +114,26 @@ Nudges idle teammates that still have in-progress tasks:
 - Counts assigned in-progress tasks
 - Loop protection: allows idle after 3 consecutive blocks (teammate is genuinely stuck)
 
-Both hooks degrade gracefully — exit 0 if `jq` is missing.
+### SessionStart (compact)
+
+Auto-recovers workspace context after context compaction:
+- Detects active workspaces and injects recovery context
+- Skips completed workspaces (status: done)
+
+### PreToolUse (Write|Edit)
+
+Enforces file ownership boundaries:
+- Reads `file-locks.json` from the workspace to determine ownership
+- First violation: warns (exit 0). Second violation: blocks (exit 2)
+- Workspace files are always allowed regardless of ownership
+
+### SubagentStart / SubagentStop
+
+Tracks teammate lifecycle in `events.log`:
+- Logs spawn and stop events with timestamps and teammate metadata
+- Provides post-mortem analysis data
+
+All hooks degrade gracefully — exit 0 if `jq` is missing.
 
 ## Workspace
 
@@ -121,10 +141,12 @@ Each team creates a persistent workspace at `.agent-team/{team-name}/` in your p
 
 ```
 .agent-team/{team-name}/
-├── progress.md     # Team status, members, decisions, handoffs
-├── tasks.md        # Task ledger with status and dependencies
-├── issues.md       # Issue tracker with severity and resolution
-└── report.md       # Final report (generated at completion)
+├── progress.md      # Team status, members, decisions, handoffs
+├── tasks.md         # Task ledger with status and dependencies
+├── issues.md        # Issue tracker with severity and resolution
+├── file-locks.json  # File ownership map (teammate -> files/directories)
+├── events.log       # Structured JSON event log for post-mortem analysis
+└── report.md        # Final report (generated at completion)
 ```
 
 - **Persists** after team deletion — it's the permanent record
@@ -141,15 +163,22 @@ agent-team-plugin/
 ├── hooks/
 │   └── hooks.json               # Hook definitions (${CLAUDE_PLUGIN_ROOT} paths)
 ├── scripts/
-│   ├── verify-task-complete.sh  # TaskCompleted hook
-│   └── check-teammate-idle.sh   # TeammateIdle hook
+│   ├── verify-task-complete.sh      # TaskCompleted hook
+│   ├── check-teammate-idle.sh       # TeammateIdle hook
+│   ├── recover-context.sh           # SessionStart(compact) hook
+│   ├── check-file-ownership.sh      # PreToolUse(Write|Edit) hook
+│   ├── track-teammate-lifecycle.sh  # SubagentStart/Stop hook
+│   ├── setup-worktree.sh            # Worktree creation for isolation mode
+│   └── merge-worktrees.sh           # Worktree merge in Phase 5
 ├── skills/
 │   └── agent-team/
 │       └── SKILL.md             # Main skill (team lead orchestrator)
 ├── docs/
 │   ├── worker-roles.md          # Role definitions and spawn templates
 │   ├── coordination-patterns.md # Conflict resolution and handoff patterns
-│   └── report-format.md         # Final report specification
+│   ├── workspace-templates.md   # Workspace file templates for Phase 3
+│   ├── report-format.md         # Final report specification
+│   └── custom-roles.md          # Template for project-specific roles
 ├── package.json
 ├── CLAUDE.md
 ├── LICENSE
@@ -204,9 +233,9 @@ scoop install jq         # Windows
 
 For teams larger than 4, verify: (1) every stream has zero file overlap, (2) cross-communication is minimal, (3) workspace churn is manageable.
 
-## Planned Features
+## Changelog
 
-See `docs/plans/` for approved designs and implementation plans for upcoming features.
+See [CHANGELOG.md](CHANGELOG.md) for a detailed version history.
 
 ## License
 

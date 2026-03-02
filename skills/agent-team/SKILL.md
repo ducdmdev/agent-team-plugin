@@ -25,12 +25,15 @@ Agent Teams require the experimental feature flag. Before proceeding, verify it 
 
 ## Hooks
 
-This plugin registers two hooks at the plugin level via `hooks/hooks.json` (not in skill frontmatter). They enforce team discipline automatically:
+This plugin registers hooks at the plugin level via `hooks/hooks.json`. They enforce team discipline automatically:
 
-- **TaskCompleted** (`scripts/verify-task-complete.sh`): Blocks premature task completion — checks that workspace files exist and that implementation tasks have actual file changes. Requires `jq` (gracefully skips if missing); uses `git` for change detection (skips if not a repo).
+- **TaskCompleted** (`scripts/verify-task-complete.sh`): Blocks premature task completion — checks workspace files exist and implementation tasks have actual file changes. Uses `teammate_name` and `file-locks.json` to scope git checks to the teammate's owned files when available. Requires `jq`.
 - **TeammateIdle** (`scripts/check-teammate-idle.sh`): Nudges idle teammates that still have in-progress tasks. Includes loop protection (allows idle after 3 blocked attempts). Requires `jq`.
+- **SessionStart(compact)** (`scripts/recover-context.sh`): After context compaction, automatically outputs active workspace paths and recovery instructions. Non-blocking.
+- **PreToolUse(Write|Edit)** (`scripts/check-file-ownership.sh`): Enforces file ownership via `file-locks.json`. Warn-then-block: first violation warns, second blocks. Workspace files (`.agent-team/`) always allowed. Requires `jq`.
+- **SubagentStart / SubagentStop** (`scripts/track-teammate-lifecycle.sh`): Logs teammate spawn and stop events to `.agent-team/{team}/events.log`. Non-blocking.
 
-Both hooks exit 0 (allow) if their dependencies are missing — they degrade gracefully. Hook paths use `${CLAUDE_PLUGIN_ROOT}` so they resolve correctly regardless of install location.
+All hooks exit 0 (allow) if their dependencies are missing — they degrade gracefully. Hook paths use `${CLAUDE_PLUGIN_ROOT}`.
 
 ## Phase 1: Analyze and Decompose
 
@@ -78,6 +81,9 @@ Every phase has an owner (omit for pure review tasks):
 - Testing: [role] (required for complex plans)
 - Finalization: [role]
 
+Isolation: shared (default) | worktree
+  (if worktree) Each implementer gets a git worktree with a dedicated branch. Zero conflict risk.
+
 Workspace: .agent-team/[team-name]/
 Estimated teammates: N
 ```
@@ -105,6 +111,28 @@ Wait for user confirmation before proceeding.
    - `.agent-team/{team-name}/progress.md` — team status, members, decisions, handoffs
    - `.agent-team/{team-name}/tasks.md` — task ledger with status tracking
    - `.agent-team/{team-name}/issues.md` — issue tracker with severity and impact
+
+   #### file-locks.json
+
+   ```json
+   {
+     "{teammate-name}": ["{owned-directory}/", "{owned-file}"],
+     "{teammate-name}": ["{owned-directory}/"]
+   }
+   ```
+
+   Populated from the Phase 2 plan's file ownership mapping. Used by the PreToolUse hook to enforce ownership.
+
+   #### events.log
+
+   Initially empty. Append-only, one JSON line per event. The SubagentStart/Stop hooks write to this file automatically. The lead also appends events during Phase 4 coordination.
+
+   Event types: `spawn`, `stop`, `task_start`, `task_complete`, `blocked`, `handoff`, `decision`, `replan`.
+
+   Format:
+   ```json
+   {"ts":"2026-02-27T10:30:00Z","type":"spawn","agent":"backend-impl","agent_type":"general-purpose"}
+   ```
 
    The workspace is your persistent memory AND the team's shared state. It MUST exist before any tasks are created.
 
@@ -139,8 +167,16 @@ Wait for user confirmation before proceeding.
    7. After completing a task: mark complete via TaskUpdate, check TaskList, self-claim next available
    8. Use subagents (Task tool) for focused subtasks that don't need teammate communication
    9. Write output artifacts to the workspace directory
+   - **Branch instruction** (implementers only): "Create branch `{team-name}/{your-name}` before starting work. If git is unavailable, skip."
+   - **Nested decomposition** (optional): For large tasks, tell senior implementers: "You may create sub-tasks and spawn subagents for independent portions of your work. Report rolled-up results to me. One level of nesting max."
 
    **Update workspace**: record each teammate in `progress.md` Team Members table
+
+5b. **Create worktrees** (if `isolation: worktree`):
+    - For each implementer, run `scripts/setup-worktree.sh {team-name} {teammate-name}`
+    - Include the worktree path in the implementer's spawn prompt as their working directory
+    - If worktree creation fails for any teammate, fall back to shared mode for that teammate and log a warning in `issues.md`
+    - File ownership hook (PreToolUse) is redundant in worktree mode but remains active as a safety net
 
 6. **Team size gate** — explicitly count before spawning: "I am spawning N teammates: [list names]."
    - **Default max: 4** for mixed teams (implementers + reviewers/challengers)
@@ -195,6 +231,12 @@ When multiple events arrive close together, batch them into a single edit per fi
 | Issue resolved | issues.md | Status -> RESOLVED/MITIGATED, update counts |
 | Teammate status change | progress.md | Update Team Members table |
 | All work done | progress.md | Status -> `done` |
+| Teammate spawned | events.log | Append spawn event (also auto-logged by SubagentStart hook) |
+| Task started | events.log | Append task_start event |
+| Task completed | events.log | Append task_complete event |
+| Blocked event | events.log | Append blocked event |
+| Handoff occurs | events.log | Append handoff event |
+| Decision made | events.log | Append decision event |
 
 ### Communication Protocol
 
@@ -224,6 +266,8 @@ When receiving structured messages:
 
 When a teammate spawned with `mode: "plan"` finishes planning, they send a `plan_approval_request` message to the lead. You must respond via SendMessage with `type: "plan_approval_response"`, the teammate as `recipient`, the `request_id` from their request, and `approve: true` or `approve: false`. If rejecting, include `content` with specific feedback so the teammate can revise their plan. The teammate cannot proceed with implementation until the plan is approved.
 
+For high-frequency handoffs between specific teammates, you may authorize direct communication — see the Direct Handoff pattern in [coordination-patterns.md](../../docs/coordination-patterns.md). The audit trail must still be maintained in `progress.md`.
+
 ### Coordination Patterns
 
 For detailed patterns on these scenarios, see [coordination-patterns.md](../../docs/coordination-patterns.md):
@@ -246,6 +290,7 @@ For detailed patterns on these scenarios, see [coordination-patterns.md](../../d
 - **Adversarial review rounds** — multi-round cross-review for high-stakes changes
 - **Quality gate** — final validation pass before Phase 5 synthesis
 - **Auto-block on repeated failures** — auto-escalation after 3 blocked attempts
+- **Direct handoff** — authorized peer-to-peer messaging with audit trail
 
 **Periodic scan**: on every context recovery, check `issues.md` for OPEN items and address them before resuming normal coordination.
 
@@ -277,45 +322,52 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
    - Log the failure in `issues.md` as **high** severity
    - Only read-only teammates (reviewers, researchers, challengers, testers) are exempt — they have no files to commit
 
-4. **Check integration** — do the pieces fit together? If issues found, assign fixes before wrapping up
+4. **Merge branches** (if auto-branching or worktree isolation was used):
+   - If worktree isolation: run `scripts/merge-worktrees.sh {team-name}` to merge all teammate branches and clean up worktrees
+   - If auto-branching only: for each branch, `git merge --no-ff {team-name}/{teammate-name}`
+   - If merge conflicts: log in `issues.md`, assign the relevant implementer to resolve
+   - If neither branching nor worktrees were used, skip this step
+
+5. **Check integration** — do the pieces fit together? If issues found, assign fixes before wrapping up
 
    **Self-check**: "Did I verify that the pieces integrate? If issues were found, have I assigned fixes before proceeding?" If no, STOP — do not generate the report until integration is confirmed.
 
-5. **Update workspace**: set `progress.md` status to `completing`, update `tasks.md` with final states and teammate notes. See Workspace Update Protocol in Phase 4 for event-to-file mappings.
+6. **Update workspace**: set `progress.md` status to `completing`, update `tasks.md` with final states and teammate notes. See Workspace Update Protocol in Phase 4 for event-to-file mappings.
 
-6. **Generate final report** (MANDATORY — do not skip):
+7. **Generate final report** (MANDATORY — do not skip):
    - Read all workspace files for full history
    - Read TaskList for final task states
    - Write `.agent-team/{team-name}/report.md` using the format in [report-format.md](../../docs/report-format.md)
    - **Self-check**: "Does `.agent-team/{team-name}/report.md` exist and contain the executive summary?" If no, generate it now
 
-7. **Remediation gate** — review `issues.md` for OPEN issues:
-   - If **0 OPEN issues**: skip to step 8
-   - If **OPEN issues exist** and `progress.md` remediation cycle is already `1`: do NOT spawn another team. Include unresolved issues in the user report (step 8):
+8. **Remediation gate** — review `issues.md` for OPEN issues:
+   - If **0 OPEN issues**: skip to step 9
+   - If **OPEN issues exist** and `progress.md` remediation cycle is already `1`: do NOT spawn another team. Include unresolved issues in the user report (step 9):
      > **Unresolved issues (require manual follow-up):**
      > - Issue #N (severity): description
      > See `.agent-team/{team-name}/issues.md` for full details.
    - If **OPEN issues exist** and remediation cycle is `0`: present issues to the user and propose a remediation team. Follow the full protocol in [coordination-patterns.md](../../docs/coordination-patterns.md#remediation-gate).
 
-8. **Report to user**:
+9. **Report to user**:
    - Summary of all work completed
    - Files modified by each teammate
    - **Issues summary**: list any OPEN or MITIGATED issues from `issues.md` with their impact
    - Any open concerns or follow-up items
    - **Workspace path**: tell the user where the workspace is (`.agent-team/{team-name}/`)
 
-9. **Shutdown sequence** (parallel — do NOT wait for each one sequentially):
-   ```
-   Send ALL shutdown_request messages in a single turn (parallel SendMessage calls)
-   Wait for all approval responses
-   If a teammate rejects: check their reason, resolve, then re-request
-   ```
-   **Update workspace**: set `progress.md` status to `done`, record completion time
+10. **Shutdown sequence** (parallel — do NOT wait for each one sequentially):
+    ```
+    Send ALL shutdown_request messages in a single turn (parallel SendMessage calls)
+    Wait for all approval responses
+    If a teammate rejects: check their reason, resolve, then re-request
+    ```
+    **Update workspace**: set `progress.md` status to `done`, record completion time
 
-10. **Cleanup**:
+11. **Cleanup**:
     - **Only call TeamDelete after ALL teammates have confirmed shutdown.** TeamDelete may fail if teammates are still active — always wait for all shutdown confirmations first.
     - TeamDelete to remove ephemeral team resources (`~/.claude/teams/{team-name}/`). The workspace at `.agent-team/{team-name}/` is NOT deleted — it is the permanent record
     - Clean up idle hook counters: `rm -f /tmp/agent-team-idle-counters/{team-name}--* 2>/dev/null || true`
+    - Clean up ownership violation tracking: `rm -rf /tmp/agent-team-ownership-violations 2>/dev/null || true`
 
 ## Reference
 

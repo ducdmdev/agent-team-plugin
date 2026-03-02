@@ -11,6 +11,8 @@ fi
 INPUT=$(cat)
 TASK_SUBJECT=$(echo "$INPUT" | jq -r '.task_subject // empty')
 TEAM_NAME=$(echo "$INPUT" | jq -r '.team_name // empty')
+TASK_ID=$(echo "$INPUT" | jq -r '.task_id // empty')
+TEAMMATE_NAME=$(echo "$INPUT" | jq -r '.teammate_name // empty')
 
 # Skip validation if no task subject
 if [ -z "$TASK_SUBJECT" ]; then
@@ -54,13 +56,25 @@ fi
 # Implementation keywords take precedence over skip keywords.
 # This prevents "Write tests for audit module" from being treated as workspace-only.
 if echo "$TASK_SUBJECT" | grep -qiE 'implement|create|add|build|write|refactor|fix|migrate'; then
-  # Check git for changes (if in a git repo).
-  # Trade-off: this checks ALL repo changes (staged + unstaged + untracked),
-  # not just changes made by this specific teammate. Unrelated dirty files
-  # will cause this to always pass; conversely, a teammate who only modifies
-  # workspace files may be falsely blocked. Accepted as good-enough heuristic.
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    CHANGES=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+    CHANGES="0"
+    # Try scoped check first: if we know the teammate and their owned files, only check those
+    if [ -n "$TEAMMATE_NAME" ] && [ -n "$WORKSPACE_DIR" ] && [ -f "$WORKSPACE_DIR/file-locks.json" ]; then
+      OWNED_PATHS=$(jq -r --arg t "$TEAMMATE_NAME" '.[$t] // [] | .[]' "$WORKSPACE_DIR/file-locks.json" 2>/dev/null)
+      if [ -n "$OWNED_PATHS" ]; then
+        while IFS= read -r owned_path; do
+          [ -z "$owned_path" ] && continue
+          PATH_CHANGES=$(git status --porcelain -- "$owned_path" 2>/dev/null | wc -l | tr -d ' ')
+          CHANGES=$((CHANGES + PATH_CHANGES))
+        done <<< "$OWNED_PATHS"
+      else
+        # Teammate not in file-locks — fall back to repo-wide
+        CHANGES=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+      fi
+    else
+      # No scoping info — fall back to repo-wide (original behavior)
+      CHANGES=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
+    fi
     if [ "$CHANGES" = "0" ]; then
       echo "Implementation task marked complete but no file changes detected. Verify your work was saved, then mark complete again." >&2
       exit 2
