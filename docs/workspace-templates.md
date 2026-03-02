@@ -7,6 +7,7 @@ Templates for the 3 workspace tracking files initialized during Phase 3. The lea
 - [progress.md](#progressmd) — team status, members, phase checklist, decisions, handoffs
 - [tasks.md](#tasksmd) — task ledger with status tracking
 - [issues.md](#issuesmd) — issue tracker with severity and impact
+- [Additional Workspace Files](#additional-workspace-files) — files created during Phase 3/4 (not template-based)
 
 ## progress.md
 
@@ -97,3 +98,31 @@ Cross-teammate information transfers.
 - **rework**: Completed work must be redone
 - **deferred**: Logged for post-team follow-up
 ````
+
+## Additional Workspace Files
+
+These files are created during Phase 3/4 but are not template-based — they are generated from runtime data.
+
+### file-locks.json
+
+Created during Phase 3 after spawning teammates. Maps each teammate to their owned files/directories. Used by the PreToolUse(Write|Edit) hook to enforce file ownership.
+
+```json
+{
+  "teammate-name": ["src/auth/", "src/middleware/auth.ts"],
+  "other-teammate": ["src/api/", "tests/api/"]
+}
+```
+
+### events.log
+
+Created by the SubagentStart/SubagentStop hooks during Phase 4. Each line is a JSON object recording teammate spawn and stop events. Used for post-mortem analysis.
+
+```json
+{"event":"spawn","teammate":"backend-impl","timestamp":"2026-03-01T00:00:00Z","team":"my-team"}
+{"event":"stop","teammate":"backend-impl","timestamp":"2026-03-01T01:00:00Z","team":"my-team"}
+```
+
+### report.md
+
+Generated during Phase 5 using the template in [report-format.md](report-format.md). This is the final artifact written before shutdown.
