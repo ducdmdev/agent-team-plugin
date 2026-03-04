@@ -20,6 +20,14 @@ Templates for the 3 workspace tracking files initialized during Phase 3. The lea
 **Last updated**: {timestamp}
 **Remediation cycle**: 0
 
+## References
+
+Source documents for this team's work.
+
+| Type | Path/URL | Description |
+|------|----------|-------------|
+| {spec/ADR/design/PR/doc} | {path or URL} | {one-line description} |
+
 ## Team Members
 
 | Name | Role | Status | Current Task |
@@ -32,7 +40,8 @@ Templates for the 3 workspace tracking files initialized during Phase 3. The lea
 - [ ] Phase 2: Presented plan, received user confirmation
 - [ ] Phase 3: TeamCreate, workspace initialized, tasks created, teammates spawned
 - [ ] Phase 4: All teammates sent STARTING, coordination active
-- [ ] Phase 5: All tasks completed, report generated, teammates shut down, cleanup done
+- [ ] Phase 5a: Completion Gate passed (uncommitted, build, lint, integration, security, issues, plan, docs)
+- [ ] Phase 5b: Report generated, teammates shut down, cleanup done
 
 ## Decision Log
 
@@ -56,23 +65,23 @@ Cross-teammate information transfers.
 
 ## In Progress
 
-| ID | Subject | Owner | Notes |
-|----|---------|-------|-------|
+| ID | Subject | Owner | Ref | Notes |
+|----|---------|-------|-----|-------|
 
 ## Blocked
 
-| ID | Subject | Owner | Blocked By | Notes |
-|----|---------|-------|-----------|-------|
+| ID | Subject | Owner | Ref | Blocked By | Notes |
+|----|---------|-------|-----|-----------|-------|
 
 ## Pending
 
-| ID | Subject | Owner | Blocked By | Notes |
-|----|---------|-------|-----------|-------|
+| ID | Subject | Owner | Ref | Blocked By | Notes |
+|----|---------|-------|-----|-----------|-------|
 
 ## Completed
 
-| ID | Subject | Owner | Notes |
-|----|---------|-------|-------|
+| ID | Subject | Owner | Ref | Notes |
+|----|---------|-------|-----|-------|
 ````
 
 ## issues.md
