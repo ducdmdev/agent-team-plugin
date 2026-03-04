@@ -8,7 +8,7 @@
     {
       "name": "agent-team",
       "description": "Orchestrates parallel work via Agent Teams with automated coordination, workspace tracking, and hook enforcement",
-      "version": "2.0.0",
+      "version": "2.0.1",
       "source": {
         "source": "url",
         "url": "https://github.com/ducdmdev/agent-team-plugin.git"
