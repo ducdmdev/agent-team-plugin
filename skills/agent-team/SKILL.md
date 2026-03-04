@@ -162,12 +162,14 @@ Wait for user confirmation before proceeding.
    Context:
    4. Workspace path: `.agent-team/{team-name}/` — read for team state, write output artifacts here
    5. Communication protocol (STARTING/COMPLETED/BLOCKED/HANDOFF/QUESTION — see Phase 4)
+   6. Project conventions: "Read CLAUDE.md if it exists. Follow its conventions."
+   7. Skill hints: role-specific recommendations from [worker-roles.md](../../docs/worker-roles.md)
 
    Behavior:
-   6. When blocked: message the lead with severity and impact, do not wait silently
-   7. After completing a task: mark complete via TaskUpdate, check TaskList, self-claim next available
-   8. Use subagents (Task tool) for focused subtasks that don't need teammate communication
-   9. Write output artifacts to the workspace directory
+   8. When blocked: message the lead with severity and impact, do not wait silently
+   9. After completing a task: mark complete via TaskUpdate, check TaskList, self-claim next available
+   10. Use subagents (Task tool) for focused subtasks that don't need teammate communication
+   11. Write output artifacts to the workspace directory
    - **Branch instruction** (implementers only): "Create branch `{team-name}/{your-name}` before starting work. If git is unavailable, skip."
    - **Nested decomposition** (optional): For large tasks, tell senior implementers: "You may create sub-tasks and spawn subagents for independent portions of your work. Report rolled-up results to me. One level of nesting max."
 
