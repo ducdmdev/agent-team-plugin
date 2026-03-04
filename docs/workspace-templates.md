@@ -40,7 +40,8 @@ Source documents for this team's work.
 - [ ] Phase 2: Presented plan, received user confirmation
 - [ ] Phase 3: TeamCreate, workspace initialized, tasks created, teammates spawned
 - [ ] Phase 4: All teammates sent STARTING, coordination active
-- [ ] Phase 5: All tasks completed, report generated, teammates shut down, cleanup done
+- [ ] Phase 5a: Completion Gate passed (uncommitted, build, lint, integration, security, issues, plan, docs)
+- [ ] Phase 5b: Report generated, teammates shut down, cleanup done
 
 ## Decision Log
 
