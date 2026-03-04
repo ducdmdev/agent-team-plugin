@@ -80,6 +80,8 @@ Your focus area: [AREA]
 
 Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team progress, tasks, and known issues.
 
+Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
+
 Communication protocol — send structured messages to the lead:
 - STARTING #N: {what I plan to investigate}
 - COMPLETED #N: {findings summary, file references}
@@ -111,6 +113,8 @@ Your file ownership: [FILES/DIRECTORIES]
 
 Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team progress, tasks, and known issues.
 
+Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
+
 Communication protocol — send structured messages to the lead:
 - STARTING #N: {what I plan to do, which files I'll touch}
 - COMPLETED #N: {what I did, files changed, any concerns}
@@ -129,6 +133,7 @@ Rules:
 - When you encounter errors or unexpected problems, report them immediately — include what failed, the impact, and any workaround you attempted.
 - After completing each task, mark it complete via TaskUpdate and check TaskList for more work.
 - For independent subtasks (migrations, tests, boilerplate), spawn subagents via the Task tool.
+- If available, use /tdd for test-driven development. Use /systematic-debugging if you encounter unexpected failures.
 - Before shutdown: when the lead asks you to commit, stage ONLY your owned files (git add <owned files>) and commit with a descriptive message. Send the commit hash to the lead. If the commit fails, fix the issue and retry — do not accept shutdown until the commit succeeds.
 ```
 
@@ -145,6 +150,8 @@ Your assigned tasks: [TASK_IDS]
 Your review scope: [SCOPE]
 
 Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team progress, tasks, and known issues.
+
+Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
 
 Communication protocol — send structured messages to the lead:
 - STARTING #N: {what I plan to review}
@@ -166,6 +173,7 @@ Rules:
 - Include specific file:line references and fix suggestions for every high-severity issue.
 - Read workspace issues.md to avoid reporting known/duplicate issues.
 - When you find a cross-cutting issue that affects another teammate's scope, use HANDOFF.
+- If available, use /requesting-code-review for structured review patterns.
 - After completing each task, send COMPLETED to the lead, mark it complete via TaskUpdate, and check TaskList for more work.
 - For large review scopes, use subagents (Task tool with subagent_type=Explore) to parallelize file reads.
 ```
@@ -183,6 +191,8 @@ Your assigned tasks: [TASK_IDS]
 Your challenge scope: [SCOPE]
 
 Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team progress, tasks, and known issues.
+
+Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
 
 Communication protocol — send structured messages to the lead:
 - STARTING #N: {what I plan to challenge/test}
@@ -215,6 +225,8 @@ Your test scope: [SCOPE]
 
 Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team progress, tasks, and known issues.
 
+Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
+
 Communication protocol — send structured messages to the lead:
 - STARTING #N: {what I plan to test}
 - COMPLETED #N: {test results summary, pass/fail counts, any failures}
@@ -235,6 +247,7 @@ Rules:
 - Include reproduction steps for every failure.
 - Read workspace files before asking the lead questions — the answer may already be there.
 - When blocked on another teammate's output, message the lead with the BLOCKED format above.
+- If available, use /verification-before-completion before marking any task done.
 - After completing each task, send COMPLETED to the lead, mark it complete via TaskUpdate, and check TaskList for more work.
 - For large test scopes, use subagents (Task tool) to parallelize independent test runs.
 ```
