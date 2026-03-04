@@ -91,6 +91,14 @@ Record of cross-teammate information transfers.
 
 - [{timestamp}] {source} -> {target}: {what was handed off}
 
+### References
+
+Source documents consulted during this team's work.
+
+| Type | Path/URL | Description |
+|------|----------|-------------|
+| {spec/ADR/design/PR/doc} | {path or URL} | {one-line description} |
+
 ### Issues & Impact Tracker
 
 | # | Severity | Reporter | Description | Impact | Affected Tasks | Status | Resolution |
@@ -111,13 +119,14 @@ Record of cross-teammate information transfers.
 The lead generates the report during Phase 5 (MANDATORY — do not skip):
 
 1. Read all workspace files:
-   - `.agent-team/{team-name}/progress.md` — team members, decisions, handoffs
+   - `.agent-team/{team-name}/progress.md` — team members, decisions, handoffs, **references**
    - `.agent-team/{team-name}/tasks.md` — task ledger
    - `.agent-team/{team-name}/issues.md` — issue tracker
 2. Read TaskList for final task states (source of truth for status)
 3. Incorporate teammate summaries collected via structured request in Phase 5 step 2
-4. Write `.agent-team/{team-name}/report.md` using the template above
-5. **Self-check**: read the file back — does it contain the Executive Summary section? If not, regenerate
+4. Copy References section from `progress.md` into the report's References section
+5. Write `.agent-team/{team-name}/report.md` using the template above
+6. **Self-check**: read the file back — does it contain the Executive Summary section? If not, regenerate
 
 ## Guidelines
 
