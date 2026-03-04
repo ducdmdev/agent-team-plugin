@@ -51,6 +51,7 @@ Analyze the user's task: $ARGUMENTS
 6. **Identify reference documents** — find specs, ADRs, design docs, PRs, or other docs relevant to the task. These populate the workspace References section in Phase 3.
 7. **Integration points** — for each pair of streams, identify where their outputs must connect (shared interfaces, API contracts, database schemas). These become explicit handoff points in Phase 2.
 8. **Check for custom roles** — if `docs/custom-roles.md` exists in the project, read it. Use custom roles alongside built-in roles when they match the task requirements.
+9. **Detect team archetype** — read [team-archetypes.md](../../docs/team-archetypes.md). Match the user's task to an archetype (implementation, research, audit, planning, or hybrid) using the trigger patterns. The archetype determines which phases, completion gate checks, and report variant to use. Apply the archetype's phase profile for all subsequent phases.
 
 **Self-check**: "Do I have 2+ streams where each can make meaningful progress without waiting on the others? Are integration points identified?" If no, reconsider the split.
 
@@ -60,6 +61,7 @@ Before creating the team, you MUST present the decomposition and wait for explic
 
 ```
 Team plan for: [task summary]
+Team type: [detected-type] (auto-detected from task — say "change to [type]" to override)
 Complexity: standard | complex
   (if complex) Reason: [why — e.g., multi-module, risky refactor, security-sensitive]
   (if complex) ✓ Dedicated reviewer included
@@ -95,7 +97,11 @@ Estimated teammates: N
 
 Wait for user confirmation before proceeding.
 
+If the user requests a different team type during approval, re-apply the new archetype's phase profile: adjust roles, phase overrides, completion gate, and report variant before proceeding to Phase 3.
+
 ## Phase 3: Create Team
+
+> **Archetype overrides**: Check [team-archetypes.md](../../docs/team-archetypes.md) for Phase 3 overrides. Key differences: read-only archetypes (research, audit, planning) SKIP file-locks.json and branch instructions.
 
 1. **Check for existing team** — read `~/.claude/teams/` to see if a team already exists. If one does, ask the user whether to clean it up first or work within it.
 
@@ -208,6 +214,8 @@ Wait for user confirmation before proceeding.
 
 ## Phase 4: Coordinate
 
+> **Archetype overrides**: Check [team-archetypes.md](../../docs/team-archetypes.md) for Phase 4 overrides. Key difference: file ownership enforcement is N/A for archetypes without file-locks.json.
+
 ### Context Recovery
 If your context was compacted or you feel disoriented, **read the workspace first**:
 ```
@@ -304,6 +312,8 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
 
 ## Phase 5: Synthesis and Completion
 
+> **Archetype overrides**: Check [team-archetypes.md](../../docs/team-archetypes.md) for Phase 5 overrides. Key differences: read-only archetypes SKIP pre-shutdown commit, branch merge, and most completion gate checks. Use the archetype's report variant.
+
 1. **Verify all tasks completed** via TaskList — every task must be `completed`
 
 2. **Collect results** — message each teammate with the structured request (skip if teammates' COMPLETED messages already included full summaries — files changed, decisions, concerns):
@@ -398,6 +408,7 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
 - [worker-roles.md](../../docs/worker-roles.md) — lead + worker role definitions and spawn templates
 - [coordination-patterns.md](../../docs/coordination-patterns.md) — conflict resolution, handoff patterns, and communication protocol
 - [report-format.md](../../docs/report-format.md) — final report format and generation protocol
+- [team-archetypes.md](../../docs/team-archetypes.md) — team type detection, phase profiles, and completion gate overrides
 
 ## Anti-Patterns
 
