@@ -364,8 +364,8 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
    - Copy References from `progress.md` into the report's References section
    - **Self-check**: "Does `.agent-team/{team-name}/report.md` exist and contain the executive summary?" If no, generate it now
 
-8. **Remediation gate** — review `issues.md` for OPEN issues:
-   - If **0 OPEN issues**: skip to step 9
+8. **Remediation gate** — the Completion Gate (step 5) resolves most OPEN issues via fix tasks. This step handles residual issues that couldn't be resolved:
+   - If **0 OPEN issues** in `issues.md`: skip to step 9
    - If **OPEN issues exist** and `progress.md` remediation cycle is already `1`: do NOT spawn another team. Include unresolved issues in the user report (step 9):
      > **Unresolved issues (require manual follow-up):**
      > - Issue #N (severity): description
