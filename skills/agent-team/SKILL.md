@@ -334,9 +334,26 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
    - If merge conflicts: log in `issues.md`, assign the relevant implementer to resolve
    - If neither branching nor worktrees were used, skip this step
 
-5. **Check integration** — do the pieces fit together? If issues found, assign fixes before wrapping up
+5. **Completion Gate** (hard gate — ALL must PASS before proceeding to report generation):
 
-   **Self-check**: "Did I verify that the pieces integrate? If issues were found, have I assigned fixes before proceeding?" If no, STOP — do not generate the report until integration is confirmed.
+   Run checks in order. Items marked ★ are project-specific — PASS automatically if the project has no configured tooling for that check.
+
+   | # | Check | How | PASS Criteria | On FAIL |
+   |---|-------|-----|---------------|---------|
+   | 1 | **Uncommitted changes** | Run `git status` scoped to each implementer's owned files | All owned files committed. Working tree clean for owned paths | Message the implementer to commit. Re-run after confirmation |
+   | 2 | **Build & tests** | Assign a teammate: "Run `[build cmd]` and `[test cmd]`, report PASS/FAIL with output" | Build exits 0, all tests pass | Create fix task, assign to relevant implementer, re-run gate |
+   | 3 | **Lint/format** ★ | Assign a teammate: "Run `[lint cmd]`, report new warnings/errors" | No new lint errors (pre-existing are acceptable) | Create fix task, assign to implementer who owns the file, re-run gate |
+   | 4 | **Integration** | Assign a teammate: "Verify [module A] correctly calls [module B] after changes. Check shared interfaces, imports, API contracts" | Cross-teammate outputs connect correctly | Create integration fix task, assign to the implementer closest to the boundary, re-run gate |
+   | 5 | **Security scan** ★ | Assign a teammate: "Check for hardcoded secrets, common vulnerabilities (OWASP top 10) in changed files" | No new security issues in changed files | Create fix task as **critical** severity, assign to implementer, re-run gate |
+   | 6 | **Workspace issues** | Read `issues.md`, count OPEN items | 0 OPEN issues (all RESOLVED or MITIGATED) | Route each OPEN issue to a teammate for resolution, re-run gate |
+   | 7 | **Plan completion** | Compare Phase 2 plan streams against TaskList + teammate summaries | Every planned stream has completed tasks. No orphaned streams | Create tasks for missing streams, assign, re-run gate |
+   | 8 | **Documentation sync** | Assign a teammate: "Check if README, ADRs, or docs need updates based on changes made" | No stale docs, or update tasks completed | Create doc update task, assign, re-run gate |
+
+   ★ = Project-specific. If no lint/security tooling exists, mark PASS and note "N/A — no tooling configured" in the gate log.
+
+   Log gate result in `progress.md` Decision Log: "Completion Gate: PASS" or "Completion Gate: FAIL — [items], fix tasks created"
+
+   **Self-check**: "Have all 8 checks passed? If any failed, have I created fix tasks and re-run?" If no, STOP.
 
 6. **Update workspace**: set `progress.md` status to `completing`, update `tasks.md` with final states and teammate notes. See Workspace Update Protocol in Phase 4 for event-to-file mappings.
 
