@@ -172,5 +172,15 @@ run_hook "$HOOK" '{"task_subject":"Implement auth","team_name":"test","task_id":
 assert_exit_code 0 "$HOOK_EXIT" "13: Enhanced hook reads task_id and teammate_name"
 cleanup_temp_dir
 
+# --- Test 14: Impl keyword task with workspace output allows ---
+setup_temp_dir
+cd "$TEST_TEMP_DIR"
+setup_mock_workspace "test"
+setup_mock_git_repo "clean"
+echo "# Report" > ".agent-team/test/report.md"
+run_hook "$HOOK" '{"task_subject":"Write verification report","team_name":"test"}'
+assert_exit_code 0 "$HOOK_EXIT" "14: Impl keyword task with workspace output allows"
+cleanup_temp_dir
+
 print_summary
 exit "$TESTS_FAILED"

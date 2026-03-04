@@ -75,6 +75,23 @@ if echo "$TASK_SUBJECT" | grep -qiE 'implement|create|add|build|write|refactor|f
       # No scoping info — fall back to repo-wide (original behavior)
       CHANGES=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')
     fi
+    if [ "$CHANGES" = "0" ] && [ -n "$WORKSPACE_DIR" ] && [ -d "$WORKSPACE_DIR" ]; then
+      # .agent-team/ is typically gitignored, so git status misses workspace output.
+      # Check for non-tracking artifacts (report.md, etc.) written there.
+      TRACKING="progress.md tasks.md issues.md file-locks.json events.log"
+      for f in "$WORKSPACE_DIR"/*; do
+        [ -e "$f" ] || continue
+        BASENAME=$(basename "$f")
+        IS_TRACKING=false
+        for t in $TRACKING; do
+          [ "$BASENAME" = "$t" ] && IS_TRACKING=true && break
+        done
+        if [ "$IS_TRACKING" = "false" ]; then
+          CHANGES=1
+          break
+        fi
+      done
+    fi
     if [ "$CHANGES" = "0" ]; then
       echo "Implementation task marked complete but no file changes detected. Verify your work was saved, then mark complete again." >&2
       exit 2
