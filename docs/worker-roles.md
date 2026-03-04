@@ -270,6 +270,8 @@ Task tool call:
 
     Workspace: .agent-team/refactor-auth/ — read these files for context on team progress, tasks, and known issues.
 
+    Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions.
+
     Communication protocol — send structured messages to the lead:
     - STARTING #N: {what I plan to do, which files I'll touch}
     - COMPLETED #N: {what I did, files changed, any concerns}
@@ -286,6 +288,7 @@ Task tool call:
     - When you encounter errors or unexpected problems, report them immediately.
     - After completing each task, mark it complete via TaskUpdate and check TaskList for more work.
     - For independent subtasks (migrations, tests, boilerplate), spawn subagents via the Task tool.
+    - If available, use /tdd for test-driven development. Use /systematic-debugging for unexpected failures.
     - Before shutdown: when the lead asks you to commit, stage ONLY your owned files and commit with a descriptive message. Send the commit hash to the lead. If the commit fails, fix and retry.
 ```
 
