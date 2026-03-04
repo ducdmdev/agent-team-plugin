@@ -20,6 +20,14 @@ Templates for the 3 workspace tracking files initialized during Phase 3. The lea
 **Last updated**: {timestamp}
 **Remediation cycle**: 0
 
+## References
+
+Source documents for this team's work.
+
+| Type | Path/URL | Description |
+|------|----------|-------------|
+| {spec/ADR/design/PR/doc} | {path or URL} | {one-line description} |
+
 ## Team Members
 
 | Name | Role | Status | Current Task |
