@@ -1,6 +1,6 @@
 {
   "name": "agent-team-plugin",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "Orchestrate parallel AI teammates in Claude Code — with hook enforcement, workspace tracking, and structured coordination across 5 phases",
   "license": "MIT",
   "keywords": ["claude-code", "plugin", "agent-team", "orchestration", "parallel"],

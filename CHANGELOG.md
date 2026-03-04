@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-03-04
+
+### Added
+- **Date-prefixed workspace names** — `MMDD-{task-slug}` format prevents name collisions and enables chronological sorting
+- **CLAUDE.md + skill hints in spawn prompts** — all 5 spawn templates instruct teammates to read project conventions; role-specific skill hints (`/tdd`, `/requesting-code-review`, `/verification-before-completion`)
+- **Documentation references in workspace files** — References sections in progress.md and report.md templates, Ref column in tasks.md, Phase 1 step to identify reference docs
+- **Completion Gate (Phase 5)** — 8-item hard gate (uncommitted, build, lint, integration, security, issues, plan, docs) replaces the vague "Check integration" step
+
+### Changed
+- Remediation Gate (Phase 5 step 8) simplified to handle residual issues only — primary issue resolution now handled by Completion Gate
+- Quality Gate pattern in coordination-patterns.md updated with Completion Gate cross-reference
+
 ## [2.0.1] - 2026-03-04
 
 ### Fixed
