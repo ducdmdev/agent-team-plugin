@@ -114,6 +114,8 @@ Wait for user confirmation before proceeding.
    - `.agent-team/{team-name}/tasks.md` — task ledger with status tracking
    - `.agent-team/{team-name}/issues.md` — issue tracker with severity and impact
 
+   Populate the `## References` section in `progress.md` with docs identified in Phase 1. If no reference docs were found, leave the table with a single `—` row.
+
    #### file-locks.json
 
    ```json
@@ -342,6 +344,7 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
    - Read all workspace files for full history
    - Read TaskList for final task states
    - Write `.agent-team/{team-name}/report.md` using the format in [report-format.md](../../docs/report-format.md)
+   - Copy References from `progress.md` into the report's References section
    - **Self-check**: "Does `.agent-team/{team-name}/report.md` exist and contain the executive summary?" If no, generate it now
 
 8. **Remediation gate** — review `issues.md` for OPEN issues:
