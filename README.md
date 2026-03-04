@@ -137,10 +137,10 @@ All hooks degrade gracefully — exit 0 if `jq` is missing.
 
 ## Workspace
 
-Each team creates a persistent workspace at `.agent-team/{team-name}/` in your project:
+Each team creates a persistent workspace at `.agent-team/{team-name}/` in your project, where `{team-name}` uses an `MMDD-` date prefix for uniqueness (e.g., `0304-refactor-auth`):
 
 ```
-.agent-team/{team-name}/
+.agent-team/0304-refactor-auth/
 ├── progress.md      # Team status, members, decisions, handoffs
 ├── tasks.md         # Task ledger with status and dependencies
 ├── issues.md        # Issue tracker with severity and resolution
