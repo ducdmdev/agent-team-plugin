@@ -64,23 +64,23 @@ Cross-teammate information transfers.
 
 ## In Progress
 
-| ID | Subject | Owner | Notes |
-|----|---------|-------|-------|
+| ID | Subject | Owner | Ref | Notes |
+|----|---------|-------|-----|-------|
 
 ## Blocked
 
-| ID | Subject | Owner | Blocked By | Notes |
-|----|---------|-------|-----------|-------|
+| ID | Subject | Owner | Ref | Blocked By | Notes |
+|----|---------|-------|-----|-----------|-------|
 
 ## Pending
 
-| ID | Subject | Owner | Blocked By | Notes |
-|----|---------|-------|-----------|-------|
+| ID | Subject | Owner | Ref | Blocked By | Notes |
+|----|---------|-------|-----|-----------|-------|
 
 ## Completed
 
-| ID | Subject | Owner | Notes |
-|----|---------|-------|-------|
+| ID | Subject | Owner | Ref | Notes |
+|----|---------|-------|-----|-------|
 ````
 
 ## issues.md
