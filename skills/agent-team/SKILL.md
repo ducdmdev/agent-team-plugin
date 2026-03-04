@@ -48,8 +48,9 @@ Analyze the user's task: $ARGUMENTS
    - **By concern**: implementation vs verification vs research (best for quality-critical tasks)
    - **By layer**: data model vs API vs UI (best for full-stack features)
    - Avoid splits that create heavy cross-dependencies — if two streams need constant handoffs, merge them
-6. **Integration points** — for each pair of streams, identify where their outputs must connect (shared interfaces, API contracts, database schemas). These become explicit handoff points in Phase 2.
-7. **Check for custom roles** — if `docs/custom-roles.md` exists in the project, read it. Use custom roles alongside built-in roles when they match the task requirements.
+6. **Identify reference documents** — find specs, ADRs, design docs, PRs, or other docs relevant to the task. These populate the workspace References section in Phase 3.
+7. **Integration points** — for each pair of streams, identify where their outputs must connect (shared interfaces, API contracts, database schemas). These become explicit handoff points in Phase 2.
+8. **Check for custom roles** — if `docs/custom-roles.md` exists in the project, read it. Use custom roles alongside built-in roles when they match the task requirements.
 
 **Self-check**: "Do I have 2+ streams where each can make meaningful progress without waiting on the others? Are integration points identified?" If no, reconsider the split.
 
@@ -100,7 +101,8 @@ Wait for user confirmation before proceeding.
 
 2. **Create team**:
    ```
-   TeamCreate: team-name based on task (e.g., "refactor-auth", "review-pr-142")
+   TeamCreate: team-name = MMDD-{task-slug} (e.g., "0304-refactor-auth", "0304-review-pr-142")
+   The MMDD prefix is today's date. This prevents name collisions across sessions and makes workspaces chronologically sortable.
    ```
 
 3. **Initialize workspace** — immediately after TeamCreate, create the workspace directory and all 3 tracking files:
@@ -111,6 +113,8 @@ Wait for user confirmation before proceeding.
    - `.agent-team/{team-name}/progress.md` — team status, members, decisions, handoffs
    - `.agent-team/{team-name}/tasks.md` — task ledger with status tracking
    - `.agent-team/{team-name}/issues.md` — issue tracker with severity and impact
+
+   Populate the `## References` section in `progress.md` with docs identified in Phase 1. If no reference docs were found, leave the table with a single `—` row.
 
    #### file-locks.json
 
@@ -161,12 +165,14 @@ Wait for user confirmation before proceeding.
    Context:
    4. Workspace path: `.agent-team/{team-name}/` — read for team state, write output artifacts here
    5. Communication protocol (STARTING/COMPLETED/BLOCKED/HANDOFF/QUESTION — see Phase 4)
+   6. Project conventions: "Read CLAUDE.md if it exists. Follow its conventions."
+   7. Skill hints: role-specific recommendations from [worker-roles.md](../../docs/worker-roles.md)
 
    Behavior:
-   6. When blocked: message the lead with severity and impact, do not wait silently
-   7. After completing a task: mark complete via TaskUpdate, check TaskList, self-claim next available
-   8. Use subagents (Task tool) for focused subtasks that don't need teammate communication
-   9. Write output artifacts to the workspace directory
+   8. When blocked: message the lead with severity and impact, do not wait silently
+   9. After completing a task: mark complete via TaskUpdate, check TaskList, self-claim next available
+   10. Use subagents (Task tool) for focused subtasks that don't need teammate communication
+   11. Write output artifacts to the workspace directory
    - **Branch instruction** (implementers only): "Create branch `{team-name}/{your-name}` before starting work. If git is unavailable, skip."
    - **Nested decomposition** (optional): For large tasks, tell senior implementers: "You may create sub-tasks and spawn subagents for independent portions of your work. Report rolled-up results to me. One level of nesting max."
 
@@ -194,7 +200,7 @@ Wait for user confirmation before proceeding.
 
 | Failure | Recovery |
 |---------|----------|
-| TeamCreate fails (name collision) | Append a suffix: `{team-name}-2`. If that also fails, ask the user for a name |
+| TeamCreate fails (name collision) | Append a counter: `{name}-2`, `{name}-3`. If `-3` also fails, ask the user for a name |
 | TeamCreate fails (feature not enabled) | Tell the user to enable `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` and restart |
 | Workspace directory already exists | Read `progress.md` — if status is `done`, it's stale: ask user to confirm reuse or clean up. If status is `active`, another session may be using it: ask user |
 | Teammate fails to spawn | Check the error. Common causes: tool not available, permission denied. Retry once. If still failing, log to `issues.md`, continue with remaining teammates, reassign orphaned tasks |
@@ -328,9 +334,26 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
    - If merge conflicts: log in `issues.md`, assign the relevant implementer to resolve
    - If neither branching nor worktrees were used, skip this step
 
-5. **Check integration** — do the pieces fit together? If issues found, assign fixes before wrapping up
+5. **Completion Gate** (hard gate — ALL must PASS before proceeding to report generation):
 
-   **Self-check**: "Did I verify that the pieces integrate? If issues were found, have I assigned fixes before proceeding?" If no, STOP — do not generate the report until integration is confirmed.
+   Run checks in order. Items marked ★ are project-specific — PASS automatically if the project has no configured tooling for that check.
+
+   | # | Check | How | PASS Criteria | On FAIL |
+   |---|-------|-----|---------------|---------|
+   | 1 | **Uncommitted changes** | Run `git status` scoped to each implementer's owned files | All owned files committed. Working tree clean for owned paths | Message the implementer to commit. Re-run after confirmation |
+   | 2 | **Build & tests** | Assign a teammate: "Run `[build cmd]` and `[test cmd]`, report PASS/FAIL with output" | Build exits 0, all tests pass | Create fix task, assign to relevant implementer, re-run gate |
+   | 3 | **Lint/format** ★ | Assign a teammate: "Run `[lint cmd]`, report new warnings/errors" | No new lint errors (pre-existing are acceptable) | Create fix task, assign to implementer who owns the file, re-run gate |
+   | 4 | **Integration** | Assign a teammate: "Verify [module A] correctly calls [module B] after changes. Check shared interfaces, imports, API contracts" | Cross-teammate outputs connect correctly | Create integration fix task, assign to the implementer closest to the boundary, re-run gate |
+   | 5 | **Security scan** ★ | Assign a teammate: "Check for hardcoded secrets, common vulnerabilities (OWASP top 10) in changed files" | No new security issues in changed files | Create fix task as **critical** severity, assign to implementer, re-run gate |
+   | 6 | **Workspace issues** | Read `issues.md`, count OPEN items | 0 OPEN issues (all RESOLVED or MITIGATED) | Route each OPEN issue to a teammate for resolution, re-run gate |
+   | 7 | **Plan completion** | Compare Phase 2 plan streams against TaskList + teammate summaries | Every planned stream has completed tasks. No orphaned streams | Create tasks for missing streams, assign, re-run gate |
+   | 8 | **Documentation sync** | Assign a teammate: "Check if README, ADRs, or docs need updates based on changes made" | No stale docs, or update tasks completed | Create doc update task, assign, re-run gate |
+
+   ★ = Project-specific. If no lint/security tooling exists, mark PASS and note "N/A — no tooling configured" in the gate log.
+
+   Log gate result in `progress.md` Decision Log: "Completion Gate: PASS" or "Completion Gate: FAIL — [items], fix tasks created"
+
+   **Self-check**: "Have all 8 checks passed? If any failed, have I created fix tasks and re-run?" If no, STOP.
 
 6. **Update workspace**: set `progress.md` status to `completing`, update `tasks.md` with final states and teammate notes. See Workspace Update Protocol in Phase 4 for event-to-file mappings.
 
@@ -338,10 +361,11 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
    - Read all workspace files for full history
    - Read TaskList for final task states
    - Write `.agent-team/{team-name}/report.md` using the format in [report-format.md](../../docs/report-format.md)
+   - Copy References from `progress.md` into the report's References section
    - **Self-check**: "Does `.agent-team/{team-name}/report.md` exist and contain the executive summary?" If no, generate it now
 
-8. **Remediation gate** — review `issues.md` for OPEN issues:
-   - If **0 OPEN issues**: skip to step 9
+8. **Remediation gate** — the Completion Gate (step 5) resolves most OPEN issues via fix tasks. This step handles residual issues that couldn't be resolved:
+   - If **0 OPEN issues** in `issues.md`: skip to step 9
    - If **OPEN issues exist** and `progress.md` remediation cycle is already `1`: do NOT spawn another team. Include unresolved issues in the user report (step 9):
      > **Unresolved issues (require manual follow-up):**
      > - Issue #N (severity): description
