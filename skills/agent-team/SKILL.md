@@ -100,7 +100,8 @@ Wait for user confirmation before proceeding.
 
 2. **Create team**:
    ```
-   TeamCreate: team-name based on task (e.g., "refactor-auth", "review-pr-142")
+   TeamCreate: team-name = MMDD-{task-slug} (e.g., "0304-refactor-auth", "0304-review-pr-142")
+   The MMDD prefix is today's date. This prevents name collisions across sessions and makes workspaces chronologically sortable.
    ```
 
 3. **Initialize workspace** — immediately after TeamCreate, create the workspace directory and all 3 tracking files:
@@ -194,7 +195,7 @@ Wait for user confirmation before proceeding.
 
 | Failure | Recovery |
 |---------|----------|
-| TeamCreate fails (name collision) | Append a suffix: `{team-name}-2`. If that also fails, ask the user for a name |
+| TeamCreate fails (name collision) | Append a counter: `{name}-2`, `{name}-3`. If `-3` also fails, ask the user for a name |
 | TeamCreate fails (feature not enabled) | Tell the user to enable `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` and restart |
 | Workspace directory already exists | Read `progress.md` — if status is `done`, it's stale: ask user to confirm reuse or clean up. If status is `active`, another session may be using it: ask user |
 | Teammate fails to spawn | Check the error. Common causes: tool not available, permission denied. Retry once. If still failing, log to `issues.md`, continue with remaining teammates, reassign orphaned tasks |
