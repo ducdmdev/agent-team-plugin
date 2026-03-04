@@ -344,6 +344,8 @@ When review quality is critical (security-sensitive code, architectural decision
 
 A final validation pass before Phase 5 synthesis. Catches integration issues that per-task checks miss.
 
+> **Note**: The Completion Gate in SKILL.md Phase 5 step 5 provides mandatory quality checks (build, tests, lint, integration, security, issues, plan completion, doc sync) for ALL teams. This pattern describes extended verification options for complex plans that go beyond the standard gate.
+
 ### When to Use
 
 - Complex plans with 3+ implementers
