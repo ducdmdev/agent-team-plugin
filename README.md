@@ -84,6 +84,26 @@ Analyze    -->   Present Plan --> Create Team -->  Coordinate  -->  Synthesize
 | **Researcher** | Investigate, analyze, report findings | Read, Grep, Glob, WebFetch, WebSearch |
 | **Challenger** | Stress-test assumptions, find edge cases | Read, Grep, Glob, Bash, WebSearch |
 | **Tester** | Run tests, verify builds, check runtime behavior | Read, Grep, Glob, Bash |
+| **Analyst** | Deep-dive into data, metrics, performance | Read, Grep, Glob, Bash (read-only) |
+| **Planner** | Produce specs, architecture designs, decision docs | Read, Write (docs only), Grep, Glob |
+| **Writer** | Produce documentation, ADRs, guides | Read, Write (docs only), Grep, Glob |
+| **Strategist** | Evaluate trade-offs, recommend direction | Read, Grep, Glob, WebFetch, WebSearch |
+| **Auditor** | Systematic checks against standards/checklists | Read, Grep, Glob, Bash (read-only) |
+| **Scout** | Quick recon — scan and report structure | Read, Grep, Glob, Bash (read-only) |
+
+### Team Types
+
+The lead auto-detects the team type from your request and adapts the workflow accordingly:
+
+| Team Type | When Used | Default Roles | Output |
+|-----------|-----------|---------------|--------|
+| **Implementation** | Build, refactor, fix, migrate code | Implementers + Reviewer + Tester | Code changes + report |
+| **Research** | Investigate, analyze, compare approaches | Researchers + Analyst/Challenger | Findings report |
+| **Audit** | Review, assess, evaluate against standards | Reviewers/Auditors + Challenger | Audit report |
+| **Planning** | Design, architect, produce specs | Planners/Strategists + Researcher | Plan/spec document |
+| **Hybrid** | Mixed work types (e.g., research then implement) | Mix from all roles | Standard report |
+
+The team type determines which completion checks apply and what the final report looks like. You can override the auto-detected type during plan approval.
 
 ### Communication Protocol
 
@@ -178,6 +198,7 @@ agent-team-plugin/
 │   ├── coordination-patterns.md # Conflict resolution and handoff patterns
 │   ├── workspace-templates.md   # Workspace file templates for Phase 3
 │   ├── report-format.md         # Final report specification
+│   ├── team-archetypes.md       # Team type definitions and phase profiles
 │   └── custom-roles.md          # Template for project-specific roles
 ├── package.json
 ├── CLAUDE.md
