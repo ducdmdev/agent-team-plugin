@@ -136,3 +136,115 @@ The lead generates the report during Phase 5 (MANDATORY — do not skip):
 - File paths should be relative to the project root where possible
 - Keep the report factual — no speculation about what "might" need attention unless backed by evidence from the session
 - The report draws from workspace files, not from memory — this ensures accuracy after context compaction
+
+## Report Variants
+
+All archetypes share the same outer structure (Executive Summary, Team Metrics, Full Audit Trail, Per-Teammate Summaries). Only the middle content sections differ. The lead selects the variant based on the team archetype detected in Phase 1.
+
+### Findings Report
+
+Used by: **research-team**
+
+Replaces the "Files Changed" section in the Executive Summary and adds a Findings section to the Full Audit Trail:
+
+```markdown
+### What Was Discovered
+{2-5 bullet points summarizing the key findings}
+
+### Findings
+
+#### [Research Angle / Question 1]
+- **Key finding**: {concise statement}
+- **Evidence**: {file:line references, data points, external sources}
+- **Confidence**: high | medium | low
+- **Implications**: {what this means for the project/decision}
+
+#### [Research Angle / Question 2]
+...
+
+### Synthesis
+- **Agreements**: {findings confirmed by multiple researchers}
+- **Contradictions**: {conflicting findings with evidence from each side}
+- **Open questions**: {what couldn't be determined and why}
+- **Recommended next steps**: {actionable items based on findings}
+```
+
+The "Files Changed" section is omitted (research teams don't modify files). The "Per-Teammate Summaries" section uses "Findings" instead of "Files modified".
+
+### Audit Report
+
+Used by: **audit-team**
+
+Replaces the "Files Changed" section and adds an Audit Results section:
+
+```markdown
+### What Was Audited
+{2-5 bullet points summarizing the audit scope and standards checked}
+
+### Audit Results
+
+#### Summary
+- **Items checked**: {total count}
+- **Pass**: {count} | **Fail**: {count} | **Warning**: {count}
+- **Overall compliance**: {percentage or qualitative assessment}
+
+> PASS/FAIL/WARNING is the per-checklist-item status (Compliance Status table below). FAIL items are further classified by severity (Critical/High/Medium/Low) in the Findings section based on impact.
+
+#### Findings by Severity
+
+##### Critical
+- {finding}: {file:line}, standard violated: {standard}, recommended fix: {fix}
+
+##### High
+- {finding}: {file:line}, standard violated: {standard}, recommended fix: {fix}
+
+##### Medium
+- {finding}: {file:line}, description
+
+##### Low
+- {finding}: {file:line}, description
+
+### Compliance Status
+
+| Standard/Checklist Item | Status | File(s) | Notes |
+|------------------------|--------|---------|-------|
+| {item} | PASS / FAIL / WARNING / N/A | {file references} | {details} |
+```
+
+The "Per-Teammate Summaries" section uses "Audit findings" and "Items checked" instead of "Files modified".
+
+### Plan Report
+
+Used by: **planning-team**
+
+Replaces the "Files Changed" section and adds design/planning sections:
+
+```markdown
+### What Was Planned
+{2-5 bullet points summarizing the planning scope and deliverables}
+
+### Proposed Approach
+- {Architecture / design summary}
+- {Key components and their responsibilities}
+- {Data flow or interaction model}
+
+### Alternatives Considered
+
+| Approach | Pros | Cons | Why Rejected/Chosen |
+|----------|------|------|-------------------|
+| {approach 1} | {pros} | {cons} | {reasoning} |
+| {approach 2} | {pros} | {cons} | {reasoning} |
+
+### Decision Rationale
+- {Why this approach over alternatives}
+- {Key assumptions and what would invalidate them}
+- {Risks and mitigations}
+
+> If the team has Planners but no Strategist, the lead synthesizes the assumption analysis from Planners' "alternatives considered" and "trade-offs" outputs.
+
+### Action Items
+- [ ] {Next step to implement this plan, with owner if known}
+- [ ] {Next step}
+```
+
+The "Per-Teammate Summaries" section uses "Design contributions" and "Decisions proposed" instead of "Files modified".

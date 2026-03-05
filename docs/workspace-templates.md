@@ -116,6 +116,8 @@ These files are created during Phase 3/4 but are not template-based — they are
 
 Created during Phase 3 after spawning teammates. Maps each teammate to their owned files/directories. Used by the PreToolUse(Write|Edit) hook to enforce file ownership.
 
+**When to create**: Only for archetypes with teammates that write project files (Implementation, Hybrid with implementers). **SKIP for read-only archetypes** (Research, Audit, Planning) — these teams have no file ownership to enforce.
+
 ```json
 {
   "teammate-name": ["src/auth/", "src/middleware/auth.ts"],
@@ -135,3 +137,7 @@ Created by the SubagentStart/SubagentStop hooks during Phase 4. Each line is a J
 ### report.md
 
 Generated during Phase 5 using the template in [report-format.md](report-format.md). This is the final artifact written before shutdown.
+
+## See Also
+
+- [team-archetypes.md](team-archetypes.md) — defines which workspace files are created per team type

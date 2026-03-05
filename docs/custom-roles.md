@@ -1,6 +1,6 @@
 # Custom Role Definitions
 
-Project-specific role definitions that extend the built-in roles (Implementer, Reviewer, Researcher, Challenger, Tester).
+Project-specific role definitions that extend the built-in roles (Leader, Implementer, Reviewer, Researcher, Challenger, Tester, Analyst, Planner, Writer, Strategist, Auditor, Scout).
 
 The team lead reads this file during Phase 1 task decomposition and uses custom roles alongside built-in roles when they match the task requirements.
 
