@@ -1,7 +1,7 @@
 # Design: Flexible Teammate Roles & Team Archetypes
 
 **Date**: 2026-03-04
-**Status**: Approved
+**Status**: Implemented (2026-03-05, PR #11)
 **Problem**: The current role system is implementation-centric (6 fixed roles). Teams for research, planning, or auditing must force-fit into implementation roles and phases.
 **Solution**: Introduce team archetypes that auto-detect work type and adapt role composition, phase behavior, and output format accordingly. Expand the role catalog from 6 to 12.
 

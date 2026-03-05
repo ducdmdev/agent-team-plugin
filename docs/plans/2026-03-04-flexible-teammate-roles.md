@@ -2,6 +2,10 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
+**Status:** COMPLETED (2026-03-05)
+**PR:** #11 (`feat/flexible-teammate-roles` -> `main`)
+**Executed via:** superpowers:subagent-driven-development (8 tasks, 7 commits, all spec-reviewed)
+
 **Goal:** Add team archetypes that auto-detect work type and adapt role composition, phase behavior, and output format. Expand role catalog from 6 to 12.
 
 **Architecture:** New `docs/team-archetypes.md` defines 5 archetypes with phase profiles. SKILL.md gets a single dispatch point in Phase 1 to load the archetype, then one-liner override checks in Phases 2-5. `worker-roles.md` gets 6 new roles. `report-format.md` gets 3 report variants.
@@ -9,6 +13,23 @@
 **Tech Stack:** Markdown documentation (no code changes to hooks or scripts)
 
 **Design doc:** `docs/plans/2026-03-04-flexible-teammate-roles-design.md`
+
+### Completion Summary
+
+| Task | Status | Commit | Notes |
+|------|--------|--------|-------|
+| 1. Create `docs/team-archetypes.md` | ✅ | `49fae24` | |
+| 2. Add 6 new roles to `worker-roles.md` | ✅ | `d58a594` | Deviation: "Documentation sprint" archetype changed from Implementation to Hybrid (more accurate) |
+| 3. Add report variants to `report-format.md` | ✅ | `1a69a09` | |
+| 4. Update `workspace-templates.md` | ✅ | `9f4e4b9` | |
+| 5. Update `SKILL.md` with archetype dispatch | ✅ | `ec1e519` | Deviation: Phase 2 team type line uses `[detected-type]` with override prompt instead of literal enum |
+| 6. Update `README.md` | ✅ | `4fffe51` | |
+| 7. Update `CLAUDE.md` | ✅ | `c863bf0` | |
+| 8. Run tests and validate | ✅ | — | 88 assertions, 9 files, all passed |
+
+**Deviations from plan:**
+1. Task 2 Role Selection Guide: "Documentation sprint" archetype changed from `Implementation` to `Hybrid` — Writers only write docs, not code, making Hybrid more accurate.
+2. Task 5 Phase 2: Team type line uses `[detected-type] (auto-detected from task — say "change to [type]" to override)` instead of literal `implementation | research | audit | planning | hybrid` — more user-friendly with override instruction.
 
 ---
 
