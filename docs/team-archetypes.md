@@ -25,6 +25,10 @@ The lead matches the user's task description against trigger patterns. If multip
 
 **Fallback**: If no clear match, default to Implementation (the most common case). Present the detected archetype in Phase 2 — the user can override.
 
+> **Disambiguation — "evaluate"**: "Evaluate against a standard/checklist" (e.g., "evaluate our security posture") → Audit. "Evaluate alternatives/options" (e.g., "evaluate database options") → Research or Planning. When ambiguous, the Phase 2 override lets the user correct.
+
+> **Disambiguation — "write/document"**: "Write code/feature" → Implementation. "Write documentation/docs/ADRs" or "document X" → Planning (if producing design artifacts) or Hybrid (if updating existing project docs). The Phase 2 override lets the user correct.
+
 ## Implementation Team
 
 **Purpose**: Build, refactor, fix, or migrate code.
@@ -41,7 +45,7 @@ The lead matches the user's task description against trigger patterns. If multip
 | Phase 4 | Full coordination with file ownership enforcement |
 | Phase 5 | **All 8 completion gate checks**. Pre-shutdown commit required. Branch merge if applicable |
 
-**Completion gate**: All 8 checks (#1-#8)
+**Completion gate**: All 8 checks (#1-#8). See [Strictest Gate Rule](#strictest-gate-rule) for check definitions.
 
 **Report variant**: Standard report (current `report-format.md` template)
 
@@ -56,7 +60,7 @@ The lead matches the user's task description against trigger patterns. If multip
 | Phase | Behavior | Override from default |
 |-------|----------|---------------------|
 | Phase 1 | Standard analysis. Decompose by research angle/question, not by module | Decomposition strategy: by question/hypothesis |
-| Phase 2 | Standard plan. Show `Team type: research-team` | Add team type line |
+| Phase 2 | Standard plan. Show `Team type: research (auto-detected)` | Add team type line |
 | Phase 3 | Workspace: progress.md, tasks.md, issues.md, events.log. **SKIP file-locks.json** (all read-only). **SKIP branch instructions** (no code branches) | No file-locks, no branches |
 | Phase 4 | Standard coordination. File ownership hook is N/A (no file-locks.json) | No file ownership enforcement |
 | Phase 5 | **SKIP**: pre-shutdown commit (#3), branch merge (#4). **Completion gate**: only #6 (workspace issues) + #7 (plan completion). **SKIP**: #1-#5, #8 | Reduced gate, no commits |
@@ -76,12 +80,12 @@ The lead matches the user's task description against trigger patterns. If multip
 | Phase | Behavior | Override from default |
 |-------|----------|---------------------|
 | Phase 1 | Standard analysis. Decompose by audit lens/checklist area | Decomposition strategy: by audit lens |
-| Phase 2 | Standard plan. Show `Team type: audit-team` | Add team type line |
+| Phase 2 | Standard plan. Show `Team type: audit (auto-detected)` | Add team type line |
 | Phase 3 | Workspace: progress.md, tasks.md, issues.md, events.log. **SKIP file-locks.json**. **SKIP branch instructions** | No file-locks, no branches |
 | Phase 4 | Standard coordination. File ownership hook is N/A | No file ownership enforcement |
-| Phase 5 | **SKIP**: pre-shutdown commit (#3), branch merge (#4). **Completion gate**: #4 (integration) + #5 (security) + #6 (workspace issues) + #7 (plan completion). **SKIP**: #1-#3, #8 | Partial gate, no commits |
+| Phase 5 | **SKIP**: pre-shutdown commit (#3), branch merge (#4). **Completion gate**: #4 (integration — verify audit covered cross-module concerns) + #5 (security — verify audit covered security aspects) + #6 (workspace issues) + #7 (plan completion). **SKIP**: #1-#3, #8 | Partial gate, no commits |
 
-**Completion gate**: #4 (integration) + #5 (security) + #6 (workspace issues) + #7 (plan completion)
+**Completion gate**: #4 (integration — audit comprehensiveness, not code changes) + #5 (security — audit coverage, not code changes) + #6 (workspace issues) + #7 (plan completion)
 
 **Report variant**: Audit report — see [report-format.md](report-format.md#audit-report)
 
@@ -96,8 +100,8 @@ The lead matches the user's task description against trigger patterns. If multip
 | Phase | Behavior | Override from default |
 |-------|----------|---------------------|
 | Phase 1 | Standard analysis. Decompose by planning concern (architecture, data model, API design, etc.) | Decomposition strategy: by planning concern |
-| Phase 2 | Standard plan. Show `Team type: planning-team` | Add team type line |
-| Phase 3 | Workspace: progress.md, tasks.md, issues.md, events.log. **SKIP file-locks.json** (Planners/Writers write docs to workspace, not project files). **SKIP branch instructions** | No file-locks, no branches |
+| Phase 2 | Standard plan. Show `Team type: planning (auto-detected)` | Add team type line |
+| Phase 3 | Workspace: progress.md, tasks.md, issues.md, events.log. **SKIP file-locks.json** (Planners/Writers write docs to workspace, not project files). **SKIP branch instructions**. If multiple Planners, assign distinct workspace sub-paths (e.g., `{workspace}/planner-1/`) to avoid write conflicts | No file-locks, no branches |
 | Phase 4 | Standard coordination. File ownership hook is N/A | No file ownership enforcement |
 | Phase 5 | **SKIP**: pre-shutdown commit (#3), branch merge (#4). **Completion gate**: only #6 (workspace issues) + #7 (plan completion). **SKIP**: #1-#5, #8 | Reduced gate, no commits |
 
@@ -108,6 +112,8 @@ The lead matches the user's task description against trigger patterns. If multip
 ## Hybrid Team
 
 **Purpose**: Tasks that clearly combine multiple work types (e.g., "research X then implement Y", "audit and fix").
+
+> **Mid-session archetype change**: If the user requests an archetype change after Phase 3 (e.g., "also fix the issues you found" during an audit), treat it as a re-plan: present the updated plan as Hybrid, get user approval, then adjust workspace (add file-locks.json if needed) and spawn additional teammates. See coordination-patterns.md Re-plan on Block pattern.
 
 **Default roles**: Lead composes from the full role catalog based on the combined task types.
 
@@ -123,7 +129,7 @@ The lead matches the user's task description against trigger patterns. If multip
 
 **Completion gate**: Strictest gate from component archetypes
 
-**Report variant**: Standard report
+**Report variant**: Standard report. If the Hybrid has no Implementation component (e.g., research + audit), the lead should omit the empty "Files Changed" section and substitute with the appropriate variant section (e.g., "What Was Discovered" or "What Was Audited").
 
 ### Strictest Gate Rule
 
@@ -139,3 +145,12 @@ When combining archetypes, the completion gate includes any check required by AN
 | #6 Workspace issues | Always |
 | #7 Plan completion | Always |
 | #8 Documentation sync | Any Implementer present |
+
+> **Lead judgment**: When the implementation component is minor (e.g., a single config change), the lead may mark checks as N/A with a brief note in `progress.md`. The gate is a safety net, not a blocker for obviously inapplicable checks.
+
+## Design Notes
+
+Intentional design choices documented for future reference:
+
+- **Documentation sprint archetype**: Classified as Hybrid (not Implementation) because Writers produce documentation rather than code — the Hybrid archetype correctly handles conditional file-locks and mixed read/write teams.
+- **Phase 2 team type display**: Uses `[detected-type] (auto-detected)` user-friendly format instead of a literal enum. This makes the override mechanism more intuitive for users.

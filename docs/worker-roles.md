@@ -273,6 +273,7 @@ Rules:
 **Purpose**: Deep-dive into data, metrics, logs, performance profiling. More quantitative than Researcher.
 **When to use**: Performance analysis, data investigation, metrics review, log analysis.
 **Typical tools**: Read, Grep, Glob, Bash (read-only commands for data queries)
+**Subagent type**: `general-purpose` (needs Bash for data queries)
 
 **Spawn prompt template**:
 ```
@@ -283,7 +284,7 @@ Your analysis scope: [SCOPE]
 
 Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team progress, tasks, and known issues.
 
-Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions.
+Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
 
 Communication protocol — send structured messages to the lead:
 - STARTING #N: {what I plan to analyze, data sources}
@@ -312,6 +313,7 @@ Rules:
 **Purpose**: Produce specs, architecture designs, decision documents.
 **When to use**: Architecture design, technical specification, decision documents, migration planning.
 **Typical tools**: Read, Write (docs only), Grep, Glob, WebSearch
+**Subagent type**: `general-purpose` (needs Write for design docs)
 
 **Spawn prompt template**:
 ```
@@ -323,7 +325,7 @@ Your output location: .agent-team/[TEAM_NAME]/ (write design artifacts here)
 
 Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team progress, tasks, and known issues.
 
-Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions.
+Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
 
 Communication protocol — send structured messages to the lead:
 - STARTING #N: {what I plan to design/specify}
@@ -340,12 +342,14 @@ Rules:
 - Read workspace files and existing project docs before starting to avoid duplicating existing decisions.
 - When blocked, message the lead immediately with the BLOCKED format above.
 - After completing each task, send COMPLETED to the lead, mark it complete via TaskUpdate, and check TaskList for more work.
+- For independent research subtasks, use subagents (Task tool with subagent_type=Explore) to gather information in parallel.
 ```
 
 ### Writer
 **Purpose**: Produce documentation, ADRs, guides, user-facing content.
 **When to use**: Documentation creation, ADR writing, README updates, user guides, API docs.
 **Typical tools**: Read, Write (docs only), Grep, Glob
+**Subagent type**: `general-purpose` (needs Write for documentation)
 
 **Spawn prompt template**:
 ```
@@ -374,16 +378,20 @@ Rules:
 - Read workspace files before asking the lead questions — the answer may already be there.
 - When blocked, message the lead immediately with the BLOCKED format above.
 - After completing each task, send COMPLETED to the lead, mark it complete via TaskUpdate, and check TaskList for more work.
+- For independent research subtasks (checking existing docs, verifying code references), use subagents (Task tool with subagent_type=Explore).
 - Before shutdown: when the lead asks you to commit, stage ONLY your owned files and commit with a descriptive message. Send the commit hash to the lead.
 ```
 
 **Variants**:
 - **Documenter**: Same tools and rules, but focuses on code-level documentation (JSDoc, docstrings, README, API reference) rather than user-facing content. Use when the task is specifically about code documentation.
 
+> **Note — Planner vs Writer**: Planners write to the workspace directory only (no file ownership). Writers write to project files (have file ownership and commit instructions). In Hybrid teams with both, the lead creates file-locks.json for Writers but not Planners.
+
 ### Strategist
 **Purpose**: Evaluate trade-offs, compare alternatives, recommend direction.
 **When to use**: Technology evaluation, approach comparison, decision support, roadmap input.
 **Typical tools**: Read, Grep, Glob, WebFetch, WebSearch
+**Subagent type**: `Explore` (read-only analysis, no Bash needed)
 
 **Spawn prompt template**:
 ```
@@ -394,7 +402,7 @@ Your evaluation scope: [SCOPE]
 
 Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team progress, tasks, and known issues.
 
-Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions.
+Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
 
 Communication protocol — send structured messages to the lead:
 - STARTING #N: {what alternatives I plan to evaluate}
@@ -425,6 +433,7 @@ Rules:
 **Purpose**: Systematic checks against a standard, checklist, or compliance requirement.
 **When to use**: Security audit, compliance check, accessibility review, best-practices assessment.
 **Typical tools**: Read, Grep, Glob, Bash (read-only commands)
+**Subagent type**: `general-purpose` (needs Bash for read-only audit commands)
 
 **Spawn prompt template**:
 ```
@@ -436,7 +445,7 @@ Your audit standard: [STANDARD/CHECKLIST]
 
 Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team progress, tasks, and known issues.
 
-Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions.
+Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
 
 Communication protocol — send structured messages to the lead:
 - STARTING #N: {what I plan to audit, which standard/checklist}
@@ -462,10 +471,13 @@ Rules:
 - For large audit scopes, use subagents (Task tool with subagent_type=Explore) to parallelize file reads.
 ```
 
+> **Scout vs Researcher**: Scouts prioritize breadth and speed — they map the territory and flag areas for deeper investigation. Researchers prioritize depth and thoroughness — they investigate specific questions and produce evidence-backed findings. Use Scouts for orientation; use Researchers for investigation.
+
 ### Scout
 **Purpose**: Quick reconnaissance — scan a codebase, API, or documentation and report structure and key findings.
 **When to use**: Codebase orientation, API surface mapping, dependency inventory, quick assessment before deeper work.
 **Typical tools**: Read, Grep, Glob, Bash (read-only)
+**Subagent type**: `general-purpose` (needs Bash for quick recon commands)
 
 **Spawn prompt template**:
 ```
@@ -476,7 +488,7 @@ Your recon scope: [SCOPE]
 
 Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team progress, tasks, and known issues.
 
-Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions.
+Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
 
 Communication protocol — send structured messages to the lead:
 - STARTING #N: {what I plan to scan}
@@ -570,6 +582,8 @@ Key parameters:
 | Codebase orientation | Research | 2-3 Scouts (by area) | 2-3 (all read-only) |
 | Research + implement | Hybrid | 1-2 Researchers + 1-2 Implementers + Reviewer | 3-4 |
 | Audit + fix | Hybrid | 1-2 Auditors + 1 Implementer + Tester | 3-4 |
+
+> Archetype names in the table above correspond to team archetype sections in [team-archetypes.md](team-archetypes.md) (e.g., "Research" → "Research Team").
 
 ### Team Size Limits
 

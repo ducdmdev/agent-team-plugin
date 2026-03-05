@@ -101,7 +101,7 @@ If the user requests a different team type during approval, re-apply the new arc
 
 ## Phase 3: Create Team
 
-> **Archetype overrides**: Check [team-archetypes.md](../../docs/team-archetypes.md) for Phase 3 overrides. Key differences: read-only archetypes (research, audit, planning) SKIP file-locks.json and branch instructions.
+> **Archetype overrides**: Check [team-archetypes.md](../../docs/team-archetypes.md) for Phase 3 overrides. Key differences: read-only archetypes (research, audit, planning) SKIP file-locks.json and branch instructions. Hybrid teams create file-locks.json only if ANY teammate writes project files.
 
 1. **Check for existing team** — read `~/.claude/teams/` to see if a team already exists. If one does, ask the user whether to clean it up first or work within it.
 

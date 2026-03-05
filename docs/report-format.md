@@ -188,6 +188,8 @@ Replaces the "Files Changed" section and adds an Audit Results section:
 - **Pass**: {count} | **Fail**: {count} | **Warning**: {count}
 - **Overall compliance**: {percentage or qualitative assessment}
 
+> PASS/FAIL/WARNING is the per-checklist-item status (Compliance Status table below). FAIL items are further classified by severity (Critical/High/Medium/Low) in the Findings section based on impact.
+
 #### Findings by Severity
 
 ##### Critical
@@ -237,6 +239,8 @@ Replaces the "Files Changed" section and adds design/planning sections:
 - {Why this approach over alternatives}
 - {Key assumptions and what would invalidate them}
 - {Risks and mitigations}
+
+> If the team has Planners but no Strategist, the lead synthesizes the assumption analysis from Planners' "alternatives considered" and "trade-offs" outputs.
 
 ### Action Items
 - [ ] {Next step to implement this plan, with owner if known}
