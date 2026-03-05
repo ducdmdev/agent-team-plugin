@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-03-05
+
+### Added
+- **5 team archetypes** — Implementation, Research, Audit, Planning, Hybrid with auto-detection from task trigger patterns, phase profile overrides, and archetype-specific completion gates
+- **6 new roles** — Analyst, Planner, Writer, Strategist, Auditor, Scout with full spawn templates, subagent type annotations, and structured output formats
+- **3 report variants** — Findings Report (research), Audit Report (audit), Plan Report (planning) with shared outer structure and domain-specific content sections
+- **Archetype dispatch in SKILL.md** — Phase 1 detection, Phase 2 team type display with user override, Phase 3-5 override callouts referencing team-archetypes.md
+- **Team archetypes reference** (`docs/team-archetypes.md`) — trigger patterns, phase profiles, Strictest Gate Rule for Hybrid teams, disambiguation notes for ambiguous triggers
+- **Role variants** — Migrator/Integrator/Debugger (Implementer), Facilitator (Challenger), Validator (Tester), Documenter (Writer)
+
+### Changed
+- Role Selection Guide expanded with Archetype column and 8 new task type entries
+- custom-roles.md intro updated to list all 12 built-in roles
+
 ## [2.1.0] - 2026-03-04
 
 ### Added
