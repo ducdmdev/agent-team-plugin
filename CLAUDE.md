@@ -36,6 +36,7 @@ docs/                  Reference docs consumed by SKILL.md at runtime
 | `docs/workspace-templates.md` | Workspace file templates | Update when adding new workspace files |
 | `docs/report-format.md` | Final report template | Update when changing report structure |
 | `docs/custom-roles.md` | Project-specific role template | Reference for users creating custom roles |
+| `docs/team-archetypes.md` | Team type definitions + phase profiles | Update when adding new archetypes or modifying phase overrides |
 | `CHANGELOG.md` | Version history | Add entry for each release |
 | `README.md` | User-facing documentation | Keep in sync with feature changes |
 | `tests/` | Hook and structure tests | `hooks/` for hook tests, `structure/` for plugin validation |
@@ -124,6 +125,14 @@ Six hooks registered in `hooks/hooks.json`:
 1. Add the role definition and spawn template to `docs/worker-roles.md`
 2. Update the Role Selection Guide table
 3. Update README Teammate Roles table
+
+### Adding a New Team Archetype
+
+1. Add the archetype definition to `docs/team-archetypes.md`
+2. Include: trigger patterns, default roles, phase profile table, completion gate checks, report variant
+3. Add the report variant template to `docs/report-format.md`
+4. Update `README.md` Team Types table
+5. Test: trigger the skill with a matching phrase and verify the lead selects the correct archetype
 
 ### Releasing a New Version
 
