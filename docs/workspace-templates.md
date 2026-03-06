@@ -8,6 +8,7 @@ Templates for the 3 workspace tracking files initialized during Phase 3. The lea
 - [tasks.md](#tasksmd) — task ledger with status tracking
 - [issues.md](#issuesmd) — issue tracker with severity and impact
 - [Additional Workspace Files](#additional-workspace-files) — files created during Phase 3/4 (not template-based)
+- [Workspace Update Protocol](#workspace-update-protocol) — event-to-file mapping table
 
 ## progress.md
 
@@ -112,6 +113,30 @@ Cross-teammate information transfers.
 
 These files are created during Phase 3/4 but are not template-based — they are generated from runtime data.
 
+## Workspace Update Protocol
+
+The lead updates workspace files at every significant event. When multiple events arrive close together, batch them into a single edit per file.
+
+| Event | File | What to update |
+|-------|------|---------------|
+| Team created | All 3 files | Initialize from templates |
+| Tasks created | tasks.md | Fill task ledger |
+| Teammate spawned | progress.md | Add row to Team Members |
+| Task started | tasks.md | Status -> `in_progress` |
+| Task completed | tasks.md | Status -> `completed`, add notes |
+| Decision made | progress.md | Append to Decision Log |
+| Handoff occurs | progress.md | Append to Handoffs |
+| Issue found | issues.md | Append row, update Open count |
+| Issue resolved | issues.md | Status -> RESOLVED/MITIGATED, update counts |
+| Teammate status change | progress.md | Update Team Members table |
+| All work done | progress.md | Status -> `done` |
+| Teammate spawned | events.log | Append spawn event (also auto-logged by SubagentStart hook) |
+| Task started | events.log | Append task_start event |
+| Task completed | events.log | Append task_complete event |
+| Blocked event | events.log | Append blocked event |
+| Handoff occurs | events.log | Append handoff event |
+| Decision made | events.log | Append decision event |
+
 ### file-locks.json
 
 Created during Phase 3 after spawning teammates. Maps each teammate to their owned files/directories. Used by the PreToolUse(Write|Edit) hook to enforce file ownership.
@@ -128,6 +153,8 @@ Created during Phase 3 after spawning teammates. Maps each teammate to their own
 ### events.log
 
 Created by the SubagentStart/SubagentStop hooks during Phase 4. Each line is a JSON object recording teammate spawn and stop events. Used for post-mortem analysis.
+
+Event types: `spawn`, `stop`, `task_start`, `task_complete`, `blocked`, `handoff`, `decision`, `replan`.
 
 ```json
 {"ts":"2026-03-01T00:00:00Z","type":"spawn","agent":"backend-impl","agent_type":"general-purpose"}

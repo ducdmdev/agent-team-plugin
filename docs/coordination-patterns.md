@@ -1,10 +1,11 @@
 # Coordination Patterns Reference
 
-Patterns for the lead to handle common coordination scenarios.
+Patterns for the lead to handle common coordination scenarios during Phase 4.
 
 ## Contents
 
 - [Communication Protocol](#communication-protocol) — structured messages, processing rules, and plan approval
+- [Setup Failures](#setup-failures) — recovery actions for common Phase 3 failures
 - [Batch Updates](#batch-updates) — efficient workspace writes
 - [First Contact Verification](#first-contact-verification) — confirming teammates are active
 - [Parallel Shutdown](#parallel-shutdown) — shutting down teammates efficiently
@@ -28,15 +29,7 @@ Patterns for the lead to handle common coordination scenarios.
 
 ### Structured Messages
 
-All teammates use structured message prefixes when communicating with the lead:
-
-```
-STARTING #N: {what I plan to do, which files I'll touch}
-COMPLETED #N: {what I did, files changed, any concerns}
-BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
-HANDOFF #N: {what I produced that another teammate needs, key details}
-QUESTION: {what I need to know, what I already checked}
-```
+See [communication-protocol.md](communication-protocol.md) for the canonical protocol definition (STARTING, COMPLETED, BLOCKED, HANDOFF, QUESTION prefixes and role-specific formats).
 
 ### Lead Processing
 
@@ -158,6 +151,18 @@ After generating the final report, the lead reviews `issues.md` for OPEN items. 
 - **Scope**: only the OPEN issues — tasks derive from the issue list, not a fresh decomposition
 
 **Why**: OPEN issues represent known problems that were logged but never resolved. Leaving them as "FYI" in the report means the user must manually investigate and fix. A remediation team gives the lead a structured way to close the loop while keeping the user in control.
+
+## Setup Failures
+
+Recovery actions for common Phase 3 failures.
+
+| Failure | Recovery |
+|---------|----------|
+| TeamCreate fails (name collision) | Append a counter: `{name}-2`, `{name}-3`. If `-3` also fails, ask the user for a name |
+| TeamCreate fails (feature not enabled) | Tell the user to enable `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` and restart |
+| Workspace directory already exists | Read `progress.md` — if status is `done`, it's stale: ask user to confirm reuse or clean up. If status is `active`, another session may be using it: ask user |
+| Teammate fails to spawn | Check the error. Common causes: tool not available, permission denied. Retry once. If still failing, log to `issues.md`, continue with remaining teammates, reassign orphaned tasks |
+| Context compaction during Phase 3 | On recovery, read workspace files. If they exist but tasks/teammates are incomplete, resume from where you left off. If workspace doesn't exist yet, restart Phase 3 |
 
 ## File Conflict Resolution
 
