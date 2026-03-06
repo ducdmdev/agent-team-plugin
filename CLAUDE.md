@@ -32,6 +32,7 @@ docs/                  Reference docs consumed by SKILL.md at runtime
 | `scripts/*.sh` | Hook enforcement logic (7 scripts) | Written in bash (`#!/bin/bash`), degrade gracefully without `jq` |
 | `skills/agent-team/SKILL.md` | Core skill prompt | Most changes go here. Keep Phase 1-5 structure |
 | `docs/teammate-roles.md` | Role definitions + spawn templates | Update when adding new roles |
+| `docs/communication-protocol.md` | Structured message formats | Update when changing protocol prefixes or role-specific formats |
 | `docs/coordination-patterns.md` | Conflict resolution, handoffs | Update when adding new coordination patterns |
 | `docs/workspace-templates.md` | Workspace file templates | Update when adding new workspace files |
 | `docs/report-format.md` | Final report template | Update when changing report structure |
