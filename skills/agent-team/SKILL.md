@@ -14,6 +14,14 @@ You are the **Team Lead**. Your sole job is coordination — you never write cod
 
 For your full role definition, see [teammate-roles.md](../../docs/teammate-roles.md) under "Leader".
 
+## Quick Start
+
+1. **Analyze** — identify 2+ independent streams, detect archetype
+2. **Plan** — present to user, wait for approval (hard gate)
+3. **Create** — team, workspace, tasks, spawn teammates
+4. **Coordinate** — track progress, route messages, resolve blockers
+5. **Synthesize** — completion gate, report, shutdown
+
 ## Prerequisites
 
 Agent Teams require the experimental feature flag. Before proceeding, verify it is enabled:
@@ -91,6 +99,29 @@ Workspace: .agent-team/[team-name]/
 Estimated teammates: N
 ```
 
+**Example** — "refactor the auth module":
+
+```
+Team plan for: Refactor auth module — extract token validation and session management
+Team type: implementation (auto-detected)
+Complexity: standard
+
+Teammates (3 total):
+- auth-impl-1 (Implementer): Refactor token validation -> owns src/auth/token.ts, src/auth/validate.ts
+- auth-impl-2 (Implementer): Extract session management -> owns src/auth/session.ts, src/middleware/auth.ts
+- auth-reviewer (Reviewer): Review all changes -> read-only
+
+Task breakdown:
+1. Refactor token validation logic -> auth-impl-1
+2. Extract session management to dedicated module -> auth-impl-2
+3. Update middleware to use new session API -> auth-impl-2 (blocked by #2)
+4. Review all changes across both scopes -> auth-reviewer (blocked by #1, #2)
+
+Isolation: shared (default)
+Workspace: .agent-team/0306-refactor-auth/
+Estimated teammates: 3
+```
+
 **Self-check before proceeding**:
 1. "Is this plan complex? Complexity signals: multi-module/area changes, architectural decisions, risky refactors, multiple implementers with cross-dependencies, security-sensitive changes, new integrations. If yes, does the teammate list include a **dedicated reviewer** AND a **dedicated tester** (separate teammates, not combined)? If no, add them before presenting."
 2. "Have I presented this plan AND received user confirmation?" If no, STOP.
@@ -124,25 +155,11 @@ If the user requests a different team type during approval, re-apply the new arc
 
    #### file-locks.json
 
-   ```json
-   {
-     "{teammate-name}": ["{owned-directory}/", "{owned-file}"],
-     "{teammate-name}": ["{owned-directory}/"]
-   }
-   ```
-
-   Populated from the Phase 2 plan's file ownership mapping. Used by the PreToolUse hook to enforce ownership.
+   Maps teammates to owned files/directories. Used by PreToolUse hook. See [workspace-templates.md](../../docs/workspace-templates.md#file-locksjson) for format and creation rules.
 
    #### events.log
 
-   Initially empty. Append-only, one JSON line per event. The SubagentStart/Stop hooks write to this file automatically. The lead also appends events during Phase 4 coordination.
-
-   Event types: `spawn`, `stop`, `task_start`, `task_complete`, `blocked`, `handoff`, `decision`, `replan`.
-
-   Format:
-   ```json
-   {"ts":"2026-02-27T10:30:00Z","type":"spawn","agent":"backend-impl","agent_type":"general-purpose"}
-   ```
+   Initially empty. Append-only JSON event log. Written by SubagentStart/Stop hooks and the lead during coordination. See [workspace-templates.md](../../docs/workspace-templates.md#eventslog) for format and event types.
 
    The workspace is your persistent memory AND the team's shared state. It MUST exist before any tasks are created.
 
@@ -160,6 +177,8 @@ If the user requests a different team type during approval, re-apply the new arc
 5. **Spawn teammates** using the Task tool with `team_name`, `name`, and `subagent_type` parameters. See [teammate-roles.md](../../docs/teammate-roles.md) for role-specific spawn templates.
 
    **subagent_type**: `"general-purpose"` for full tool access (implementers, challengers, testers). `"Explore"` for read-only research teammates. `"general-purpose"` if a reviewer needs Bash. Optionally set `mode: "plan"` for risky or architectural tasks.
+
+   **Protocol injection**: Before building spawn prompts, read [communication-protocol.md](../../docs/communication-protocol.md). Substitute the `{COMMUNICATION_PROTOCOL}` placeholder in each role's spawn template with the Structured Messages block. For roles with format placeholders (`{FINDINGS_FORMAT}`, `{RESULTS_FORMAT}`, `{REPORT_FORMAT}`), substitute the matching section from the same file.
 
    Every spawn prompt MUST include:
 
@@ -181,6 +200,38 @@ If the user requests a different team type during approval, re-apply the new arc
    11. Write output artifacts to the workspace directory
    - **Branch instruction** (implementers only): "Create branch `{team-name}/{your-name}` before starting work. If git is unavailable, skip."
    - **Nested decomposition** (optional): For large tasks, tell senior implementers: "You may create sub-tasks and spawn subagents for independent portions of your work. Report rolled-up results to me. One level of nesting max."
+
+   **Example — assembling a spawn prompt**:
+
+   The lead reads `docs/communication-protocol.md`, then substitutes into the role template:
+
+   ```
+   # 1. Read the protocol
+   Read: docs/communication-protocol.md → get COMMUNICATION_PROTOCOL block
+
+   # 2. Build prompt from teammate-roles.md template
+   Task tool call:
+     subagent_type: "general-purpose"
+     team_name: "0306-refactor-auth"
+     name: "auth-impl-1"
+     prompt: |
+       You are an implementer on this team. Your job is to write code...
+
+       Your assigned tasks: #1
+       Your file ownership: src/auth/token.ts, src/auth/validate.ts
+
+       Workspace: .agent-team/0306-refactor-auth/
+       Project conventions: Read CLAUDE.md if it exists.
+
+       Communication protocol — send structured messages to the lead:
+       - STARTING #N: {what I plan to do, which files I'll touch}
+       - COMPLETED #N: {what I did, files changed, any concerns}
+       - BLOCKED #N: severity={level}, {what's blocking}, impact={what can't proceed}
+       - HANDOFF #N: {what I produced that another teammate needs}
+       - QUESTION: {what I need to know}
+
+       Rules: [... rest of implementer template ...]
+   ```
 
    **Update workspace**: record each teammate in `progress.md` Team Members table
 
@@ -204,13 +255,7 @@ If the user requests a different team type during approval, re-apply the new arc
 
 ### Setup Failures
 
-| Failure | Recovery |
-|---------|----------|
-| TeamCreate fails (name collision) | Append a counter: `{name}-2`, `{name}-3`. If `-3` also fails, ask the user for a name |
-| TeamCreate fails (feature not enabled) | Tell the user to enable `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` and restart |
-| Workspace directory already exists | Read `progress.md` — if status is `done`, it's stale: ask user to confirm reuse or clean up. If status is `active`, another session may be using it: ask user |
-| Teammate fails to spawn | Check the error. Common causes: tool not available, permission denied. Retry once. If still failing, log to `issues.md`, continue with remaining teammates, reassign orphaned tasks |
-| Context compaction during Phase 3 | On recovery, read workspace files. If they exist but tasks/teammates are incomplete, resume from where you left off. If workspace doesn't exist yet, restart Phase 3 |
+See [coordination-patterns.md](../../docs/coordination-patterns.md#setup-failures) for recovery actions on common Phase 3 failures (name collisions, missing feature flag, stale workspaces, spawn failures, context compaction).
 
 ## Phase 4: Coordinate
 
@@ -226,31 +271,8 @@ Read: .agent-team/{team-name}/issues.md
 This restores your full awareness of team state, decisions, and history. Then read `~/.claude/teams/{team-name}/config.json` for live team members and call TaskList for live task state.
 
 ### Workspace Updates
-Update workspace files at every significant event. Use the update protocol below.
 
-When multiple events arrive close together, batch them into a single edit per file rather than making separate writes.
-
-#### Workspace Update Protocol
-
-| Event | File | What to update |
-|-------|------|---------------|
-| Team created | All 3 files | Initialize from templates |
-| Tasks created | tasks.md | Fill task ledger |
-| Teammate spawned | progress.md | Add row to Team Members |
-| Task started | tasks.md | Status -> `in_progress` |
-| Task completed | tasks.md | Status -> `completed`, add notes |
-| Decision made | progress.md | Append to Decision Log |
-| Handoff occurs | progress.md | Append to Handoffs |
-| Issue found | issues.md | Append row, update Open count |
-| Issue resolved | issues.md | Status -> RESOLVED/MITIGATED, update counts |
-| Teammate status change | progress.md | Update Team Members table |
-| All work done | progress.md | Status -> `done` |
-| Teammate spawned | events.log | Append spawn event (also auto-logged by SubagentStart hook) |
-| Task started | events.log | Append task_start event |
-| Task completed | events.log | Append task_complete event |
-| Blocked event | events.log | Append blocked event |
-| Handoff occurs | events.log | Append handoff event |
-| Decision made | events.log | Append decision event |
+Update workspace files at every significant event. Batch multiple events into a single edit per file. See [workspace-templates.md](../../docs/workspace-templates.md#workspace-update-protocol) for the full event-to-file mapping table.
 
 ### Communication Protocol
 
@@ -406,6 +428,7 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
 ## Reference
 
 - [teammate-roles.md](../../docs/teammate-roles.md) — lead + teammate role definitions and spawn templates
+- [communication-protocol.md](../../docs/communication-protocol.md) — structured message formats (canonical source for spawn prompt injection)
 - [coordination-patterns.md](../../docs/coordination-patterns.md) — conflict resolution, handoff patterns, and communication protocol
 - [report-format.md](../../docs/report-format.md) — final report format and generation protocol
 - [team-archetypes.md](../../docs/team-archetypes.md) — team type detection, phase profiles, and completion gate overrides
