@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2026-03-06
+
+### Changed
+- **Communication protocol consolidated** — new `docs/communication-protocol.md` as canonical source; 11 spawn templates now use `{COMMUNICATION_PROTOCOL}` placeholder injected at spawn time
+- **Terminology standardized** — renamed `worker-roles.md` → `teammate-roles.md`; "worker" eliminated from all active file references
+- **SKILL.md restructured** — moved Setup Failures, Workspace Update Protocol, file-locks/events.log details to docs; replaced with one-line references
+- **Quick Start section** added to SKILL.md for fast orientation
+- **Concrete examples** added: Phase 2 plan example and Phase 3 spawn prompt assembly example
+- **Protocol injection instruction** added to Phase 3 for lead to read and substitute protocol at spawn time
+
 ## [2.2.0] - 2026-03-05
 
 ### Added
