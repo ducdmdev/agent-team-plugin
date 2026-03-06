@@ -240,7 +240,7 @@ agent-team-plugin/
 │   └── agent-team/
 │       └── SKILL.md             # Main skill (team lead orchestrator)
 ├── docs/
-│   ├── worker-roles.md          # Role definitions and spawn templates
+│   ├── teammate-roles.md          # Role definitions and spawn templates
 │   ├── coordination-patterns.md # Conflict resolution and handoff patterns
 │   ├── workspace-templates.md   # Workspace file templates for Phase 3
 │   ├── report-format.md         # Final report specification

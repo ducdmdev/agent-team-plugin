@@ -1,4 +1,4 @@
-# Worker Roles Reference
+# Teammate Roles Reference
 
 Generic role definitions for agent team teammates. Select roles based on the task, not technology.
 

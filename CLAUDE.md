@@ -31,7 +31,7 @@ docs/                  Reference docs consumed by SKILL.md at runtime
 | `hooks/hooks.json` | Hook registration (6 hooks) | Update timeout values, add new hooks, or update hook command paths |
 | `scripts/*.sh` | Hook enforcement logic (7 scripts) | Written in bash (`#!/bin/bash`), degrade gracefully without `jq` |
 | `skills/agent-team/SKILL.md` | Core skill prompt | Most changes go here. Keep Phase 1-5 structure |
-| `docs/worker-roles.md` | Role definitions + spawn templates | Update when adding new roles |
+| `docs/teammate-roles.md` | Role definitions + spawn templates | Update when adding new roles |
 | `docs/coordination-patterns.md` | Conflict resolution, handoffs | Update when adding new coordination patterns |
 | `docs/workspace-templates.md` | Workspace file templates | Update when adding new workspace files |
 | `docs/report-format.md` | Final report template | Update when changing report structure |
@@ -122,7 +122,7 @@ Six hooks registered in `hooks/hooks.json`:
 
 ### Adding a New Teammate Role
 
-1. Add the role definition and spawn template to `docs/worker-roles.md`
+1. Add the role definition and spawn template to `docs/teammate-roles.md`
 2. Update the Role Selection Guide table
 3. Update README Teammate Roles table
 

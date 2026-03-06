@@ -12,7 +12,7 @@ allowed-tools: TeamCreate, TeamDelete, TaskCreate, TaskUpdate, TaskList, TaskGet
 
 You are the **Team Lead**. Your sole job is coordination — you never write code directly. You maintain a persistent workspace that tracks everything the team does.
 
-For your full role definition, see [worker-roles.md](../../docs/worker-roles.md) under "Leader".
+For your full role definition, see [teammate-roles.md](../../docs/teammate-roles.md) under "Leader".
 
 ## Prerequisites
 
@@ -157,7 +157,7 @@ If the user requests a different team type during approval, re-apply the new arc
    - **Update workspace**: record all tasks in `tasks.md`
    - **Self-check**: "Does every task have a verifiable completion criterion — something a teammate can confirm as done or not done?" If any task says just "implement X" without a success condition, rewrite it.
 
-5. **Spawn teammates** using the Task tool with `team_name`, `name`, and `subagent_type` parameters. See [worker-roles.md](../../docs/worker-roles.md) for role-specific spawn templates.
+5. **Spawn teammates** using the Task tool with `team_name`, `name`, and `subagent_type` parameters. See [teammate-roles.md](../../docs/teammate-roles.md) for role-specific spawn templates.
 
    **subagent_type**: `"general-purpose"` for full tool access (implementers, challengers, testers). `"Explore"` for read-only research teammates. `"general-purpose"` if a reviewer needs Bash. Optionally set `mode: "plan"` for risky or architectural tasks.
 
@@ -172,7 +172,7 @@ If the user requests a different team type during approval, re-apply the new arc
    4. Workspace path: `.agent-team/{team-name}/` — read for team state, write output artifacts here
    5. Communication protocol (STARTING/COMPLETED/BLOCKED/HANDOFF/QUESTION — see Phase 4)
    6. Project conventions: "Read CLAUDE.md if it exists. Follow its conventions."
-   7. Skill hints: role-specific recommendations from [worker-roles.md](../../docs/worker-roles.md)
+   7. Skill hints: role-specific recommendations from [teammate-roles.md](../../docs/teammate-roles.md)
 
    Behavior:
    8. When blocked: message the lead with severity and impact, do not wait silently
@@ -405,7 +405,7 @@ The phase checklist is embedded in your `progress.md` — check it during worksp
 
 ## Reference
 
-- [worker-roles.md](../../docs/worker-roles.md) — lead + worker role definitions and spawn templates
+- [teammate-roles.md](../../docs/teammate-roles.md) — lead + teammate role definitions and spawn templates
 - [coordination-patterns.md](../../docs/coordination-patterns.md) — conflict resolution, handoff patterns, and communication protocol
 - [report-format.md](../../docs/report-format.md) — final report format and generation protocol
 - [team-archetypes.md](../../docs/team-archetypes.md) — team type detection, phase profiles, and completion gate overrides
