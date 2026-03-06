@@ -72,6 +72,8 @@ Everything else — .env files, config files, source code, test files, documenta
 
 ## Available Roles
 
+> **Protocol placeholders**: Spawn templates use `{COMMUNICATION_PROTOCOL}`, `{FINDINGS_FORMAT}`, `{RESULTS_FORMAT}`, and `{REPORT_FORMAT}` placeholders. The lead reads [communication-protocol.md](communication-protocol.md) at spawn time and substitutes the appropriate blocks into each teammate's prompt.
+
 ### Researcher
 **Purpose**: Explore, analyze, report findings. Never modifies code.
 **When to use**: Investigation, audit, documentation review, dependency analysis.
@@ -88,12 +90,7 @@ Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team pro
 
 Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
 
-Communication protocol — send structured messages to the lead:
-- STARTING #N: {what I plan to investigate}
-- COMPLETED #N: {findings summary, file references}
-- BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
-- HANDOFF #N: {findings that another teammate needs}
-- QUESTION: {what I need to know, what I already checked in workspace}
+{COMMUNICATION_PROTOCOL}
 
 Rules:
 - Read and analyze only. Do not modify any files.
@@ -121,12 +118,7 @@ Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team pro
 
 Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
 
-Communication protocol — send structured messages to the lead:
-- STARTING #N: {what I plan to do, which files I'll touch}
-- COMPLETED #N: {what I did, files changed, any concerns}
-- BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
-- HANDOFF #N: {what I produced that another teammate needs, key details}
-- QUESTION: {what I need to know, what I already checked in workspace}
+{COMMUNICATION_PROTOCOL}
 
 Rules:
 - At the start of your first task, create a feature branch: `git checkout -b {team-name}/{your-name}`. All your work goes on this branch. If git is not available, skip branching and work directly.
@@ -164,19 +156,9 @@ Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team pro
 
 Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
 
-Communication protocol — send structured messages to the lead:
-- STARTING #N: {what I plan to review}
-- COMPLETED #N: {review summary, issues found by severity}
-- BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
-- HANDOFF #N: {issues that the implementer needs to fix}
-- QUESTION: {what I need to know, what I already checked in workspace}
+{COMMUNICATION_PROTOCOL}
 
-Findings format — use consistent severity labels:
-- **H{n}** (high — must fix): file:line, description, suggested fix
-- **M{n}** (medium — should fix): file:line, description
-- **L{n}** (low — suggestion): file:line, description
-Number sequentially per severity within each task (H1, H2, M1, M2, L1...).
-In COMPLETED messages, include total counts: "N issues: X high, Y medium, Z low"
+{FINDINGS_FORMAT}
 
 Rules:
 - Read and analyze only. Do not modify files.
@@ -205,12 +187,7 @@ Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team pro
 
 Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
 
-Communication protocol — send structured messages to the lead:
-- STARTING #N: {what I plan to challenge/test}
-- COMPLETED #N: {findings summary, weaknesses found by severity}
-- BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
-- HANDOFF #N: {critical findings that affect another teammate's work}
-- QUESTION: {what I need to know, what I already checked in workspace}
+{COMMUNICATION_PROTOCOL}
 
 Rules:
 - Actively try to break or disprove what other teammates produce.
@@ -241,18 +218,9 @@ Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team pro
 
 Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
 
-Communication protocol — send structured messages to the lead:
-- STARTING #N: {what I plan to test}
-- COMPLETED #N: {test results summary, pass/fail counts, any failures}
-- BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
-- HANDOFF #N: {test failures that the implementer needs to fix}
-- QUESTION: {what I need to know, what I already checked in workspace}
+{COMMUNICATION_PROTOCOL}
 
-Results format — use consistent structure:
-- **PASS**: test name, what was verified
-- **FAIL**: test name, expected vs actual, reproduction steps, suggested fix
-- **SKIP**: test name, reason skipped
-In COMPLETED messages, include total counts: "N tests: X passed, Y failed, Z skipped"
+{RESULTS_FORMAT}
 
 Rules:
 - Run existing test suites and write new tests as needed to verify implementation correctness.
@@ -286,17 +254,9 @@ Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team pro
 
 Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
 
-Communication protocol — send structured messages to the lead:
-- STARTING #N: {what I plan to analyze, data sources}
-- COMPLETED #N: {analysis summary, key metrics, data points}
-- BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
-- HANDOFF #N: {analysis results that another teammate needs}
-- QUESTION: {what I need to know, what I already checked in workspace}
+{COMMUNICATION_PROTOCOL}
 
-Results format — use consistent structure:
-- **Metric**: name, value, baseline/comparison, significance
-- **Pattern**: description, evidence (file:line or data references), confidence (high/medium/low)
-- **Anomaly**: description, affected area, severity
+{RESULTS_FORMAT}
 
 Rules:
 - Read and analyze only. Do not modify any files.
@@ -327,12 +287,7 @@ Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team pro
 
 Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
 
-Communication protocol — send structured messages to the lead:
-- STARTING #N: {what I plan to design/specify}
-- COMPLETED #N: {design summary, artifact location, key decisions}
-- BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
-- HANDOFF #N: {design decisions that another teammate needs to know}
-- QUESTION: {what I need to know, what I already checked in workspace}
+{COMMUNICATION_PROTOCOL}
 
 Rules:
 - Write design artifacts to the workspace directory, not project files.
@@ -363,12 +318,7 @@ Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team pro
 
 Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for documentation style.
 
-Communication protocol — send structured messages to the lead:
-- STARTING #N: {what I plan to write, which files I'll create/modify}
-- COMPLETED #N: {what I wrote, files changed, any open questions}
-- BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
-- HANDOFF #N: {documentation that another teammate needs to review or reference}
-- QUESTION: {what I need to know, what I already checked in workspace}
+{COMMUNICATION_PROTOCOL}
 
 Rules:
 - ONLY modify files in your owned area. If you need changes elsewhere, message the lead.
@@ -404,12 +354,7 @@ Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team pro
 
 Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
 
-Communication protocol — send structured messages to the lead:
-- STARTING #N: {what alternatives I plan to evaluate}
-- COMPLETED #N: {evaluation summary, recommendation, confidence level}
-- BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
-- HANDOFF #N: {recommendation that another teammate needs for their work}
-- QUESTION: {what I need to know, what I already checked in workspace}
+{COMMUNICATION_PROTOCOL}
 
 Evaluation format — use consistent structure:
 - **Option**: name, brief description
@@ -447,18 +392,9 @@ Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team pro
 
 Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
 
-Communication protocol — send structured messages to the lead:
-- STARTING #N: {what I plan to audit, which standard/checklist}
-- COMPLETED #N: {audit summary, pass/fail/warning counts, critical findings}
-- BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
-- HANDOFF #N: {findings that another teammate needs to act on}
-- QUESTION: {what I need to know, what I already checked in workspace}
+{COMMUNICATION_PROTOCOL}
 
-Findings format — use consistent structure:
-- **PASS**: checklist item, what was verified, evidence
-- **FAIL**: checklist item, what's wrong, file:line, recommended fix, severity
-- **WARNING**: checklist item, potential concern, file:line, recommendation
-In COMPLETED messages, include total counts: "N items checked: X pass, Y fail, Z warning"
+{FINDINGS_FORMAT}
 
 Rules:
 - Read and analyze only. Do not modify any files.
@@ -490,19 +426,9 @@ Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team pro
 
 Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
 
-Communication protocol — send structured messages to the lead:
-- STARTING #N: {what I plan to scan}
-- COMPLETED #N: {structure overview, key findings, notable items}
-- BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
-- HANDOFF #N: {findings that another teammate needs before starting their work}
-- QUESTION: {what I need to know, what I already checked in workspace}
+{COMMUNICATION_PROTOCOL}
 
-Report format — use consistent structure:
-- **Structure**: directory layout, key files, entry points
-- **Dependencies**: external libraries, internal module relationships
-- **Patterns**: coding patterns, conventions, architectural style
-- **Risks**: potential issues, technical debt, areas of concern
-- **Recommendations**: suggested focus areas for deeper investigation
+{REPORT_FORMAT}
 
 Rules:
 - Read and analyze only. Do not modify any files.
