@@ -1,6 +1,6 @@
 # Coordination Patterns Reference
 
-Patterns for the lead to handle common coordination scenarios.
+Patterns for the lead to handle common coordination scenarios during Phase 4.
 
 ## Contents
 
