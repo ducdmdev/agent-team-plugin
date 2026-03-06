@@ -4,7 +4,7 @@
 
 **Goal:** Maximize compliance with official Claude skill authoring best practices — fix token duplication, add examples, standardize terminology, trim SKILL.md, add quick start.
 
-**Architecture:** 6 independent changes applied in dependency order: create new canonical file first, then update consumers, then rename, then trim, then add new content.
+**Architecture:** 8 tasks in dependency order: create canonical file → rename → update consumers → trim+enhance SKILL.md (single pass) → update CLAUDE.md → verify. Amended from original 10-task plan after audit.
 
 **Tech Stack:** Markdown files only. No code changes. All edits are docs/skill content.
 
@@ -23,6 +23,15 @@
 # Communication Protocol
 
 Canonical definition of structured messages used by all teammates. The lead reads this file during Phase 3 and injects the protocol into each teammate's spawn prompt.
+
+## Contents
+
+- [Structured Messages](#structured-messages)
+- [Reviewer/Auditor Findings Format](#reviewerauditor-findings-format)
+- [Tester Results Format](#tester-results-format)
+- [Auditor Compliance Format](#auditor-compliance-format)
+- [Analyst Results Format](#analyst-results-format)
+- [Scout Report Format](#scout-report-format)
 
 ## Structured Messages
 
@@ -146,10 +155,10 @@ No change needed — already says "teammates".
 - Line 1: `# Custom Role Definitions` — no change needed
 - Line 3: change `built-in roles (Leader, Implementer, Reviewer, Researcher, Challenger, Tester, Analyst, Planner, Writer, Strategist, Auditor, Scout)` — no change needed, no "worker" in content
 
-**Step 7: Verify no remaining references to old filename**
+**Step 7: Verify no remaining references to old filename in active files**
 
-Run: `grep -r "worker-roles" --include="*.md" .`
-Expected: 0 results (no remaining references)
+Run: `grep -r "worker-roles" --include="*.md" . --exclude-dir="docs/plans"`
+Expected: 0 results (historical plan files in `docs/plans/` are excluded — they are archival)
 
 **Step 8: Commit**
 
@@ -213,7 +222,7 @@ Also replace role-specific format blocks that are now in `communication-protocol
 {REPORT_FORMAT}
 ```
 
-Templates affected (12 total — protocol block replacement):
+Templates affected (11 total — protocol block replacement):
 1. Researcher (~line 91-96)
 2. Implementer (~line 124-129)
 3. Reviewer (~line 167-172)
@@ -225,7 +234,8 @@ Templates affected (12 total — protocol block replacement):
 9. Strategist (~line 407-412)
 10. Auditor (~line 450-455)
 11. Scout (~line 493-498)
-12. Spawn Example (~line 538-543)
+
+> **Amendment 5**: The Spawn Example (~line 520-556) is intentionally LEFT AS-IS. It shows a concrete expanded prompt (what the teammate actually receives), so the protocol block should remain verbatim there to demonstrate the final injected result.
 
 **Step 2: Add a note at the top of the Available Roles section**
 
@@ -346,17 +356,9 @@ The lead updates workspace files at every significant event. When multiple event
 | Decision made | events.log | Append decision event |
 ```
 
-**Step 2: Expand file-locks.json section**
+**Step 2: ~~Expand file-locks.json section~~ SKIP (Amendment 2)**
 
-The existing section (lines 115-126) already covers the basics. Add after the JSON example:
-
-```markdown
-Populated from the Phase 2 plan's file ownership mapping. Used by the PreToolUse(Write|Edit) hook to enforce ownership.
-
-**When to create**: Only for archetypes with teammates that write project files (Implementation, Hybrid with implementers). **SKIP for read-only archetypes** (Research, Audit, Planning).
-```
-
-Check if this content already exists — if the "When to create" note is already present, skip this addition.
+> **SKIP**: The "When to create" note and "Populated from Phase 2 plan" text already exist in `workspace-templates.md` at lines 117-119. Adding them again would create duplicates.
 
 **Step 3: Expand events.log section**
 
@@ -383,77 +385,18 @@ sections with details previously only in SKILL.md."
 
 ---
 
-### Task 6: Trim SKILL.md — remove moved sections, add references
+### Task 6: SKILL.md single-pass update — trim, add quick start, add examples, add protocol instruction, update references (Amendment 4: merged Tasks 6+7+8)
+
+> **Amendment 4**: Tasks 6, 7, and 8 are merged into a single pass because they all edit SKILL.md. Applying them separately would cause line-number drift between tasks. Read the file once, apply all changes, write once.
 
 **Files:**
 - Modify: `skills/agent-team/SKILL.md`
 
-**Step 1: Replace Setup Failures section (lines 205-213)**
-
-Replace the full table with:
-
-```markdown
-### Setup Failures
-
-See [coordination-patterns.md](../../docs/coordination-patterns.md#setup-failures) for recovery actions on common Phase 3 failures (name collisions, missing feature flag, stale workspaces, spawn failures, context compaction).
-```
-
-**Step 2: Replace file-locks.json section (lines 125-134)**
-
-Replace the full section with:
-
-```markdown
-   #### file-locks.json
-
-   Maps teammates to owned files/directories. Used by PreToolUse hook. See [workspace-templates.md](../../docs/workspace-templates.md#file-locksjson) for format and creation rules.
-```
-
-**Step 3: Replace events.log section (lines 136-145)**
-
-Replace with:
-
-```markdown
-   #### events.log
-
-   Initially empty. Append-only JSON event log. Written by SubagentStart/Stop hooks and the lead during coordination. See [workspace-templates.md](../../docs/workspace-templates.md#eventslog) for format and event types.
-```
-
-**Step 4: Replace Workspace Update Protocol (lines 233-253)**
-
-Replace with:
-
-```markdown
-### Workspace Updates
-
-Update workspace files at every significant event. Batch multiple events into a single edit per file. See [workspace-templates.md](../../docs/workspace-templates.md#workspace-update-protocol) for the full event-to-file mapping table.
-```
-
-**Step 5: Verify line count**
-
-Run: `wc -l skills/agent-team/SKILL.md`
-Expected: ~375 lines (down from 420 — ~45 lines freed)
-
-**Step 6: Commit**
-
-```bash
-git add skills/agent-team/SKILL.md
-git commit -m "refactor: trim SKILL.md by moving sections to docs
-
-Move Setup Failures, file-locks.json details, events.log details,
-and Workspace Update Protocol to their respective doc files.
-Replace with one-line references. ~45 lines freed."
-```
-
----
-
-### Task 7: Add Quick Start and examples to SKILL.md
-
-**Files:**
-- Modify: `skills/agent-team/SKILL.md`
+**Read the file first**, then apply all changes in this order (top-to-bottom through the file):
 
 **Step 1: Add Quick Start section**
 
-Insert after line 15 (the role definition link), before "## Prerequisites":
+Insert after the role definition link ("For your full role definition..."), before "## Prerequisites":
 
 ```markdown
 ## Quick Start
@@ -465,36 +408,35 @@ Insert after line 15 (the role definition link), before "## Prerequisites":
 5. **Synthesize** — completion gate, report, shutdown
 ```
 
-**Step 2: Add Phase 2 example**
+**Step 2: Replace file-locks.json section (Phase 3, ~lines 125-134)**
 
-Insert after the plan template block (after line 92 `Estimated teammates: N`), before the self-check:
+Replace the full section with:
 
-````markdown
-**Example** — "refactor the auth module":
+```markdown
+   #### file-locks.json
 
+   Maps teammates to owned files/directories. Used by PreToolUse hook. See [workspace-templates.md](../../docs/workspace-templates.md#file-locksjson) for format and creation rules.
 ```
-Team plan for: Refactor auth module — extract token validation and session management
-Team type: implementation (auto-detected)
-Complexity: standard
 
-Teammates (3 total):
-- auth-impl-1 (Implementer): Refactor token validation -> owns src/auth/token.ts, src/auth/validate.ts
-- auth-impl-2 (Implementer): Extract session management -> owns src/auth/session.ts, src/middleware/auth.ts
-- auth-reviewer (Reviewer): Review all changes -> read-only
+**Step 3: Replace events.log section (Phase 3, ~lines 136-145)**
 
-Task breakdown:
-1. Refactor token validation logic -> auth-impl-1
-2. Extract session management to dedicated module -> auth-impl-2
-3. Update middleware to use new session API -> auth-impl-2 (blocked by #2)
-4. Review all changes across both scopes -> auth-reviewer (blocked by #1, #2)
+Replace with:
 
-Isolation: shared (default)
-Workspace: .agent-team/0306-refactor-auth/
-Estimated teammates: 3
+```markdown
+   #### events.log
+
+   Initially empty. Append-only JSON event log. Written by SubagentStart/Stop hooks and the lead during coordination. See [workspace-templates.md](../../docs/workspace-templates.md#eventslog) for format and event types.
 ```
-````
 
-**Step 3: Add spawn prompt assembly example**
+**Step 4: Add protocol injection instruction to Phase 3**
+
+In Phase 3, step 5 (spawn teammates), add before "Every spawn prompt MUST include":
+
+```markdown
+   **Protocol injection**: Before building spawn prompts, read [communication-protocol.md](../../docs/communication-protocol.md). Substitute the `{COMMUNICATION_PROTOCOL}` placeholder in each role's spawn template with the Structured Messages block. For roles with format placeholders (`{FINDINGS_FORMAT}`, `{RESULTS_FORMAT}`, `{REPORT_FORMAT}`), substitute the matching section from the same file.
+```
+
+**Step 5: Add spawn prompt assembly example**
 
 Insert in Phase 3 after step 5 (spawn teammates), before step 5b:
 
@@ -532,40 +474,58 @@ Insert in Phase 3 after step 5 (spawn teammates), before step 5b:
    ```
 ````
 
-**Step 4: Verify final line count**
+**Step 6: Replace Setup Failures section (Phase 3, ~lines 205-213)**
 
-Run: `wc -l skills/agent-team/SKILL.md`
-Expected: ~415 lines (375 after trim + ~40 for quick start and examples)
-
-**Step 5: Commit**
-
-```bash
-git add skills/agent-team/SKILL.md
-git commit -m "feat: add quick start section and concrete examples to SKILL.md
-
-Add 5-line phase overview for fast orientation. Add Phase 2 plan
-presentation example and Phase 3 spawn prompt assembly example
-demonstrating the protocol injection pattern."
-```
-
----
-
-### Task 8: Update SKILL.md references and protocol import instruction
-
-**Files:**
-- Modify: `skills/agent-team/SKILL.md`
-
-**Step 1: Add protocol import instruction to Phase 3**
-
-In Phase 3, step 5 (spawn teammates), add before "Every spawn prompt MUST include":
+Replace the full table with:
 
 ```markdown
-   **Protocol injection**: Before building spawn prompts, read [communication-protocol.md](../../docs/communication-protocol.md). Substitute the `{COMMUNICATION_PROTOCOL}` placeholder in each role's spawn template with the Structured Messages block. For roles with format placeholders (`{FINDINGS_FORMAT}`, `{RESULTS_FORMAT}`, `{REPORT_FORMAT}`), substitute the matching section from the same file.
+### Setup Failures
+
+See [coordination-patterns.md](../../docs/coordination-patterns.md#setup-failures) for recovery actions on common Phase 3 failures (name collisions, missing feature flag, stale workspaces, spawn failures, context compaction).
 ```
 
-**Step 2: Update the Reference section at the bottom**
+**Step 7: Replace Workspace Update Protocol (Phase 4, ~lines 233-253)**
 
-Update line 408:
+Replace with:
+
+```markdown
+### Workspace Updates
+
+Update workspace files at every significant event. Batch multiple events into a single edit per file. See [workspace-templates.md](../../docs/workspace-templates.md#workspace-update-protocol) for the full event-to-file mapping table.
+```
+
+**Step 8: Add Phase 2 example**
+
+Insert after the plan template block (after `Estimated teammates: N`), before the self-check:
+
+````markdown
+**Example** — "refactor the auth module":
+
+```
+Team plan for: Refactor auth module — extract token validation and session management
+Team type: implementation (auto-detected)
+Complexity: standard
+
+Teammates (3 total):
+- auth-impl-1 (Implementer): Refactor token validation -> owns src/auth/token.ts, src/auth/validate.ts
+- auth-impl-2 (Implementer): Extract session management -> owns src/auth/session.ts, src/middleware/auth.ts
+- auth-reviewer (Reviewer): Review all changes -> read-only
+
+Task breakdown:
+1. Refactor token validation logic -> auth-impl-1
+2. Extract session management to dedicated module -> auth-impl-2
+3. Update middleware to use new session API -> auth-impl-2 (blocked by #2)
+4. Review all changes across both scopes -> auth-reviewer (blocked by #1, #2)
+
+Isolation: shared (default)
+Workspace: .agent-team/0306-refactor-auth/
+Estimated teammates: 3
+```
+````
+
+**Step 9: Update the Reference section at the bottom**
+
+Update the worker-roles reference (already renamed in Task 2):
 ```markdown
 - [teammate-roles.md](../../docs/teammate-roles.md) — lead + teammate role definitions and spawn templates
 ```
@@ -575,25 +535,32 @@ Add new reference:
 - [communication-protocol.md](../../docs/communication-protocol.md) — structured message formats (canonical source for spawn prompt injection)
 ```
 
-**Step 3: Verify no broken references**
+**Step 10: Verify**
+
+Run: `wc -l skills/agent-team/SKILL.md`
+Expected: ~415 lines
 
 Run: `grep -n "worker-roles\|\.\.\/\.\.\/docs\/.*\.md" skills/agent-team/SKILL.md`
 Expected: All links point to existing files, no "worker-roles" remaining
 
-**Step 4: Commit**
+**Step 11: Commit**
 
 ```bash
 git add skills/agent-team/SKILL.md
-git commit -m "docs: add protocol import instruction and update references
+git commit -m "refactor: trim SKILL.md, add quick start, examples, and protocol injection
 
-Add explicit instruction for lead to read communication-protocol.md
-and inject into spawn prompts. Update Reference section with new
-canonical protocol file."
+Single-pass update:
+- Remove Setup Failures, file-locks details, events.log details,
+  Workspace Update Protocol (moved to docs)
+- Add Quick Start section for fast orientation
+- Add Phase 2 plan example and Phase 3 spawn prompt assembly example
+- Add protocol injection instruction for {COMMUNICATION_PROTOCOL}
+- Update Reference section with communication-protocol.md"
 ```
 
 ---
 
-### Task 9: Update CLAUDE.md file ownership table
+### Task 7: Update CLAUDE.md file ownership table
 
 **Files:**
 - Modify: `CLAUDE.md:34,125`
@@ -620,17 +587,17 @@ git commit -m "docs: update CLAUDE.md for renamed teammate-roles and new protoco
 
 ---
 
-### Task 10: Final verification
+### Task 8: Final verification
 
 **Files:**
 - Read: all modified files
 
-**Step 1: Verify no broken references**
+**Step 1: Verify no broken references in active project files**
 
 ```bash
-grep -r "worker-roles" --include="*.md" .
+grep -r "worker-roles" --include="*.md" . --exclude-dir="docs/plans"
 ```
-Expected: 0 results
+Expected: 0 results (historical plan files in `docs/plans/` are excluded — they are archival and should not be updated)
 
 **Step 2: Verify SKILL.md line count**
 
