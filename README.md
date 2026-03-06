@@ -16,6 +16,8 @@ This plugin adds an **Agent Team** skill to Claude Code that decomposes complex 
 
 ## See It In Action
 
+![Agent Team Demo](demo.gif)
+
 Here's what happens when you say: *"use agent team to refactor the auth module"*
 
 ```
