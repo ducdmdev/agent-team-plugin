@@ -14,6 +14,50 @@ This plugin adds an **Agent Team** skill to Claude Code that decomposes complex 
 - **Hooks** enforce discipline: block premature completion, nudge idle teammates
 - A **persistent workspace** tracks progress, tasks, issues, decisions, and generates a final report
 
+## See It In Action
+
+Here's what happens when you say: *"use agent team to refactor the auth module"*
+
+```
+You > use agent team to refactor the auth module
+
+Phase 1 - Analyze
+  Identified 3 independent streams: token validation, session management, middleware
+  No file overlaps detected
+
+Phase 2 - Plan (you approve before anything starts)
+  Team type: implementation (auto-detected)
+  Proposed team:
+    auth-impl-1 (Implementer) — owns src/auth/token.ts, src/auth/validate.ts
+    auth-impl-2 (Implementer) — owns src/auth/session.ts, src/middleware/auth.ts
+    auth-reviewer (Reviewer)  — reviews all changes
+  Approve? [y/n]
+
+You > y
+
+Phase 3 - Create
+  Created team "0306-refactor-auth"
+  Initialized workspace at .agent-team/0306-refactor-auth/
+  Spawned 3 teammates in parallel
+
+Phase 4 - Coordinate
+  auth-impl-1:  STARTING #1: Refactoring token validation, touching src/auth/token.ts
+  auth-impl-2:  STARTING #2: Extracting session logic to src/auth/session.ts
+  auth-impl-1:  COMPLETED #1: Token validation refactored, 3 files changed
+  auth-impl-2:  COMPLETED #2: Session management extracted, 2 files changed
+  auth-impl-1:  HANDOFF #3: New token interface ready for reviewer
+  auth-reviewer: STARTING #4: Reviewing all changes across both scopes
+  auth-reviewer: COMPLETED #4: 0 high, 2 medium, 1 low issues found
+
+Phase 5 - Synthesize
+  All tasks completed (4/4)
+  Completion gate: PASSED (build, tests, lint, integration)
+  Report: .agent-team/0306-refactor-auth/report.md
+  Team shut down. Total: 6 files changed, 0 open issues.
+```
+
+The workspace persists at `.agent-team/0306-refactor-auth/` with the full audit trail: tasks, issues, decisions, and final report.
+
 ## Prerequisites
 
 | Requirement | Details |
