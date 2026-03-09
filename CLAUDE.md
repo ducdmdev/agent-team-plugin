@@ -10,8 +10,12 @@ A Claude Code plugin that adds an Agent Team skill for orchestrating parallel wo
 .claude-plugin/        Plugin manifest + marketplace registry
 hooks/hooks.json       Plugin-level hooks (use ${CLAUDE_PLUGIN_ROOT} for paths)
 scripts/               Hook scripts (bash, require jq)
-skills/agent-team/     SKILL.md — the main skill prompt (team lead orchestrator)
-docs/                  Reference docs consumed by SKILL.md at runtime
+skills/agent-team/     Hybrid/catch-all orchestrator
+skills/agent-implement/ Implementation team orchestrator
+skills/agent-research/  Research team orchestrator
+skills/agent-audit/     Audit team orchestrator
+skills/agent-plan/      Planning team orchestrator
+docs/                  Shared phases + reference docs consumed by skills at runtime
 ```
 
 ### Key Design Decisions
@@ -30,7 +34,12 @@ docs/                  Reference docs consumed by SKILL.md at runtime
 | `.claude-plugin/marketplace.json` | Marketplace registry | Bump version here too, keep in sync with plugin.json |
 | `hooks/hooks.json` | Hook registration (6 hooks) | Update timeout values, add new hooks, or update hook command paths |
 | `scripts/*.sh` | Hook enforcement logic (7 scripts) | Written in bash (`#!/bin/bash`), degrade gracefully without `jq` |
-| `skills/agent-team/SKILL.md` | Core skill prompt | Most changes go here. Keep Phase 1-5 structure |
+| `skills/agent-team/SKILL.md` | Hybrid/catch-all skill | Archetype detection + hybrid-specific overrides |
+| `skills/agent-implement/SKILL.md` | Implementation skill | Implementation-specific Phase 3/5 |
+| `skills/agent-research/SKILL.md` | Research skill | Research-specific Phase 3/5 |
+| `skills/agent-audit/SKILL.md` | Audit skill | Audit-specific Phase 3/5 |
+| `skills/agent-plan/SKILL.md` | Planning skill | Planning-specific Phase 3/5 |
+| `docs/shared-phases.md` | Shared phase logic | Changes here affect ALL archetype skills |
 | `docs/teammate-roles.md` | Role definitions + spawn templates | Update when adding new roles |
 | `docs/communication-protocol.md` | Structured message formats | Update when changing protocol prefixes or role-specific formats |
 | `docs/coordination-patterns.md` | Conflict resolution, handoffs | Update when adding new coordination patterns |
@@ -127,13 +136,18 @@ Six hooks registered in `hooks/hooks.json`:
 2. Update the Role Selection Guide table
 3. Update README Teammate Roles table
 
-### Adding a New Team Archetype
+### Adding a New Archetype Skill
 
-1. Add the archetype definition to `docs/team-archetypes.md`
-2. Include: trigger patterns, default roles, phase profile table, completion gate checks, report variant
-3. Add the report variant template to `docs/report-format.md`
-4. Update `README.md` Team Types table
-5. Test: trigger the skill with a matching phrase and verify the lead selects the correct archetype
+1. Create a new `skills/agent-{name}/SKILL.md` with frontmatter (name, description, argument-hint, allowed-tools)
+2. Reference `../../docs/shared-phases.md` for shared logic (Phases 1, 2, 4)
+3. Add archetype-specific Phase 3 and Phase 5 overrides
+4. Add the archetype to the detection table in `skills/agent-team/SKILL.md`
+5. Add trigger patterns to `docs/team-archetypes.md`
+6. Add the report variant template to `docs/report-format.md`
+7. Update `tests/structure/test-doc-references.sh` (auto-detected via `skills/*/SKILL.md` glob)
+8. Update `README.md` Archetype-Specific Commands table and Plugin Structure tree
+9. Add row to `CLAUDE.md` File Ownership table
+10. Test: run `bash tests/run-tests.sh`, then trigger the skill with a matching phrase
 
 ### Releasing a New Version
 

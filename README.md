@@ -104,6 +104,16 @@ Trigger the skill with phrases like:
 
 The skill activates when your task has **2+ independent work streams**. If the task is better handled sequentially, the lead will tell you.
 
+### Archetype-Specific Commands
+
+| Command | When to Use | Example |
+|---------|------------|---------|
+| `/agent-implement` | Build, refactor, fix, migrate code | "implement the new auth module in parallel" |
+| `/agent-research` | Investigate, analyze, compare | "research database options with a team" |
+| `/agent-audit` | Review, assess, evaluate | "audit security with parallel reviewers" |
+| `/agent-plan` | Design, architect, produce specs | "design the API with a planning team" |
+| `/agent-team` | Mixed work types or unsure | "research then implement the caching layer" |
+
 ## How It Works
 
 ```
@@ -237,9 +247,18 @@ agent-team-plugin/
 │   ├── setup-worktree.sh            # Worktree creation for isolation mode
 │   └── merge-worktrees.sh           # Worktree merge in Phase 5
 ├── skills/
-│   └── agent-team/
-│       └── SKILL.md             # Main skill (team lead orchestrator)
+│   ├── agent-team/
+│   │   └── SKILL.md             # Hybrid/catch-all orchestrator
+│   ├── agent-implement/
+│   │   └── SKILL.md             # Implementation teams
+│   ├── agent-research/
+│   │   └── SKILL.md             # Research teams
+│   ├── agent-audit/
+│   │   └── SKILL.md             # Audit teams
+│   └── agent-plan/
+│       └── SKILL.md             # Planning teams
 ├── docs/
+│   ├── shared-phases.md           # Shared phase logic for all archetype skills
 │   ├── teammate-roles.md          # Role definitions and spawn templates
 │   ├── coordination-patterns.md # Conflict resolution and handoff patterns
 │   ├── workspace-templates.md   # Workspace file templates for Phase 3
