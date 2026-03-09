@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-03-09
+
+### Added
+- **4 archetype-specific skills** — `/agent-implement`, `/agent-research`, `/agent-audit`, `/agent-plan` each with focused Phase 3/5 overrides and archetype-specific completion gates
+- **Shared phases doc** (`docs/shared-phases.md`) — extracted shared logic (Phases 1, 2, 4, shared steps of 3 and 5) referenced by all archetype skills
+
+### Changed
+- **`/agent-team` slimmed to hybrid catch-all** — 102 lines (down from 443), with archetype auto-detection table that recommends dedicated skills when a clear match exists
+- **`docs/team-archetypes.md` simplified** — 95 lines (down from 157), now a detection reference only (phase profiles moved into each skill)
+- **Test suite extended** — `test-doc-references.sh` loops over all `skills/*/SKILL.md` instead of hardcoded path
+- **README updated** — new Archetype-Specific Commands table and updated plugin structure tree
+- **CLAUDE.md updated** — file ownership table expanded, "Adding a New Archetype Skill" guide added
+
 ## [2.2.1] - 2026-03-06
 
 ### Changed
