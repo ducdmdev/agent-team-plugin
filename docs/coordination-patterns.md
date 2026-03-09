@@ -23,6 +23,7 @@ Patterns for the lead to handle common coordination scenarios during Phase 4.
 - [Adversarial Review Rounds](#adversarial-review-rounds) — multi-round cross-review for critical changes
 - [Quality Gate](#quality-gate) — final validation pass before synthesis
 - [Checkpoint/Rollback](#checkpointrollback) — save and resume long-running tasks
+- [Deadline Escalation](#deadline-escalation) — time-based proactive escalation
 - [Auto-Block on Repeated Failures](#auto-block-on-repeated-failures) — escalation after repeated failures
 - [Direct Handoff](#direct-handoff) — authorized peer-to-peer messaging with audit trail
 
@@ -419,6 +420,44 @@ Save consistent state at natural breakpoints during long-running tasks. Enables 
 ### Key Rule
 
 Checkpoints are lightweight — a one-line CHECKPOINT message, not a full state dump. The workspace files (`tasks.md`, `issues.md`) already track team-level state. Checkpoints track task-level progress within a single teammate's scope.
+
+## Deadline Escalation
+
+Proactive time-based escalation to prevent tasks from exceeding the user's time budget.
+
+### When to Use
+
+- User has an implicit or explicit time constraint
+- A task has been in_progress for an extended period with no PROGRESS or COMPLETED message
+- The team session is approaching context limits
+
+### Protocol
+
+1. **Lead tracks** estimated task duration in `progress.md`:
+   ```
+   **Session started**: {timestamp}
+   ```
+2. **Lead proactively checks** tasks that have been in_progress without updates:
+   ```
+   Status check on task #N — it's been [duration] since your last update.
+   What's your progress? Use PROGRESS or COMPLETED format.
+   If blocked, use BLOCKED so I can log and route it.
+   ```
+3. **Escalation ladder**:
+   - **Nudge** (first check): request status update
+   - **Warn** (second check, ~5 min later): "Task #N is at risk. Need status or BLOCKED report."
+   - **Escalate** (third check): mark task as at-risk in `tasks.md`, consider reassignment or scope reduction
+4. **Scope reduction option**: if task is too large, lead proposes splitting:
+   ```
+   Task #N is taking longer than expected. Options:
+   a) Continue (estimated X more minutes)
+   b) Split: complete [partial scope], defer [remaining scope] as follow-up
+   c) Reassign to [other teammate]
+   ```
+
+### Key Rule
+
+Deadline escalation is proactive, not punitive. The goal is visibility — silent tasks are the biggest risk to team throughput. Combine with the PROGRESS message type for teammates to self-report before escalation triggers.
 
 ## Auto-Block on Repeated Failures
 
