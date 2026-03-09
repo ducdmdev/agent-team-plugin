@@ -1,6 +1,6 @@
 # Team Archetypes Reference
 
-The lead auto-detects the team archetype from the user's request in Phase 1. Each archetype defines default roles, phase profile overrides, and output type. The user can override the auto-detected archetype during Phase 2 plan approval.
+The lead auto-detects the team archetype from the user's request in Phase 1. Each archetype defines default roles and output type. Phase profile overrides, completion gates, and report variants are now in each archetype's dedicated skill.
 
 ## Contents
 
@@ -10,6 +10,7 @@ The lead auto-detects the team archetype from the user's request in Phase 1. Eac
 - [Audit Team](#audit-team) — review, assess, evaluate
 - [Planning Team](#planning-team) — design, architect, propose
 - [Hybrid Team](#hybrid-team) — mixed work types
+- [Strictest Gate Rule](#strictest-gate-rule) — gate composition for Hybrid teams
 
 ## Archetype Detection
 
@@ -35,39 +36,11 @@ The lead matches the user's task description against trigger patterns. If multip
 
 **Default roles**: 1-2 Implementers + Reviewer (standard) or + Reviewer + Tester (complex)
 
-**Phase profile**:
-
-| Phase | Behavior |
-|-------|----------|
-| Phase 1 | Standard analysis and decomposition |
-| Phase 2 | Standard plan presentation |
-| Phase 3 | Full workspace: progress.md, tasks.md, issues.md, file-locks.json, events.log. Branch instructions for implementers |
-| Phase 4 | Full coordination with file ownership enforcement |
-| Phase 5 | **All 8 completion gate checks**. Pre-shutdown commit required. Branch merge if applicable |
-
-**Completion gate**: All 8 checks (#1-#8). See [Strictest Gate Rule](#strictest-gate-rule) for check definitions.
-
-**Report variant**: Standard report (current `report-format.md` template)
-
 ## Research Team
 
 **Purpose**: Investigate, analyze, compare approaches, report findings. No code modifications.
 
 **Default roles**: 2-3 Researchers (different angles/hypotheses) + optional Analyst or Challenger
-
-**Phase profile**:
-
-| Phase | Behavior | Override from default |
-|-------|----------|---------------------|
-| Phase 1 | Standard analysis. Decompose by research angle/question, not by module | Decomposition strategy: by question/hypothesis |
-| Phase 2 | Standard plan. Show `Team type: research (auto-detected)` | Add team type line |
-| Phase 3 | Workspace: progress.md, tasks.md, issues.md, events.log. **SKIP file-locks.json** (all read-only). **SKIP branch instructions** (no code branches) | No file-locks, no branches |
-| Phase 4 | Standard coordination. File ownership hook is N/A (no file-locks.json) | No file ownership enforcement |
-| Phase 5 | **SKIP**: pre-shutdown commit (#3), branch merge (#4). **Completion gate**: only #6 (workspace issues) + #7 (plan completion). **SKIP**: #1-#5, #8 | Reduced gate, no commits |
-
-**Completion gate**: #6 (workspace issues) + #7 (plan completion) only
-
-**Report variant**: Findings report — see [report-format.md](report-format.md#findings-report)
 
 ## Audit Team
 
@@ -75,39 +48,11 @@ The lead matches the user's task description against trigger patterns. If multip
 
 **Default roles**: 2-3 Reviewers or Auditors (different lenses: security, performance, compliance) + optional Challenger
 
-**Phase profile**:
-
-| Phase | Behavior | Override from default |
-|-------|----------|---------------------|
-| Phase 1 | Standard analysis. Decompose by audit lens/checklist area | Decomposition strategy: by audit lens |
-| Phase 2 | Standard plan. Show `Team type: audit (auto-detected)` | Add team type line |
-| Phase 3 | Workspace: progress.md, tasks.md, issues.md, events.log. **SKIP file-locks.json**. **SKIP branch instructions** | No file-locks, no branches |
-| Phase 4 | Standard coordination. File ownership hook is N/A | No file ownership enforcement |
-| Phase 5 | **SKIP**: pre-shutdown commit (#3), branch merge (#4). **Completion gate**: #4 (integration — verify audit covered cross-module concerns) + #5 (security — verify audit covered security aspects) + #6 (workspace issues) + #7 (plan completion). **SKIP**: #1-#3, #8 | Partial gate, no commits |
-
-**Completion gate**: #4 (integration — audit comprehensiveness, not code changes) + #5 (security — audit coverage, not code changes) + #6 (workspace issues) + #7 (plan completion)
-
-**Report variant**: Audit report — see [report-format.md](report-format.md#audit-report)
-
 ## Planning Team
 
 **Purpose**: Produce specs, architecture designs, decision documents, or strategic recommendations.
 
 **Default roles**: 1-2 Planners or Strategists + Researcher + optional Challenger
-
-**Phase profile**:
-
-| Phase | Behavior | Override from default |
-|-------|----------|---------------------|
-| Phase 1 | Standard analysis. Decompose by planning concern (architecture, data model, API design, etc.) | Decomposition strategy: by planning concern |
-| Phase 2 | Standard plan. Show `Team type: planning (auto-detected)` | Add team type line |
-| Phase 3 | Workspace: progress.md, tasks.md, issues.md, events.log. **SKIP file-locks.json** (Planners/Writers write docs to workspace, not project files). **SKIP branch instructions**. If multiple Planners, assign distinct workspace sub-paths (e.g., `{workspace}/planner-1/`) to avoid write conflicts | No file-locks, no branches |
-| Phase 4 | Standard coordination. File ownership hook is N/A | No file ownership enforcement |
-| Phase 5 | **SKIP**: pre-shutdown commit (#3), branch merge (#4). **Completion gate**: only #6 (workspace issues) + #7 (plan completion). **SKIP**: #1-#5, #8 | Reduced gate, no commits |
-
-**Completion gate**: #6 (workspace issues) + #7 (plan completion) only
-
-**Report variant**: Plan report — see [report-format.md](report-format.md#plan-report)
 
 ## Hybrid Team
 
@@ -116,20 +61,6 @@ The lead matches the user's task description against trigger patterns. If multip
 > **Mid-session archetype change**: If the user requests an archetype change after Phase 3 (e.g., "also fix the issues you found" during an audit), treat it as a re-plan: present the updated plan as Hybrid, get user approval, then adjust workspace (add file-locks.json if needed) and spawn additional teammates. See coordination-patterns.md Re-plan on Block pattern.
 
 **Default roles**: Lead composes from the full role catalog based on the combined task types.
-
-**Phase profile**:
-
-| Phase | Behavior | Override from default |
-|-------|----------|---------------------|
-| Phase 1 | Standard analysis. Identify which parts map to which archetype | Standard |
-| Phase 2 | Standard plan. Show `Team type: hybrid (research + implementation)` listing component types | Add team type line with component types |
-| Phase 3 | Full workspace. **file-locks.json**: create if ANY teammate writes project files. **Branch instructions**: for implementers only | Conditional file-locks |
-| Phase 4 | Full coordination | Standard |
-| Phase 5 | Uses the **strictest** gate from component archetypes. If any Implementer present → full 8-check gate. If all read-only → reduced gate | Strictest component gate |
-
-**Completion gate**: Strictest gate from component archetypes
-
-**Report variant**: Standard report. If the Hybrid has no Implementation component (e.g., research + audit), the lead should omit the empty "Files Changed" section and substitute with the appropriate variant section (e.g., "What Was Discovered" or "What Was Audited").
 
 ### Strictest Gate Rule
 
@@ -154,3 +85,11 @@ Intentional design choices documented for future reference:
 
 - **Documentation sprint archetype**: Classified as Hybrid (not Implementation) because Writers produce documentation rather than code — the Hybrid archetype correctly handles conditional file-locks and mixed read/write teams.
 - **Phase 2 team type display**: Uses `[detected-type] (auto-detected)` user-friendly format instead of a literal enum. This makes the override mechanism more intuitive for users.
+
+## See Also
+
+- `/agent-implement` — Implementation archetype skill
+- `/agent-research` — Research archetype skill
+- `/agent-audit` — Audit archetype skill
+- `/agent-plan` — Planning archetype skill
+- `/agent-team` — Hybrid/catch-all orchestrator skill
