@@ -24,6 +24,7 @@ Patterns for the lead to handle common coordination scenarios during Phase 4.
 - [Quality Gate](#quality-gate) — final validation pass before synthesis
 - [Checkpoint/Rollback](#checkpointrollback) — save and resume long-running tasks
 - [Deadline Escalation](#deadline-escalation) — time-based proactive escalation
+- [Circular Dependency Detection](#circular-dependency-detection) — prevent deadlocks in Phase 2
 - [Auto-Block on Repeated Failures](#auto-block-on-repeated-failures) — escalation after repeated failures
 - [Direct Handoff](#direct-handoff) — authorized peer-to-peer messaging with audit trail
 
@@ -458,6 +459,41 @@ Proactive time-based escalation to prevent tasks from exceeding the user's time 
 ### Key Rule
 
 Deadline escalation is proactive, not punitive. The goal is visibility — silent tasks are the biggest risk to team throughput. Combine with the PROGRESS message type for teammates to self-report before escalation triggers.
+
+## Circular Dependency Detection
+
+Validate task dependency graphs before execution to prevent silent deadlocks.
+
+### When to Use
+
+- Phase 2 plan has 4+ tasks with `blocked by` relationships
+- Any time tasks form chains longer than 2 levels deep
+
+### Protocol
+
+1. **During Phase 2**: Before presenting the plan, trace all dependency chains:
+   - For each task with `blocked by`, follow the chain: A blocks B blocks C...
+   - If any chain leads back to a task already visited, there's a cycle
+2. **On cycle detected**: Do NOT present the plan. Instead, restructure:
+   - Option A: Merge the cyclic tasks into one (assign to same teammate)
+   - Option B: Remove the weakest dependency (the one where the blocker could be worked around)
+   - Option C: Split one task to break the cycle (the blocking portion runs first)
+3. **Log**: Record the detected cycle and resolution in `progress.md` Decision Log
+
+### Example
+
+```
+Task #1: Set up database schema
+Task #2: Write API endpoints (blocked by #1)
+Task #3: Write migrations (blocked by #2)
+Task #1 update: schema depends on migration format (blocked by #3)  ← CYCLE
+
+Resolution: Merge #1 and #3 into single task "Database schema + migrations"
+```
+
+### Prevention
+
+The best prevention is Phase 1 decomposition by independent modules, not by sequential steps. If streams need constant handoffs, merge them.
 
 ## Auto-Block on Repeated Failures
 

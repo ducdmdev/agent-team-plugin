@@ -87,6 +87,7 @@ Estimated teammates: N
 **Self-check before proceeding**:
 1. "Is this plan complex? Complexity signals: multi-module/area changes, architectural decisions, risky refactors, multiple implementers with cross-dependencies, security-sensitive changes, new integrations. If yes, does the teammate list include a **dedicated reviewer** AND a **dedicated tester** (separate teammates, not combined)? If no, add them before presenting."
 2. "Have I presented this plan AND received user confirmation?" If no, STOP.
+3. "Do any tasks form circular dependencies? Trace each `blocked by` chain — if task A blocks B blocks C blocks A, that's a cycle. If found, restructure: merge the cyclic tasks or break the cycle by removing one dependency."
 
 Wait for user confirmation before proceeding.
 
