@@ -25,6 +25,7 @@ Patterns for the lead to handle common coordination scenarios during Phase 4.
 - [Checkpoint/Rollback](#checkpointrollback) — save and resume long-running tasks
 - [Deadline Escalation](#deadline-escalation) — time-based proactive escalation
 - [Circular Dependency Detection](#circular-dependency-detection) — prevent deadlocks in Phase 2
+- [Graceful Degradation](#graceful-degradation) — scope reduction under resource pressure
 - [Auto-Block on Repeated Failures](#auto-block-on-repeated-failures) — escalation after repeated failures
 - [Direct Handoff](#direct-handoff) — authorized peer-to-peer messaging with audit trail
 
@@ -494,6 +495,46 @@ Resolution: Merge #1 and #3 into single task "Database schema + migrations"
 ### Prevention
 
 The best prevention is Phase 1 decomposition by independent modules, not by sequential steps. If streams need constant handoffs, merge them.
+
+## Graceful Degradation
+
+Reduce scope rather than stopping when the team hits resource limits or unrecoverable blockers.
+
+### When to Use
+
+- Context window is running low (frequent compaction)
+- Multiple teammates are blocked and remediation isn't viable
+- User's time budget is exceeded but partial delivery has value
+
+### Protocol
+
+1. **Detect degradation trigger**:
+   - 2+ context compactions in short succession
+   - 3+ teammates blocked simultaneously
+   - Lead judges that full scope cannot be completed
+2. **Assess salvageable work**: read `tasks.md` — which tasks are COMPLETED? What partial value exists?
+3. **Present scope reduction to user**:
+   ```
+   Scope reduction needed: [trigger reason]
+
+   Completed work (will be preserved):
+   - [task IDs and summaries]
+
+   Work to defer (will be logged as follow-up):
+   - [task IDs and summaries]
+
+   Approve reduced scope?
+   ```
+4. **If approved**:
+   - Mark deferred tasks as `deferred` in `tasks.md`
+   - Shut down teammates working on deferred tasks
+   - Continue to Phase 5 with completed work only
+   - Include deferred items in report's Follow-up section
+5. **Log**: Record scope reduction decision in `progress.md` Decision Log
+
+### Key Rule
+
+Graceful degradation is a controlled retreat, not a failure. The user gets partial value immediately and a clear list of what remains. This is always better than a team that burns context trying to finish everything and produces nothing.
 
 ## Auto-Block on Repeated Failures
 
