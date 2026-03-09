@@ -209,6 +209,8 @@ When receiving structured messages:
 | BLOCKED | Add row to `issues.md` immediately. Acknowledge the teammate. Route to resolution |
 | HANDOFF | Extract key details, forward to dependent teammate with actionable context. Log in `progress.md` Handoffs |
 | QUESTION | Check if answer is in workspace files. If yes, answer with file reference. If no, investigate |
+| PROGRESS | Note milestone in `tasks.md` Notes column. If percent indicates near-completion, no action needed. If stalled, trigger Deadline Escalation |
+| CHECKPOINT | If `ready_for` lists task IDs, forward checkpoint details to dependent teammate. Log in `progress.md` Handoffs |
 
 #### Plan Approval Handling
 
