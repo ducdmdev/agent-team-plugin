@@ -22,6 +22,7 @@ Patterns for the lead to handle common coordination scenarios during Phase 4.
 - [Re-plan on Block](#re-plan-on-block) — revising the plan when a critical block invalidates it
 - [Adversarial Review Rounds](#adversarial-review-rounds) — multi-round cross-review for critical changes
 - [Quality Gate](#quality-gate) — final validation pass before synthesis
+- [Checkpoint/Rollback](#checkpointrollback) — save and resume long-running tasks
 - [Auto-Block on Repeated Failures](#auto-block-on-repeated-failures) — escalation after repeated failures
 - [Direct Handoff](#direct-handoff) — authorized peer-to-peer messaging with audit trail
 
@@ -381,6 +382,43 @@ Completion criteria: Build exits 0 with no errors.
 ```
 
 Assign to the nearest available teammate (reviewer or tester preferred, implementer if no others are available).
+
+## Checkpoint/Rollback
+
+Save consistent state at natural breakpoints during long-running tasks. Enables recovery from mid-task failures without losing completed work.
+
+### When to Use
+
+- Tasks expected to take >10 minutes
+- Multi-step migrations, large refactors, or batch operations
+- Any task where partial failure is possible and rework is expensive
+
+### Protocol
+
+1. **Lead instructs** in spawn prompt: "For long tasks, send CHECKPOINT messages at natural breakpoints (after each module, after each migration step, etc.)"
+2. **Teammate sends** CHECKPOINT at each breakpoint:
+   ```
+   CHECKPOINT #N: {what was completed}, artifacts={file references}, ready_for=[task IDs]
+   ```
+3. **Lead logs** checkpoint in `progress.md` Decision Log: "Checkpoint: task #N at [milestone]"
+4. **On failure**: Lead messages teammate with last checkpoint context:
+   ```
+   Resume from checkpoint. Last known state:
+   - Completed: {checkpoint description}
+   - Artifacts: {file references}
+   - Remaining: {what's left to do}
+   ```
+5. **If teammate is unrecoverable**: spawn replacement with checkpoint context in prompt
+
+### Workspace Integration
+
+- Checkpoints are logged in `progress.md` Decision Log (not a separate file)
+- Checkpoint artifacts live in the workspace directory: `.agent-team/{team}/checkpoint-{task-id}.md`
+- On task completion, checkpoint artifacts can be cleaned up or kept for audit
+
+### Key Rule
+
+Checkpoints are lightweight — a one-line CHECKPOINT message, not a full state dump. The workspace files (`tasks.md`, `issues.md`) already track team-level state. Checkpoints track task-level progress within a single teammate's scope.
 
 ## Auto-Block on Repeated Failures
 
