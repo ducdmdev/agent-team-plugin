@@ -205,6 +205,25 @@ When Teammate A produces output that Teammate B needs:
 
 Do NOT have teammates message each other directly for handoffs unless they need a back-and-forth discussion. The lead summarizing and forwarding keeps coordination clean and maintains the workspace audit trail.
 
+### Warm vs Cold Handoff
+
+- **Warm handoff**: Lead forwards full context — what was done, why, key decisions, and specific next steps for the receiving teammate. Use when the handoff requires understanding of reasoning.
+  ```
+  A finished task #3 (auth token refactor). Key changes:
+  - Moved token validation to src/auth/validate.ts
+  - New interface: TokenResult { valid: boolean, claims: Claims }
+  - Decision: used JWT over opaque tokens (see progress.md Decision Log)
+  You can now proceed with task #5 using the new TokenResult interface.
+  ```
+
+- **Cold handoff**: Lead forwards minimal context — just file paths and a pointer to workspace. Use when the receiving teammate only needs to know what files to read.
+  ```
+  A finished task #3. Output files: src/auth/validate.ts, src/auth/types.ts.
+  Check workspace tasks.md for full details. Proceed with task #5.
+  ```
+
+**Default to warm handoffs** — the extra context costs little and prevents follow-up QUESTION messages. Use cold handoffs only when the downstream task is clearly independent (e.g., reviewer just needs to read files).
+
 ## Teammate Not Responding
 
 If a teammate hasn't sent an update after an extended period:
