@@ -5,6 +5,7 @@ Canonical definition of structured messages used by all teammates. The lead read
 ## Contents
 
 - [Structured Messages](#structured-messages)
+- [Extended Messages (Optional)](#extended-messages-optional)
 - [Reviewer/Auditor Findings Format](#reviewerauditor-findings-format)
 - [Tester Results Format](#tester-results-format)
 - [Auditor Compliance Format](#auditor-compliance-format)
@@ -22,6 +23,40 @@ BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what
 HANDOFF #N: {what I produced that another teammate needs, key details}
 QUESTION: {what I need to know, what I already checked in workspace}
 ```
+
+## Extended Messages (Optional)
+
+These message types are optional enhancements. Teammates use them when the lead requests granular updates or when tasks are long-running.
+
+### Progress Reporting
+
+For long-running tasks (>5 minutes expected), teammates report intermediate progress:
+
+```
+PROGRESS #N: milestone={description}, percent={0-100}, eta={minutes or omitted}
+```
+
+Example:
+```
+PROGRESS #5: milestone="security scan phase 2 of 4", percent=50, eta=3
+```
+
+**Lead processing**: Log milestone in `tasks.md` Notes column. No workspace file update needed unless the milestone unblocks another task.
+
+### Checkpoint (Partial Completion)
+
+When a task produces intermediate artifacts that downstream tasks can consume early:
+
+```
+CHECKPOINT #N: {what was completed}, artifacts={file references}, ready_for=[task IDs]
+```
+
+Example:
+```
+CHECKPOINT #5: completed 50/100 tests, early findings: 3 failures in auth module, artifacts=.agent-team/{team}/test-results-partial.md, ready_for=[6]
+```
+
+**Lead processing**: If `ready_for` lists task IDs, message the dependent teammate with the checkpoint details. Log in `progress.md` Handoffs section.
 
 ## Reviewer/Auditor Findings Format
 
