@@ -28,6 +28,7 @@ Patterns for the lead to handle common coordination scenarios during Phase 4.
 - [Graceful Degradation](#graceful-degradation) — scope reduction under resource pressure
 - [Auto-Block on Repeated Failures](#auto-block-on-repeated-failures) — escalation after repeated failures
 - [Direct Handoff](#direct-handoff) — authorized peer-to-peer messaging with audit trail
+- [Anti-Pattern Catalog](#anti-pattern-catalog) — known coordination pitfalls to avoid
 
 ## Communication Protocol
 
@@ -606,3 +607,27 @@ For pre-approved information transfers between specific teammates, bypassing the
 ### Key Rule
 
 The audit trail MUST be maintained. Direct handoffs save time but must still be logged via the lead's workspace updates.
+
+## Anti-Pattern Catalog
+
+Known coordination anti-patterns to avoid. These emerge from research into multi-agent systems (CrewAI, AutoGen, LangGraph, MetaGPT) and distributed systems theory.
+
+### Critical (Prevent by Design)
+
+**Circular Wait Deadlock**: Tasks A→B→C→A where each blocks the next. Prevention: validate dependency DAG in Phase 2 (see [Circular Dependency Detection](#circular-dependency-detection)).
+
+**Race Condition on Shared State**: Two teammates simultaneously edit the same file; last write wins. Prevention: 1:1 file ownership mapping in Phase 2 + PreToolUse hook enforcement.
+
+**Context Overflow Cascade**: Workspace grows unbounded; teammates can't read full context; compaction fires repeatedly. Prevention: batch workspace updates, keep workspace files concise, use [Graceful Degradation](#graceful-degradation) when compaction frequency increases.
+
+**Infinite Re-Debate Loop**: Two teammates keep revisiting a completed decision. Prevention: once a task is COMPLETED, no further work on it unless explicitly reassigned by the lead. Log decisions in `progress.md` Decision Log as the authoritative record.
+
+### Warning (Monitor and Mitigate)
+
+**Silent Failure**: Teammate completes but sends no message — task appears blocked but is actually done. Mitigation: First Contact Verification + proactive check-ins. If idle 2+ cycles without any message, investigate.
+
+**Scope Explosion**: Team grows beyond lead's effective span of control (>6 agents). Mitigation: enforce team size limits in Phase 3; for >6, use hierarchical sub-leads or phased execution.
+
+**Single Point of Failure**: All work depends on one teammate; if they fail, the whole team stalls. Mitigation: avoid assigning >50% of tasks to any single teammate. For critical paths, ensure another teammate can take over.
+
+**Byzantine Output**: Teammate reports task complete but output is incorrect or hallucinated. Mitigation: Adversarial Review Rounds for critical tasks; verify file changes actually exist before marking tasks complete (TaskCompleted hook already does this for implementers).
