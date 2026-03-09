@@ -50,6 +50,7 @@ docs/                  Shared phases + reference docs consumed by skills at runt
 | `CHANGELOG.md` | Version history | Add entry for each release |
 | `README.md` | User-facing documentation | Keep in sync with feature changes |
 | `tests/` | Hook and structure tests | `hooks/` for hook tests, `structure/` for plugin validation |
+| `.agent-team/0309-protocol-research/` | Research findings | Reference only — do not modify. Contains 4 reports on protocol, patterns, resilience, and scaling |
 
 ## Conventions
 
