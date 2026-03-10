@@ -22,8 +22,13 @@ Patterns for the lead to handle common coordination scenarios during Phase 4.
 - [Re-plan on Block](#re-plan-on-block) — revising the plan when a critical block invalidates it
 - [Adversarial Review Rounds](#adversarial-review-rounds) — multi-round cross-review for critical changes
 - [Quality Gate](#quality-gate) — final validation pass before synthesis
+- [Checkpoint/Rollback](#checkpointrollback) — save and resume long-running tasks
+- [Deadline Escalation](#deadline-escalation) — time-based proactive escalation
+- [Circular Dependency Detection](#circular-dependency-detection) — prevent deadlocks in Phase 2
+- [Graceful Degradation](#graceful-degradation) — scope reduction under resource pressure
 - [Auto-Block on Repeated Failures](#auto-block-on-repeated-failures) — escalation after repeated failures
 - [Direct Handoff](#direct-handoff) — authorized peer-to-peer messaging with audit trail
+- [Anti-Pattern Catalog](#anti-pattern-catalog) — known coordination pitfalls to avoid
 
 ## Communication Protocol
 
@@ -200,6 +205,25 @@ When Teammate A produces output that Teammate B needs:
 4. **Lead logs** the handoff in `progress.md` Handoffs section
 
 Do NOT have teammates message each other directly for handoffs unless they need a back-and-forth discussion. The lead summarizing and forwarding keeps coordination clean and maintains the workspace audit trail.
+
+### Warm vs Cold Handoff
+
+- **Warm handoff**: Lead forwards full context — what was done, why, key decisions, and specific next steps for the receiving teammate. Use when the handoff requires understanding of reasoning.
+  ```
+  A finished task #3 (auth token refactor). Key changes:
+  - Moved token validation to src/auth/validate.ts
+  - New interface: TokenResult { valid: boolean, claims: Claims }
+  - Decision: used JWT over opaque tokens (see progress.md Decision Log)
+  You can now proceed with task #5 using the new TokenResult interface.
+  ```
+
+- **Cold handoff**: Lead forwards minimal context — just file paths and a pointer to workspace. Use when the receiving teammate only needs to know what files to read.
+  ```
+  A finished task #3. Output files: src/auth/validate.ts, src/auth/types.ts.
+  Check workspace tasks.md for full details. Proceed with task #5.
+  ```
+
+**Default to warm handoffs** — the extra context costs little and prevents follow-up QUESTION messages. Use cold handoffs only when the downstream task is clearly independent (e.g., reviewer just needs to read files).
 
 ## Teammate Not Responding
 
@@ -382,6 +406,156 @@ Completion criteria: Build exits 0 with no errors.
 
 Assign to the nearest available teammate (reviewer or tester preferred, implementer if no others are available).
 
+## Checkpoint/Rollback
+
+Save consistent state at natural breakpoints during long-running tasks. Enables recovery from mid-task failures without losing completed work.
+
+### When to Use
+
+- Tasks expected to take >10 minutes
+- Multi-step migrations, large refactors, or batch operations
+- Any task where partial failure is possible and rework is expensive
+
+### Protocol
+
+1. **Lead instructs** in spawn prompt: "For long tasks, send CHECKPOINT messages at natural breakpoints (after each module, after each migration step, etc.)"
+2. **Teammate sends** CHECKPOINT at each breakpoint:
+   ```
+   CHECKPOINT #N: {what was completed}, artifacts={file references}, ready_for=[task IDs]
+   ```
+3. **Lead logs** checkpoint in `progress.md` Decision Log: "Checkpoint: task #N at [milestone]"
+4. **On failure**: Lead messages teammate with last checkpoint context:
+   ```
+   Resume from checkpoint. Last known state:
+   - Completed: {checkpoint description}
+   - Artifacts: {file references}
+   - Remaining: {what's left to do}
+   ```
+5. **If teammate is unrecoverable**: spawn replacement with checkpoint context in prompt
+
+### Workspace Integration
+
+- Checkpoints are logged in `progress.md` Decision Log (not a separate file)
+- Checkpoint artifacts live in the workspace directory: `.agent-team/{team}/checkpoint-{task-id}.md`
+- On task completion, checkpoint artifacts can be cleaned up or kept for audit
+
+### Key Rule
+
+Checkpoints are lightweight — a one-line CHECKPOINT message, not a full state dump. The workspace files (`tasks.md`, `issues.md`) already track team-level state. Checkpoints track task-level progress within a single teammate's scope.
+
+## Deadline Escalation
+
+Proactive time-based escalation to prevent tasks from exceeding the user's time budget.
+
+### When to Use
+
+- User has an implicit or explicit time constraint
+- A task has been in_progress for an extended period with no PROGRESS or COMPLETED message
+- The team session is approaching context limits
+
+### Protocol
+
+1. **Lead tracks** estimated task duration in `progress.md`:
+   ```
+   **Session started**: {timestamp}
+   ```
+2. **Lead proactively checks** tasks that have been in_progress without updates:
+   ```
+   Status check on task #N — it's been [duration] since your last update.
+   What's your progress? Use PROGRESS or COMPLETED format.
+   If blocked, use BLOCKED so I can log and route it.
+   ```
+3. **Escalation ladder**:
+   - **Nudge** (first check): request status update
+   - **Warn** (second check, ~5 min later): "Task #N is at risk. Need status or BLOCKED report."
+   - **Escalate** (third check): mark task as at-risk in `tasks.md`, consider reassignment or scope reduction
+4. **Scope reduction option**: if task is too large, lead proposes splitting:
+   ```
+   Task #N is taking longer than expected. Options:
+   a) Continue (estimated X more minutes)
+   b) Split: complete [partial scope], defer [remaining scope] as follow-up
+   c) Reassign to [other teammate]
+   ```
+
+### Key Rule
+
+Deadline escalation is proactive, not punitive. The goal is visibility — silent tasks are the biggest risk to team throughput. Combine with the PROGRESS message type for teammates to self-report before escalation triggers.
+
+## Circular Dependency Detection
+
+Validate task dependency graphs before execution to prevent silent deadlocks.
+
+### When to Use
+
+- Phase 2 plan has 4+ tasks with `blocked by` relationships
+- Any time tasks form chains longer than 2 levels deep
+
+### Protocol
+
+1. **During Phase 2**: Before presenting the plan, trace all dependency chains:
+   - For each task with `blocked by`, follow the chain: A blocks B blocks C...
+   - If any chain leads back to a task already visited, there's a cycle
+2. **On cycle detected**: Do NOT present the plan. Instead, restructure:
+   - Option A: Merge the cyclic tasks into one (assign to same teammate)
+   - Option B: Remove the weakest dependency (the one where the blocker could be worked around)
+   - Option C: Split one task to break the cycle (the blocking portion runs first)
+3. **Log**: Record the detected cycle and resolution in `progress.md` Decision Log
+
+### Example
+
+```
+Task #1: Set up database schema
+Task #2: Write API endpoints (blocked by #1)
+Task #3: Write migrations (blocked by #2)
+Task #1 update: schema depends on migration format (blocked by #3)  ← CYCLE
+
+Resolution: Merge #1 and #3 into single task "Database schema + migrations"
+```
+
+### Prevention
+
+The best prevention is Phase 1 decomposition by independent modules, not by sequential steps. If streams need constant handoffs, merge them.
+
+## Graceful Degradation
+
+Reduce scope rather than stopping when the team hits resource limits or unrecoverable blockers.
+
+### When to Use
+
+- Context window is running low (frequent compaction)
+- Multiple teammates are blocked and remediation isn't viable
+- User's time budget is exceeded but partial delivery has value
+
+### Protocol
+
+1. **Detect degradation trigger**:
+   - 2+ context compactions in short succession
+   - 3+ teammates blocked simultaneously
+   - Lead judges that full scope cannot be completed
+2. **Assess salvageable work**: read `tasks.md` — which tasks are COMPLETED? What partial value exists?
+3. **Present scope reduction to user**:
+   ```
+   Scope reduction needed: [trigger reason]
+
+   Completed work (will be preserved):
+   - [task IDs and summaries]
+
+   Work to defer (will be logged as follow-up):
+   - [task IDs and summaries]
+
+   Approve reduced scope?
+   ```
+4. **If approved**:
+   - Mark deferred tasks as `deferred` in `tasks.md`
+   - Shut down teammates working on deferred tasks
+   - Continue to Phase 5 with completed work only
+   - Include deferred items in report's Follow-up section
+5. **Log**: Record scope reduction decision in `progress.md` Decision Log
+
+### Key Rule
+
+Graceful degradation is a controlled retreat, not a failure. The user gets partial value immediately and a clear list of what remains. This is always better than a team that burns context trying to finish everything and produces nothing.
+
 ## Auto-Block on Repeated Failures
 
 Prevents teammates from spinning on the same error. Escalates automatically after repeated failures.
@@ -433,3 +607,27 @@ For pre-approved information transfers between specific teammates, bypassing the
 ### Key Rule
 
 The audit trail MUST be maintained. Direct handoffs save time but must still be logged via the lead's workspace updates.
+
+## Anti-Pattern Catalog
+
+Known coordination anti-patterns to avoid. These emerge from research into multi-agent systems (CrewAI, AutoGen, LangGraph, MetaGPT) and distributed systems theory.
+
+### Critical (Prevent by Design)
+
+**Circular Wait Deadlock**: Tasks A→B→C→A where each blocks the next. Prevention: validate dependency DAG in Phase 2 (see [Circular Dependency Detection](#circular-dependency-detection)).
+
+**Race Condition on Shared State**: Two teammates simultaneously edit the same file; last write wins. Prevention: 1:1 file ownership mapping in Phase 2 + PreToolUse hook enforcement.
+
+**Context Overflow Cascade**: Workspace grows unbounded; teammates can't read full context; compaction fires repeatedly. Prevention: batch workspace updates, keep workspace files concise, use [Graceful Degradation](#graceful-degradation) when compaction frequency increases.
+
+**Infinite Re-Debate Loop**: Two teammates keep revisiting a completed decision. Prevention: once a task is COMPLETED, no further work on it unless explicitly reassigned by the lead. Log decisions in `progress.md` Decision Log as the authoritative record.
+
+### Warning (Monitor and Mitigate)
+
+**Silent Failure**: Teammate completes but sends no message — task appears blocked but is actually done. Mitigation: First Contact Verification + proactive check-ins. If idle 2+ cycles without any message, investigate.
+
+**Scope Explosion**: Team grows beyond lead's effective span of control (>6 agents). Mitigation: enforce team size limits in Phase 3; for >6, use hierarchical sub-leads or phased execution.
+
+**Single Point of Failure**: All work depends on one teammate; if they fail, the whole team stalls. Mitigation: avoid assigning >50% of tasks to any single teammate. For critical paths, ensure another teammate can take over.
+
+**Byzantine Output**: Teammate reports task complete but output is incorrect or hallucinated. Mitigation: Adversarial Review Rounds for critical tasks; verify file changes actually exist before marking tasks complete (TaskCompleted hook already does this for implementers).

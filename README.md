@@ -173,6 +173,13 @@ HANDOFF #N:    what I produced that another teammate needs
 QUESTION:      what I need to know
 ```
 
+Optional extended messages for long-running tasks:
+
+```
+PROGRESS #N:   milestone={desc}, percent={0-100}, eta={minutes}
+CHECKPOINT #N: intermediate results, artifacts, ready_for=[task IDs]
+```
+
 ## Hooks
 
 Five hooks enforce team discipline automatically:

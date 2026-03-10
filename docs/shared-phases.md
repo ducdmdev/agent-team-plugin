@@ -87,6 +87,7 @@ Estimated teammates: N
 **Self-check before proceeding**:
 1. "Is this plan complex? Complexity signals: multi-module/area changes, architectural decisions, risky refactors, multiple implementers with cross-dependencies, security-sensitive changes, new integrations. If yes, does the teammate list include a **dedicated reviewer** AND a **dedicated tester** (separate teammates, not combined)? If no, add them before presenting."
 2. "Have I presented this plan AND received user confirmation?" If no, STOP.
+3. "Do any tasks form circular dependencies? Trace each `blocked by` chain — if task A blocks B blocks C blocks A, that's a cycle. If found, restructure: merge the cyclic tasks or break the cycle by removing one dependency."
 
 Wait for user confirmation before proceeding.
 
@@ -208,6 +209,8 @@ When receiving structured messages:
 | BLOCKED | Add row to `issues.md` immediately. Acknowledge the teammate. Route to resolution |
 | HANDOFF | Extract key details, forward to dependent teammate with actionable context. Log in `progress.md` Handoffs |
 | QUESTION | Check if answer is in workspace files. If yes, answer with file reference. If no, investigate |
+| PROGRESS | Note milestone in `tasks.md` Notes column. If percent indicates near-completion, no action needed. If stalled, trigger Deadline Escalation |
+| CHECKPOINT | If `ready_for` lists task IDs, forward checkpoint details to dependent teammate. Log in `progress.md` Handoffs |
 
 #### Plan Approval Handling
 

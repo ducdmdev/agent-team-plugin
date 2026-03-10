@@ -86,6 +86,50 @@ Intentional design choices documented for future reference:
 - **Documentation sprint archetype**: Classified as Hybrid (not Implementation) because Writers produce documentation rather than code — the Hybrid archetype correctly handles conditional file-locks and mixed read/write teams.
 - **Phase 2 team type display**: Uses `[detected-type] (auto-detected)` user-friendly format instead of a literal enum. This makes the override mechanism more intuitive for users.
 
+## Scaling Patterns
+
+When team size exceeds the default 4-6 limit, use these patterns. They are ordered by complexity — try simpler patterns first.
+
+### Read-Only Extension (5-6 agents)
+
+Add 1-2 read-only teammates (Researchers, Reviewers with `subagent_type: "Explore"`) to a standard 4-agent team. Zero file conflict risk, minimal coordination overhead.
+
+**When to use**: Need parallel investigation alongside implementation.
+
+**Example Phase 2 plan**:
+```
+Teammates (6 total):
+⚠ Team size check: 6 agents (4 core + 2 read-only researchers)
+- impl-1 (Implementer): backend auth refactor -> owns src/auth/
+- impl-2 (Implementer): frontend auth UI -> owns src/components/auth/
+- reviewer (Reviewer): code quality review -> read-only
+- tester (Tester): verify auth flows -> read-only
+- perf-analyst (Researcher): performance impact analysis -> read-only (Explore)
+- sec-researcher (Researcher): security implications -> read-only (Explore)
+```
+
+### Phased Execution (12-16+ agents over time)
+
+Break large projects into sequential team waves. Each phase is an independent team (4-6 agents). Workspace carries forward between phases.
+
+**When to use**: Clear sequential stages (research → design → implement → test).
+
+**Protocol**:
+1. Run Phase 1 team (e.g., 3 researchers), collect findings
+2. Present findings to user, get approval for Phase 2
+3. TeamDelete Phase 1, create Phase 2 team (e.g., 4 implementers) reusing same workspace
+4. Repeat for Phase 3 (verification)
+
+**Key constraint**: Each phase waits for the previous to complete. High wall-clock time but low concurrent token cost.
+
+### Sub-Agent Specialization (within 4-6 agents)
+
+Senior implementers spawn subagents for independent subtasks within their scope. Multiplies throughput without multiplying team coordination.
+
+**When to use**: A single teammate's task is large enough to parallelize internally.
+
+**Already supported**: See [teammate-roles.md Nested Task Decomposition](teammate-roles.md#nested-task-decomposition-senior-implementers). One level of nesting max.
+
 ## See Also
 
 - `/agent-implement` — Implementation archetype skill
