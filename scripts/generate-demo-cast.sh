@@ -49,6 +49,7 @@ BLU="\\u001b[34m"
 YLW="\\u001b[33m"
 CYN="\\u001b[36m"
 MAG="\\u001b[35m"
+RED="\\u001b[31m"
 
 # === Demo ===
 
@@ -70,7 +71,7 @@ pause 120
 
 # Phase 1
 nl
-emit 30 "${BLU}${B}Phase 1 - Analyze${R}"
+emit 30 "${BLU}${B}━━ Phase 1 — Analyze ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${R}"
 nl
 pause 50
 emit 30 "${D}  Scanning project structure...${R}"
@@ -88,32 +89,59 @@ pause 20
 emit 10 "    ${GRN}3.${R} Middleware layer     ${D}(src/middleware/auth.ts)${R}"
 nl
 pause 30
-emit 20 "  ${GRN}No file overlaps detected${R}"
+emit 20 "  File ownership mapped — ${GRN}no overlaps${R}"
+nl
+emit 20 "  Integration point: token interface shared between stream 1 and 3"
 nl
 pause 100
 
 # Phase 2
 nl
-emit 30 "${BLU}${B}Phase 2 - Plan${R}"
+emit 30 "${BLU}${B}━━ Phase 2 — Plan (you approve before anything starts) ━━━━━━━━━━${R}"
 nl
 pause 50
+emit 20 "  Team plan for: refactor auth module"
+nl
 emit 20 "  Team type: ${CYN}implementation${R} (auto-detected)"
 nl
+emit 20 "  Complexity: standard"
+nl
 pause 30
-emit 20 "  Proposed team:"
+nl
+emit 20 "  Teammates (3 total):"
+nl
+emit 15 "  ${D}⚠ Team size check: 3 agents (within default max of 4)${R}"
 nl
 pause 20
-emit 15 "    ${MAG}auth-impl-1${R}  (Implementer) ${D}owns src/auth/token.ts, src/auth/validate.ts${R}"
+emit 15 "    ${MAG}auth-impl-1${R}  (Implementer) ${D}token validation + middleware -> owns src/auth/token.ts, src/auth/validate.ts${R}"
 nl
-pause 20
-emit 15 "    ${MAG}auth-impl-2${R}  (Implementer) ${D}owns src/auth/session.ts, src/middleware/auth.ts${R}"
+pause 15
+emit 15 "    ${MAG}auth-impl-2${R}  (Implementer) ${D}session management -> owns src/auth/session.ts, src/middleware/auth.ts${R}"
 nl
-pause 20
-emit 15 "    ${MAG}auth-review${R}  (Reviewer)     ${D}reviews all changes${R}"
+pause 15
+emit 15 "    ${MAG}auth-review${R}  (Reviewer)     ${D}validate all changes -> read-only${R}"
+nl
+pause 30
+nl
+emit 20 "  Task breakdown:"
+nl
+emit 15 "    1. Refactor token validation logic        -> auth-impl-1"
+nl
+emit 15 "    2. Extract session management             -> auth-impl-2"
+nl
+emit 15 "    3. Update middleware (new interfaces)      -> auth-impl-1 ${D}(blocked by #2)${R}"
+nl
+emit 15 "    4. Review all changes                     -> auth-review ${D}(blocked by #1, #3)${R}"
+nl
+pause 30
+nl
+emit 20 "  Isolation: shared (default)"
+nl
+emit 20 "  Workspace: .agent-team/0306-refactor-auth/"
 nl
 pause 50
 nl
-emit 30 "  ${YLW}Approve this plan? [y/n]${R} "
+emit 30 "  ${YLW}Approve? ${R}"
 pause 100
 type_chars "y" 10
 nl
@@ -121,65 +149,97 @@ pause 80
 
 # Phase 3
 nl
-emit 30 "${BLU}${B}Phase 3 - Create${R}"
+emit 30 "${BLU}${B}━━ Phase 3 — Create ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${R}"
 nl
 pause 50
 emit 20 "  ${GRN}Created${R} team \\\"0306-refactor-auth\\\""
 nl
-pause 30
+pause 20
 emit 20 "  ${GRN}Initialized${R} workspace at .agent-team/0306-refactor-auth/"
 nl
-pause 30
-emit 20 "  ${GRN}Spawned${R} 3 teammates in parallel"
+emit 15 "    ${D}├── progress.md, tasks.md, issues.md${R}"
+nl
+emit 15 "    ${D}└── file-locks.json (ownership enforcement)${R}"
+nl
+pause 20
+emit 20 "  ${GRN}Created${R} 4 tasks with dependencies"
+nl
+emit 20 "  ${GRN}Spawning${R} 3 teammates in parallel..."
 nl
 pause 100
 
 # Phase 4
 nl
-emit 30 "${BLU}${B}Phase 4 - Coordinate${R}"
+emit 30 "${BLU}${B}━━ Phase 4 — Coordinate ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${R}"
 nl
 pause 80
-emit 30 "  ${MAG}auth-impl-1${R}  ${CYN}STARTING #1${R}: Refactoring token validation logic"
+emit 30 "  ${MAG}auth-impl-1${R}  ${CYN}STARTING #1${R}: Refactoring token validation, touching src/auth/token.ts"
 nl
 pause 40
-emit 30 "  ${MAG}auth-impl-2${R}  ${CYN}STARTING #2${R}: Extracting session management"
+emit 30 "  ${MAG}auth-impl-2${R}  ${CYN}STARTING #2${R}: Extracting session logic to src/auth/session.ts"
 nl
 pause 150
 emit 30 "  ${MAG}auth-impl-1${R}  ${GRN}COMPLETED #1${R}: Token validation refactored, 3 files changed"
 nl
 pause 60
-emit 30 "  ${MAG}auth-impl-1${R}  ${YLW}HANDOFF #3${R}: New token interface ready for reviewer"
+emit 30 "  ${MAG}auth-impl-2${R}  ${RED}BLOCKED #2${R}: severity=medium, need token interface shape, impact=#3 delayed"
+nl
+pause 40
+emit 30 "  ${D}Lead:${R}         Warm handoff — forwarding token interface from impl-1 to impl-2"
 nl
 pause 80
 emit 30 "  ${MAG}auth-impl-2${R}  ${GRN}COMPLETED #2${R}: Session management extracted, 2 files changed"
 nl
+pause 50
+emit 30 "  ${MAG}auth-impl-1${R}  ${CYN}STARTING #3${R}: Updating middleware to use new interfaces"
+nl
+pause 100
+emit 30 "  ${MAG}auth-impl-1${R}  ${GRN}COMPLETED #3${R}: Middleware updated, 1 file changed"
+nl
+pause 40
+emit 30 "  ${MAG}auth-impl-1${R}  ${YLW}HANDOFF #3${R}: New token interface + middleware ready for review"
+nl
 pause 60
-emit 30 "  ${MAG}auth-review${R}  ${CYN}STARTING #4${R}: Reviewing all changes"
+emit 30 "  ${MAG}auth-review${R}  ${CYN}STARTING #4${R}: Reviewing all changes across both scopes"
 nl
 pause 150
-emit 30 "  ${MAG}auth-review${R}  ${GRN}COMPLETED #4${R}: 0 high, 2 medium, 1 low issues found"
+emit 30 "  ${MAG}auth-review${R}  ${GRN}COMPLETED #4${R}: 5 issues: 0 high, 3 medium, 2 low"
 nl
 pause 100
 
 # Phase 5
 nl
-emit 30 "${BLU}${B}Phase 5 - Synthesize${R}"
+emit 30 "${BLU}${B}━━ Phase 5 — Synthesize ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${R}"
 nl
 pause 50
-emit 20 "  Tasks: ${GRN}4/4 completed${R}"
+emit 20 "  Pre-shutdown commit:"
 nl
-pause 30
-emit 20 "  Completion gate: ${GRN}PASSED${R} (build, tests, lint, integration)"
+emit 15 "    ${MAG}auth-impl-1${R}: committed ${D}(abc1234)${R} — 3 files"
 nl
-pause 30
-emit 20 "  Issues: 0 open, 3 resolved"
+emit 15 "    ${MAG}auth-impl-2${R}: committed ${D}(def5678)${R} — 2 files"
 nl
-pause 30
+pause 40
+nl
+emit 20 "  Completion gate (8/8 passed):"
+nl
+emit 10 "    ${GRN}✓${R} Uncommitted changes    ${GRN}✓${R} Build & tests"
+nl
+emit 10 "    ${GRN}✓${R} Lint/format             ${GRN}✓${R} Integration"
+nl
+emit 10 "    ${GRN}✓${R} Security scan           ${GRN}✓${R} Workspace issues"
+nl
+emit 10 "    ${GRN}✓${R} Plan completion         ${GRN}✓${R} Documentation sync"
+nl
+pause 40
+nl
 emit 20 "  Report: ${D}.agent-team/0306-refactor-auth/report.md${R}"
 nl
+pause 30
+emit 20 "  Team shut down (parallel). Cleanup complete."
+nl
 pause 50
 nl
-emit 30 "  ${GRN}${B}Done.${R} 6 files changed, 0 open issues."
+emit 30 "  ${GRN}${B}Done.${R} 6 files changed, 4/4 tasks, 0 open issues."
 nl
 pause 300
 
@@ -187,4 +247,4 @@ echo ""
 echo "Generated $CAST_FILE ($(wc -c < "$CAST_FILE" | tr -d ' ') bytes)"
 echo ""
 echo "Convert to GIF:"
-echo "  agg $CAST_FILE demo.gif --cols $COLS --rows $ROWS"
+echo "  agg $CAST_FILE assets/demo.gif --cols $COLS --rows $ROWS"

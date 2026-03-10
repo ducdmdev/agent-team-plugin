@@ -16,46 +16,90 @@ This plugin adds an **Agent Team** skill to Claude Code that decomposes complex 
 
 ## See It In Action
 
-![Agent Team Demo](demo.gif)
+![Agent Team Demo](assets/demo.gif)
 
 Here's what happens when you say: *"use agent team to refactor the auth module"*
 
 ```
 You > use agent team to refactor the auth module
 
-Phase 1 - Analyze
-  Identified 3 independent streams: token validation, session management, middleware
-  No file overlaps detected
+━━ Phase 1 — Analyze ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Phase 2 - Plan (you approve before anything starts)
-  Team type: implementation (auto-detected)
-  Proposed team:
-    auth-impl-1 (Implementer) — owns src/auth/token.ts, src/auth/validate.ts
-    auth-impl-2 (Implementer) — owns src/auth/session.ts, src/middleware/auth.ts
-    auth-reviewer (Reviewer)  — reviews all changes
-  Approve? [y/n]
+  Identified 3 independent streams: token validation, session management, middleware
+  File ownership mapped — no overlaps
+  Integration points: token interface shared between impl-1 and impl-2
+
+━━ Phase 2 — Plan (you approve before anything starts) ━━━━━━━━━
+
+  Team plan for: refactor auth module
+  Team type: implementation (auto-detected — say "change to [type]" to override)
+  Complexity: standard
+
+  Teammates (3 total):
+  ⚠ Team size check: 3 agents (within default max of 4)
+  - auth-impl-1 (Implementer): token validation + middleware -> owns src/auth/token.ts, src/auth/validate.ts
+  - auth-impl-2 (Implementer): session management        -> owns src/auth/session.ts, src/middleware/auth.ts
+  - auth-reviewer (Reviewer):  validate all changes       -> read-only
+
+  Task breakdown:
+  1. Refactor token validation logic        -> auth-impl-1
+  2. Extract session management             -> auth-impl-2
+  3. Update middleware to use new interfaces -> auth-impl-1 (blocked by #2)
+  4. Review all changes                     -> auth-reviewer (blocked by #1, #3)
+
+  Every phase has an owner:
+  - Implementation: auth-impl-1, auth-impl-2
+  - Verification: auth-reviewer
+
+  Isolation: shared (default)
+  Workspace: .agent-team/0306-refactor-auth/
+
+  Approve?
 
 You > y
 
-Phase 3 - Create
+━━ Phase 3 — Create ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
   Created team "0306-refactor-auth"
   Initialized workspace at .agent-team/0306-refactor-auth/
-  Spawned 3 teammates in parallel
+    ├── progress.md, tasks.md, issues.md
+    └── file-locks.json (ownership enforcement)
+  Created 4 tasks with dependencies
+  Spawning 3 teammates in parallel...
 
-Phase 4 - Coordinate
+━━ Phase 4 — Coordinate ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
   auth-impl-1:  STARTING #1: Refactoring token validation, touching src/auth/token.ts
   auth-impl-2:  STARTING #2: Extracting session logic to src/auth/session.ts
   auth-impl-1:  COMPLETED #1: Token validation refactored, 3 files changed
+  auth-impl-2:  BLOCKED #2: severity=medium, need token interface shape, impact=#3 delayed
+  Lead:         Warm handoff — forwarding token interface from impl-1 to impl-2
   auth-impl-2:  COMPLETED #2: Session management extracted, 2 files changed
-  auth-impl-1:  HANDOFF #3: New token interface ready for reviewer
+  auth-impl-1:  STARTING #3: Updating middleware to use new interfaces
+  auth-impl-1:  COMPLETED #3: Middleware updated, 1 file changed
+  auth-impl-1:  HANDOFF #3: New token interface + middleware ready for review
   auth-reviewer: STARTING #4: Reviewing all changes across both scopes
-  auth-reviewer: COMPLETED #4: 0 high, 2 medium, 1 low issues found
+  auth-reviewer: COMPLETED #4: 5 issues: 0 high, 3 medium, 2 low
 
-Phase 5 - Synthesize
-  All tasks completed (4/4)
-  Completion gate: PASSED (build, tests, lint, integration)
+━━ Phase 5 — Synthesize ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Pre-shutdown commit:
+    auth-impl-1: committed (abc1234) — src/auth/token.ts, src/auth/validate.ts, src/middleware/auth.ts
+    auth-impl-2: committed (def5678) — src/auth/session.ts
+
+  Completion gate (8/8 passed):
+    ✓ Uncommitted changes — all owned files committed
+    ✓ Build & tests — exit 0, all tests pass
+    ✓ Lint/format — no new lint errors
+    ✓ Integration — cross-module connections verified
+    ✓ Security scan — no new issues
+    ✓ Workspace issues — 0 OPEN issues
+    ✓ Plan completion — all streams have completed tasks
+    ✓ Documentation sync — no stale docs
+
   Report: .agent-team/0306-refactor-auth/report.md
-  Team shut down. Total: 6 files changed, 0 open issues.
+  Team shut down (parallel). Cleanup complete.
+  Total: 6 files changed, 4/4 tasks completed, 0 open issues.
 ```
 
 The workspace persists at `.agent-team/0306-refactor-auth/` with the full audit trail: tasks, issues, decisions, and final report.
