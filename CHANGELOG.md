@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-03-09
+
+### Added
+- **PROGRESS message type**: Optional granular progress reporting for long-running tasks
+- **CHECKPOINT message type**: Intermediate results with downstream task notification
+- **Confidence grades**: Optional `[X%]` annotation on reviewer/auditor findings
+- **Priority marking**: Optional `priority={critical|high|normal|low}` on STARTING/HANDOFF
+- **Checkpoint/Rollback pattern**: Save and resume long-running tasks at natural breakpoints
+- **Deadline Escalation pattern**: Proactive time-based escalation for stalled tasks
+- **Circular Dependency Detection**: DAG validation in Phase 2 to prevent deadlocks
+- **Graceful Degradation pattern**: Controlled scope reduction under resource pressure
+- **Warm vs Cold Handoff**: Context-level distinction for result handoffs
+- **Anti-Pattern Catalog**: 8 documented coordination pitfalls with prevention/mitigation
+- **Scaling Patterns documentation**: Read-only extension, phased execution, sub-agent specialization
+
 ## [2.3.0] - 2026-03-09
 
 ### Added
