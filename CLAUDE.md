@@ -57,7 +57,7 @@ docs/                  Shared phases + reference docs consumed by skills at runt
 ### Versioning
 
 - Follow semver: `MAJOR.MINOR.PATCH`
-- Version must be updated in **all three**: `plugin.json`, `marketplace.json`, AND `package.json`
+- Version must be updated in **both**: `plugin.json` and `marketplace.json`
 - Use `claude plugin validate .` before releasing
 
 ### Commit Messages
@@ -69,7 +69,7 @@ feat:     new feature or capability
 fix:      bug fix
 docs:     documentation changes (README, CLAUDE.md, docs/)
 refactor: code restructuring without behavior change
-chore:    maintenance (package.json, CI, dependencies)
+chore:    maintenance (CI, dependencies)
 ```
 
 ### Scripts
@@ -155,8 +155,7 @@ Six hooks registered in `hooks/hooks.json`:
 1. Run `bash tests/run-tests.sh` — all tests must pass
 2. Update version in `.claude-plugin/plugin.json`
 3. Update version in `.claude-plugin/marketplace.json`
-4. Update version in `package.json`
-5. Add entry to `CHANGELOG.md`
-6. Run `claude plugin validate .`
-7. Commit with `chore: bump version to X.Y.Z`
-8. Tag with `git tag vX.Y.Z`
+4. Add entry to `CHANGELOG.md`
+5. Run `claude plugin validate .`
+6. Commit with `chore: bump version to X.Y.Z`
+7. Tag with `git tag vX.Y.Z`

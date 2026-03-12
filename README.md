@@ -2,7 +2,6 @@
 
 > Orchestrate parallel work via AI Agent Teams in Claude Code — with automated coordination, workspace tracking, and hook enforcement.
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude_Code-Plugin-blueviolet)](https://github.com/ducdmdev/agent-team-plugin)
 
 ## What It Does
@@ -316,9 +315,7 @@ agent-team-plugin/
 │   ├── report-format.md         # Final report specification
 │   ├── team-archetypes.md       # Team type definitions and phase profiles
 │   └── custom-roles.md          # Template for project-specific roles
-├── package.json
 ├── CLAUDE.md
-├── LICENSE
 └── README.md
 ```
 
@@ -374,6 +371,3 @@ For teams larger than 4, verify: (1) every stream has zero file overlap, (2) cro
 
 See [CHANGELOG.md](CHANGELOG.md) for a detailed version history.
 
-## License
-
-[MIT](LICENSE)
