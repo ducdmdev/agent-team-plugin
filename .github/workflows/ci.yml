@@ -26,12 +26,11 @@ jobs:
 
       - name: Check version sync
         run: |
-          V_PKG=$(jq -r .version package.json)
           V_PLUGIN=$(jq -r .version .claude-plugin/plugin.json)
           V_MKT=$(jq -r '.plugins[0].version' .claude-plugin/marketplace.json)
-          echo "package.json=$V_PKG plugin.json=$V_PLUGIN marketplace.json=$V_MKT"
-          if [ "$V_PKG" != "$V_PLUGIN" ] || [ "$V_PKG" != "$V_MKT" ]; then
+          echo "plugin.json=$V_PLUGIN marketplace.json=$V_MKT"
+          if [ "$V_PLUGIN" != "$V_MKT" ]; then
             echo "::error::Version mismatch across files"
             exit 1
           fi
-          echo "All versions in sync: $V_PKG"
+          echo "All versions in sync: $V_PLUGIN"

@@ -15,7 +15,7 @@ Read [shared-phases.md](../../docs/shared-phases.md) for your identity, prerequi
 
 ## Phase 1 Override: Decomposition Strategy
 
-Apply shared Phase 1, then:
+Apply shared Phase 1a (plan detection & preparation) and Phase 1b (decompose from plan), then:
 - **Decompose by research question/hypothesis**, not by module
 - **Default roles**: 2-3 Researchers (different angles) + optional Analyst or Challenger
 - Detect archetype as `research` — show `Team type: research (auto-detected)` in Phase 2
@@ -44,6 +44,10 @@ Apply shared Phase 5 steps 1-3, then:
 Checks #1-#5 and #8 are N/A for research teams (no code changes).
 
 Log gate result in `progress.md` Decision Log.
+
+### Plan Status Update
+
+Update the source plan file per shared Phase 5 Plan Status Update section.
 
 ### Generate Report
 

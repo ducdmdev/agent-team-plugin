@@ -32,7 +32,10 @@ Before proceeding with Phase 1, determine the team archetype from the user's tas
 
 ## Phase 1 Override: Hybrid Decomposition
 
-Apply shared Phase 1, then:
+Apply shared Phase 1a (plan detection & preparation). During Phase 1a Step 0, archetype is "to be determined" — plan content will inform the detection.
+
+Then in Phase 1b, apply the shared decomposition steps plus:
+- **Detect archetype from plan content** — if the plan mixes implementation and research tasks, confirm Hybrid. If it's clearly one type, inform the user a dedicated skill exists.
 - **Identify which parts map to which archetype** (e.g., research streams vs implementation streams)
 - **Compose roles from the full catalog** based on combined task types
 - Show `Team type: hybrid ([component types])` in Phase 2 (e.g., `hybrid (research + implementation)`)
@@ -92,6 +95,10 @@ Include any check required by ANY component archetype present in the team:
 > **Lead judgment**: When the implementation component is minor (e.g., a single config change), mark checks as N/A with a brief note in `progress.md`.
 
 Log gate result in `progress.md` Decision Log.
+
+### Plan Status Update
+
+Update the source plan file per shared Phase 5 Plan Status Update section.
 
 ### Generate Report
 

@@ -18,12 +18,11 @@ for script in scripts/*.sh; do
 done
 assert_true "1: All scripts/*.sh are executable" "$ALL_EXECUTABLE"
 
-# --- Test 2: Version sync across 3 files ---
+# --- Test 2: Version sync across plugin.json and marketplace.json ---
 V_PLUGIN=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' .claude-plugin/plugin.json | head -1 | grep -o '"[^"]*"$' | tr -d '"')
 V_MARKETPLACE=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' .claude-plugin/marketplace.json | head -1 | grep -o '"[^"]*"$' | tr -d '"')
-V_PACKAGE=$(grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' package.json | head -1 | grep -o '"[^"]*"$' | tr -d '"')
 VERSIONS_MATCH=true
-if [ "$V_PLUGIN" != "$V_MARKETPLACE" ] || [ "$V_PLUGIN" != "$V_PACKAGE" ]; then
+if [ "$V_PLUGIN" != "$V_MARKETPLACE" ]; then
   VERSIONS_MATCH=false
 fi
 TESTS_TOTAL=$((TESTS_TOTAL + 1))
@@ -32,7 +31,7 @@ if $VERSIONS_MATCH; then
   printf "  ${GREEN}PASS${RESET} 2: Version sync (all = %s)\n" "$V_PLUGIN"
 else
   TESTS_FAILED=$((TESTS_FAILED + 1))
-  printf "  ${RED}FAIL${RESET} 2: Version mismatch — plugin=%s marketplace=%s package=%s\n" "$V_PLUGIN" "$V_MARKETPLACE" "$V_PACKAGE"
+  printf "  ${RED}FAIL${RESET} 2: Version mismatch — plugin=%s marketplace=%s\n" "$V_PLUGIN" "$V_MARKETPLACE"
 fi
 
 # --- Test 3: hooks.json is valid JSON ---

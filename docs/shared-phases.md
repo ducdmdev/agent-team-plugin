@@ -33,18 +33,166 @@ All hooks exit 0 (allow) if their dependencies are missing — they degrade grac
 
 Analyze the user's task: $ARGUMENTS
 
-1. **Identify independent work streams** — what can run in parallel without blocking?
-2. **Identify sequential dependencies** — what MUST happen in order?
-3. **Determine if a team is warranted** — if fewer than 2 independent streams exist, tell the user a single session is more efficient and stop here.
-4. **Map file ownership** — each teammate owns distinct files. No two teammates edit the same file.
-5. **Decomposition strategies** — choose the split that maximizes parallelism:
-   - **By module/area**: frontend vs backend, auth vs payments (best for feature work)
-   - **By concern**: implementation vs verification vs research (best for quality-critical tasks)
-   - **By layer**: data model vs API vs UI (best for full-stack features)
-   - Avoid splits that create heavy cross-dependencies — if two streams need constant handoffs, merge them
-6. **Identify reference documents** — find specs, ADRs, design docs, PRs, or other docs relevant to the task. These populate the workspace References section in Phase 3.
-7. **Integration points** — for each pair of streams, identify where their outputs must connect (shared interfaces, API contracts, database schemas). These become explicit handoff points in Phase 2.
-8. **Check for custom roles** — if `docs/custom-roles.md` exists in the project, read it. Use custom roles alongside built-in roles when they match the task requirements.
+### Early Exit — Trivial Tasks
+
+Before entering Phase 1a, apply a quick complexity check:
+- If the task obviously targets a single file with no dependencies (e.g., "fix the typo in README.md"), skip plan detection entirely and proceed to the "team not warranted" determination in Phase 1b step 4
+- Signals: task mentions one file, uses words like "typo", "rename", "bump version", no cross-module impact
+- When in doubt, proceed to Phase 1a — false negatives (skipping a plan for a complex task) are worse than false positives (scanning for a simple task)
+
+### Budget Constraints
+
+Phase 1a should remain lightweight relative to the overall team workflow:
+- **Plan scan**: Limit to scanning directory listings + reading first 20 lines of each candidate (title, status, summary). Full file reads only for the top 3 ranked candidates.
+- **Plan creation**: The writing-plans skill manages its own budget. The context bundle from Step 2a should be concise — key file paths and summaries, not full file contents.
+- **Audit**: 7 checks against one plan file. The Team Lead reads the plan once and evaluates all checks in a single pass.
+- **Max candidates scanned**: If a directory contains more than 20 `.md` files, rank by filename date prefix (most recent first) and keyword overlap, then read only the top 5.
+
+### Phase 1a: Plan Detection & Preparation
+
+#### Step 0 — Archetype Context
+
+For **dedicated archetype skills** (`/agent-implement`, `/agent-research`, `/agent-audit`, `/agent-plan`), the archetype is already known at invocation — it was determined by which skill the user triggered. This archetype context is available throughout Phase 1a and informs plan creation if needed.
+
+For **`/agent-team`** (hybrid/catch-all), archetype detection moves to Phase 1b after the plan is approved — plan content helps inform the detection.
+
+#### Step 1 — Scan for Existing Plans
+
+Scan these locations in priority order, collecting all `.md` candidates:
+
+| Priority | Location | Pattern |
+|----------|----------|---------|
+| 1 | User-specified path | Direct path from trigger (e.g., "implement `docs/plans/my-plan.md`") |
+| 2 | `docs/plans/` | `*.md` |
+| 3 | `docs/specs/` | `*.md` |
+| 4 | `plans/`, `.plans/` | `*.md` |
+| 5 | `specs/` | `*.md` |
+| 6 | `docs/` | `*plan*.md`, `*spec*.md`, `*design*.md` |
+| 7 | Project root (non-recursive, deduplicate against prior results) | `*plan*.md`, `*spec*.md`, `*design*.md` |
+
+**Matching logic:**
+- Rank candidates by relevance to the user's task (keyword overlap between task description and plan title/content)
+- If multiple candidates found, present top 3 to user: "I found these plans — which one applies, or should I create a new one?"
+- If exactly one strong match, propose it: "I found `docs/plans/X.md` — shall I use this?"
+- If zero matches → proceed to plan creation (Step 2)
+- Skip files with `Status: COMPLETED` or `Status: ABANDONED` in frontmatter/header
+- In monorepo structures (detected by multiple `package.json`, workspace configs, etc.), scope the scan to the subdirectory relevant to the user's task
+
+**Minimum plan structure for usability:**
+A plan file must contain at minimum: (a) identifiable task descriptions (numbered or headed sections), and (b) enough specificity to map tasks to files or modules. If a found plan is unstructured prose (e.g., a high-level strategy doc), it can inform context but cannot be used as the decomposition source — treat it as "zero matches" and proceed to plan creation, passing the prose document as a reference.
+
+#### Step 2 — Create Plan (No Plan Found)
+
+**2a. Gather context and references:**
+- Codebase scan: Identify relevant files, modules, and architecture related to the user's task (using Glob, Grep, Read)
+- Reference discovery: Find specs, ADRs, design docs, PRs, existing tests, CLAUDE.md conventions
+- Dependency mapping: Identify which files/modules are touched, what imports what, integration boundaries
+- Conventions check: Read CLAUDE.md, check for existing patterns in the codebase
+
+**2b. Invoke `superpowers:writing-plans` with context:**
+
+Pass a context bundle to the writing-plans skill:
+
+```
+Task: {user's original task description}
+Archetype: {known archetype if dedicated skill, or "to be determined" for /agent-team}
+Context:
+- Relevant files: {list of files/modules identified}
+- References: {specs, ADRs, design docs found}
+- Dependencies: {what touches what}
+- Conventions: {from CLAUDE.md and codebase patterns}
+- Constraints: {anything discovered that limits the solution}
+```
+
+The writing-plans skill produces a plan file at `docs/plans/YYYY-MM-DD-{task-slug}-plan.md`.
+
+**2c. Proceed to audit (Step 3).**
+
+**Fallback — writing-plans skill unavailable:**
+If `superpowers:writing-plans` is not installed or fails to invoke, the Team Lead falls back to inline plan creation:
+- Use the gathered context from Step 2a to produce a plan document directly
+- Follow the same output format (numbered tasks with file references, completion criteria, dependencies)
+- Save to `docs/plans/YYYY-MM-DD-{task-slug}-plan.md`
+- Note for Phase 3: "Plan created inline (writing-plans skill unavailable)" — log this in `progress.md` Decision Log when the workspace is created
+- Proceed to audit as normal
+
+This ensures the plugin degrades gracefully, consistent with how hooks handle missing `jq`.
+
+#### Step 3 — Audit Plan (Common Gate)
+
+Both paths converge here. Every plan is audited before the user sees it.
+
+| # | Check | What it validates | Severity |
+|---|-------|-------------------|----------|
+| 1 | Task completeness | Every task has clear completion criteria, file references, and step-by-step instructions | High |
+| 2 | Dependency coherence | No circular dependencies between tasks. Blocked-by chains resolve. | High |
+| 3 | File reference validity | Files mentioned in the plan actually exist in the codebase (or are explicitly marked as "to be created") | Medium |
+| 4 | Scope coverage | Plan tasks collectively cover the user's original request — nothing major missing | High |
+| 5 | Reference freshness | Referenced specs/ADRs/docs still exist and haven't been superseded | Low |
+| 6 | Feasibility | Tasks are achievable — no references to unavailable tools, APIs, or dependencies | Medium |
+| 7 | Parallelizability | At least 2 tasks can run concurrently (otherwise a team isn't warranted) | High |
+
+**Note on check #7 vs Phase 1b "team warranted" gate:** Check #7 is an early signal during audit — if it fails, the audit status reflects it and the user is warned. If the user chooses "proceed as-is" despite a failed check #7, Phase 1b step 4 performs the definitive evaluation after full decomposition. The audit flags the risk; Phase 1b makes the final call.
+
+**Audit output:**
+- **Status**: `ready` (0 high issues), `needs-revision` (1+ high issues), `insufficient` (plan is too vague to decompose)
+- **Issues list**: Each issue with severity, description, and suggested fix
+- **Parallelism assessment**: How many independent streams the plan supports
+
+The Team Lead performs the audit inline — reading the plan file, cross-referencing codebase state, and evaluating each check. No separate skill invocation needed.
+
+#### Step 4 — User Decision Gate
+
+Present to user regardless of audit status:
+
+```
+Plan: {plan file path}
+Source: {found in project | generated by writing-plans}
+Audit status: {ready | needs-revision | insufficient}
+
+{If issues exist:}
+Issues found:
+- [HIGH] Task 3 references src/auth/middleware.ts which doesn't exist
+- [MEDIUM] No completion criteria for Task 5
+- [LOW] Referenced ADR docs/adr-004.md was last modified 6 months ago
+
+Parallelism: {N independent streams identified}
+
+Options:
+1. Proceed as-is — use this plan for team decomposition
+2. Update — fix the issues above and re-audit
+3. Create new — discard this plan, start fresh with writing-plans
+
+Which option?
+```
+
+**Behavior per option:**
+
+| Option | What happens |
+|--------|-------------|
+| Proceed as-is | Move to Phase 1b with the plan unchanged. Team Lead works around known issues during decomposition. |
+| Update | Team Lead fixes the identified issues in the plan file, re-runs audit, presents again. Max 2 update cycles — if still `insufficient` after 2 rounds, ask user whether to proceed anyway or create new. |
+| Create new | Set aside the current plan. Re-enter the creation path (Step 2) from scratch. Only offered once — if the second plan also fails audit, compare both and proceed with the plan that has fewer High-severity issues. |
+
+**Guard rail:** For `insufficient` status, option 1 (proceed as-is) is presented but with a warning: "This plan may not have enough detail to decompose into parallel work. Proceeding may result in a weaker team structure."
+
+### Phase 1b: Decompose from Plan
+
+User has approved a plan (or no plan — see fallback below). The decomposition steps now derive from the approved plan:
+
+1. **Map plan tasks to parallel streams** — Group plan tasks by independence. Tasks with no mutual dependencies form separate streams. Tasks that share file ownership or blocked-by relationships stay in the same stream.
+2. **Assign file ownership from plan** — Plan tasks reference specific files. Each stream's files become that teammate's owned files. No two teammates edit the same file. If the plan doesn't specify files, the Team Lead infers from task descriptions + codebase scan.
+3. **Derive dependencies from plan** — The plan's task ordering and blocked-by relationships translate directly to Agent Team task dependencies.
+4. **Determine if a team is warranted** — if fewer than 2 independent streams exist, tell the user a single session is more efficient. Offer: "This plan is sequential — shall I execute it directly without a team?" Stop here if not warranted.
+5. **Integration points** — for each pair of streams, identify where plan tasks reference shared interfaces, contracts, or outputs. These become explicit handoff points in Phase 2.
+6. **Identify reference documents** — already gathered during Phase 1a. Carry forward into workspace. If Phase 1a was skipped (trivial task early exit), find specs, ADRs, design docs, PRs, or other docs relevant to the task.
+7. **Check for custom roles** — if `docs/custom-roles.md` exists in the project, read it. Use custom roles alongside built-in roles when they match the task requirements.
+
+**Fallback — no plan available:** If Phase 1a was skipped (trivial task early exit) or the user declined all plans, the Team Lead performs ad-hoc decomposition using the strategies below:
+- **By module/area**: frontend vs backend, auth vs payments (best for feature work)
+- **By concern**: implementation vs verification vs research (best for quality-critical tasks)
+- **By layer**: data model vs API vs UI (best for full-stack features)
+- Avoid splits that create heavy cross-dependencies — if two streams need constant handoffs, merge them
 
 **Self-check**: "Do I have 2+ streams where each can make meaningful progress without waiting on the others? Are integration points identified?" If no, reconsider the split.
 
@@ -54,6 +202,7 @@ Before creating the team, you MUST present the decomposition and wait for explic
 
 ```
 Team plan for: [task summary]
+Based on: [plan file path] (existing | generated) — omit if no plan
 Team type: [detected-type] (auto-detected from task — say "change to [type]" to override)
 Complexity: standard | complex
   (if complex) Reason: [why — e.g., multi-module, risky refactor, security-sensitive]
@@ -113,6 +262,8 @@ Steps shared by all archetypes. Archetype-specific overrides (file-locks, branch
    - `.agent-team/{team-name}/issues.md` — issue tracker with severity and impact
 
    Populate the `## References` section in `progress.md` with docs identified in Phase 1. If no reference docs were found, leave the table with a single `—` row.
+
+   If the team is based on a plan file, set its `Status:` to `IN PROGRESS` now (add the field if it doesn't exist). This warns other teams during Phase 1a scanning that the plan is being executed.
 
    The workspace is your persistent memory AND the team's shared state. It MUST exist before any tasks are created.
 
@@ -262,6 +413,20 @@ Steps shared by all archetypes. Archetype-specific overrides (completion gate ch
    ```
 
 3. **Update workspace**: set `progress.md` status to `completing`, update `tasks.md` with final states and teammate notes. See Workspace Update Protocol in Phase 4 for event-to-file mappings.
+
+### Plan Status Update
+
+After the archetype-specific completion gate passes and before generating the report, update the source plan file's status. Each archetype's Phase 5 Override references this step at the appropriate point in its sequence.
+
+If the team was based on a plan file (tracked in `progress.md` References), add or update the plan file's `Status:` field (insert after existing header metadata if the field doesn't exist yet):
+
+| Team outcome | Status value |
+|-------------|-------------|
+| All plan tasks completed | `Status: COMPLETED — Implemented via team {team-name} (YYYY-MM-DD)` |
+| Partial completion | `Status: PARTIAL — {N}/{total} tasks completed via team {team-name} (YYYY-MM-DD). Remaining: {list}` |
+| Team failed or abandoned | `Status: ABANDONED — Team {team-name} (YYYY-MM-DD). Reason: {reason}` |
+
+This ensures future Phase 1a plan scans correctly skip completed/abandoned plans. Skip if no plan file was used. See [workspace-templates.md](workspace-templates.md#plan-file-conventions) for the full status value reference.
 
 4. **Remediation gate** — the Completion Gate resolves most OPEN issues via fix tasks. This step handles residual issues that couldn't be resolved:
    - If **0 OPEN issues** in `issues.md`: skip

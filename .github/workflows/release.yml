@@ -33,15 +33,10 @@ jobs:
       - name: Check versions match tag
         run: |
           TAG_VERSION="${{ steps.tag.outputs.version }}"
-          V_PKG=$(jq -r .version package.json)
           V_PLUGIN=$(jq -r .version .claude-plugin/plugin.json)
           V_MKT=$(jq -r '.plugins[0].version' .claude-plugin/marketplace.json)
-          echo "tag=$TAG_VERSION package.json=$V_PKG plugin.json=$V_PLUGIN marketplace.json=$V_MKT"
+          echo "tag=$TAG_VERSION plugin.json=$V_PLUGIN marketplace.json=$V_MKT"
           MISMATCH=false
-          if [ "$V_PKG" != "$TAG_VERSION" ]; then
-            echo "::error::package.json ($V_PKG) does not match tag ($TAG_VERSION)"
-            MISMATCH=true
-          fi
           if [ "$V_PLUGIN" != "$TAG_VERSION" ]; then
             echo "::error::plugin.json ($V_PLUGIN) does not match tag ($TAG_VERSION)"
             MISMATCH=true
