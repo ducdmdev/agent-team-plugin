@@ -21,7 +21,28 @@ The 5-phase contract is preserved. Phase 1 expands into two sub-phases (1a: Plan
 
 ## Design
 
+### Early Exit — Trivial Tasks
+
+Before entering Phase 1a, the Team Lead applies a quick complexity check:
+- If the task obviously targets a single file with no dependencies (e.g., "fix the typo in README.md"), skip plan detection entirely and proceed to the existing "team not warranted" determination
+- Signals: task mentions one file, uses words like "typo", "rename", "bump version", no cross-module impact
+- When in doubt, proceed to Phase 1a — false negatives (skipping a plan for a complex task) are worse than false positives (scanning for a simple task)
+
+### Budget Constraints
+
+Phase 1a should remain lightweight relative to the overall team workflow:
+- **Plan scan**: Limit to scanning directory listings + reading first 20 lines of each candidate (title, status, summary). Full file reads only for the top 3 ranked candidates.
+- **Plan creation**: The writing-plans skill manages its own budget. The context bundle from Step 2a should be concise — key file paths and summaries, not full file contents.
+- **Audit**: 7 checks against one plan file. The Team Lead reads the plan once and evaluates all checks in a single pass.
+- **Max candidates scanned**: If a directory contains more than 20 `.md` files, rank by filename date prefix (most recent first) and keyword overlap, then read only the top 5.
+
 ### Phase 1a: Plan Detection & Preparation
+
+#### Step 0 — Archetype Context
+
+For **dedicated archetype skills** (`/agent-implement`, `/agent-research`, `/agent-audit`, `/agent-plan`), the archetype is already known at invocation — it was determined by which skill the user triggered. This archetype context is available throughout Phase 1a and informs plan creation if needed.
+
+For **`/agent-team`** (hybrid/catch-all), archetype detection moves to Phase 1b after the plan is approved — plan content helps inform the detection.
 
 #### Step 1 — Scan for Existing Plans
 
@@ -43,6 +64,10 @@ Scan these locations in priority order, collecting all `.md` candidates:
 - If exactly one strong match, propose it: "I found `docs/plans/X.md` — shall I use this?"
 - If zero matches → proceed to plan creation (Step 2)
 - Skip files with `Status: COMPLETED` or `Status: ABANDONED` in frontmatter/header
+- In monorepo structures (detected by multiple `package.json`, workspace configs, etc.), scope the scan to the subdirectory relevant to the user's task
+
+**Minimum plan structure for usability:**
+A plan file must contain at minimum: (a) identifiable task descriptions (numbered or headed sections), and (b) enough specificity to map tasks to files or modules. If a found plan is unstructured prose (e.g., a high-level strategy doc), it can inform context but cannot be used as the decomposition source — treat it as "zero matches" and proceed to plan creation, passing the prose document as a reference.
 
 #### Step 2 — Create Plan (No Plan Found)
 
@@ -57,6 +82,7 @@ Scan these locations in priority order, collecting all `.md` candidates:
 Pass a context bundle to the writing-plans skill:
 ```
 Task: {user's original task description}
+Archetype: {known archetype if dedicated skill, or "to be determined" for /agent-team}
 Context:
 - Relevant files: {list of files/modules identified}
 - References: {specs, ADRs, design docs found}
@@ -68,6 +94,16 @@ Context:
 The writing-plans skill produces a plan file at `docs/plans/YYYY-MM-DD-{task-slug}-plan.md`.
 
 **2c. Proceed to audit (Step 3).**
+
+**Fallback — writing-plans skill unavailable:**
+If `superpowers:writing-plans` is not installed or fails to invoke, the Team Lead falls back to inline plan creation:
+- Use the gathered context from Step 2a to produce a plan document directly
+- Follow the same output format (numbered tasks with file references, completion criteria, dependencies)
+- Save to `docs/plans/YYYY-MM-DD-{task-slug}-plan.md`
+- Log a note in the workspace: "Plan created inline (writing-plans skill unavailable)"
+- Proceed to audit as normal
+
+This ensures the plugin degrades gracefully, consistent with how hooks handle missing `jq`.
 
 #### Step 3 — Audit Plan (Common Gate)
 
@@ -82,6 +118,8 @@ Both paths converge here. Every plan is audited before the user sees it.
 | 5 | Reference freshness | Referenced specs/ADRs/docs still exist and haven't been superseded | Low |
 | 6 | Feasibility | Tasks are achievable — no references to unavailable tools, APIs, or dependencies | Medium |
 | 7 | Parallelizability | At least 2 tasks can run concurrently (otherwise a team isn't warranted) | High |
+
+**Note on check #7 vs Phase 1b "team warranted" gate:** Check #7 is an early signal during audit — if it fails, the audit status reflects it and the user is warned. If the user chooses "proceed as-is" despite a failed check #7, Phase 1b step 4 performs the definitive evaluation after full decomposition. The audit flags the risk; Phase 1b makes the final call.
 
 **Audit output:**
 - **Status**: `ready` (0 high issues), `needs-revision` (1+ high issues), `insufficient` (plan is too vague to decompose)
@@ -121,7 +159,7 @@ Which option?
 |--------|-------------|
 | Proceed as-is | Move to Phase 1b with the plan unchanged. Team Lead works around known issues during decomposition. |
 | Update | Team Lead fixes the identified issues in the plan file, re-runs audit, presents again. Max 2 update cycles — if still `insufficient` after 2 rounds, ask user whether to proceed anyway or create new. |
-| Create new | Discard the current plan. Re-enter the creation path (Step 2) from scratch. Only offered once — if the second plan also fails audit, proceed with best available. |
+| Create new | Set aside the current plan. Re-enter the creation path (Step 2) from scratch. Only offered once — if the second plan also fails audit, compare both and proceed with the plan that has fewer High-severity issues. |
 
 **Guard rail:** For `insufficient` status, option 1 (proceed as-is) is presented but with a warning: "This plan may not have enough detail to decompose into parallel work. Proceeding may result in a weaker team structure."
 
@@ -141,13 +179,17 @@ User has approved a plan. The existing Phase 1 decomposition steps now derive fr
 
 6. **Reference documents** — Already gathered during plan creation/audit. Carry forward into workspace.
 
-Existing Phase 1 steps 5-8 (integration points, custom roles check, self-check) remain unchanged. Phase 2 presentation adds the plan source:
+Existing shared Phase 1 steps 7-8 (integration points, custom roles check) and the self-check remain unchanged — they apply after decomposition. Step 5 (decomposition strategies) is effectively replaced by Phase 1b steps 1-3 above. Step 6 (reference documents) is handled by Phase 1a context gathering.
+
+Phase 2 presentation adds the plan source:
 
 ```
 Team plan for: [task summary]
-Based on: docs/plans/2026-03-17-refactor-auth-plan.md
+Based on: docs/plans/2026-03-17-refactor-auth-plan.md (existing)
 Team type: ...
 ```
+
+The `(existing)` / `(generated)` annotation indicates whether the plan was found in the project or created by writing-plans during this session.
 
 ### Archetype Skill Impact
 
@@ -165,21 +207,21 @@ Team type: ...
 
 ### Phase 5 Addition: Plan Status Update
 
-When the team completes (during the shared Phase 5 completion gate), add a new check:
+A new **completion step** (not a gate check) added to shared Phase 5, after the completion gate passes and before report generation.
 
-| # | Check | How | PASS Criteria | On FAIL |
-|---|-------|-----|---------------|---------|
-| 9 | **Plan status update** | Update the source plan file's `Status:` field | Status set to `COMPLETED` with team name and date | Team Lead updates the plan file directly |
+**When:** If the team was based on a plan file (tracked in `progress.md` References).
 
-**Logic:**
-- If the team was based on a plan file (tracked in `progress.md` References), update that plan's status
-- Set `Status: COMPLETED — Implemented via team {team-name} ({date})`
-- If the team only partially completed the plan (some tasks remain), set `Status: PARTIAL — {N}/{total} tasks completed via team {team-name} ({date}). Remaining: {list}`
-- If the team failed or was abandoned, set `Status: ABANDONED — Team {team-name} ({date}). Reason: {reason}`
+**Action:** The Team Lead updates the source plan file's `Status:` field:
+
+| Team outcome | Status value |
+|-------------|-------------|
+| All plan tasks completed | `Status: COMPLETED — Implemented via team {team-name} ({date})` |
+| Partial completion | `Status: PARTIAL — {N}/{total} tasks completed via team {team-name} ({date}). Remaining: {list}` |
+| Team failed or abandoned | `Status: ABANDONED — Team {team-name} ({date}). Reason: {reason}` |
 
 This ensures the plan scan in future Phase 1a runs correctly skips completed/abandoned plans.
 
-The plan status update happens **after** the completion gate passes and **before** report generation — it's part of the completion sequence, not a gate check that can fail.
+**Plan status conventions:** The valid status values (`COMPLETED`, `PARTIAL`, `ABANDONED`, and the pre-existing `IN PROGRESS`) should be documented in `docs/workspace-templates.md` under a new "Plan File Conventions" section so they are discoverable outside this spec.
 
 ### Impact Summary
 
