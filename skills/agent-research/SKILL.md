@@ -20,6 +20,12 @@ Apply shared Phase 1a (plan detection & preparation) and Phase 1b (decompose fro
 - **Default roles**: 2-3 Researchers (different angles) + optional Analyst or Challenger
 - Detect archetype as `research` — show `Team type: research (auto-detected)` in Phase 2
 
+**Example decomposition**: For "compare React vs Vue vs Svelte for our dashboard rewrite":
+- Stream 1 (Researcher): React ecosystem — performance, community, migration path
+- Stream 2 (Researcher): Vue ecosystem — same dimensions
+- Stream 3 (Researcher): Svelte ecosystem — same dimensions
+- Optional (Challenger): Cross-cut analysis — identify blind spots in each researcher's findings
+
 ## Phase 3 Override: Workspace Setup
 
 Apply shared Phase 3 steps 1-7, with these differences:
@@ -56,3 +62,4 @@ Write `.agent-team/{team-name}/report.md` using the **findings report** variant 
 **Self-check**: read the file back — does it contain the Executive Summary? If not, regenerate.
 
 Then continue with shared Phase 5 steps 4-7 (remediation gate, report to user, shutdown, cleanup).
+

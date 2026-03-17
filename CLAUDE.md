@@ -40,9 +40,11 @@ docs/                  Shared phases + reference docs consumed by skills at runt
 | `skills/agent-audit/SKILL.md` | Audit skill | Audit-specific Phase 3/5 |
 | `skills/agent-plan/SKILL.md` | Planning skill | Planning-specific Phase 3/5 |
 | `docs/shared-phases.md` | Shared phase logic | Changes here affect ALL archetype skills |
-| `docs/teammate-roles.md` | Role definitions + spawn templates | Update when adding new roles |
+| `docs/teammate-roles.md` | Role definitions + selection guide | Update when adding new roles |
+| `docs/spawn-templates.md` | Spawn prompt templates | Update when changing spawn prompts |
 | `docs/communication-protocol.md` | Structured message formats | Update when changing protocol prefixes or role-specific formats |
-| `docs/coordination-patterns.md` | Conflict resolution, handoffs | Update when adding new coordination patterns |
+| `docs/coordination-patterns.md` | Core conflict resolution, handoffs | Update when adding new core coordination patterns |
+| `docs/coordination-advanced.md` | Advanced coordination patterns | Update when adding new advanced patterns |
 | `docs/workspace-templates.md` | Workspace file templates | Update when adding new workspace files |
 | `docs/report-format.md` | Final report template | Update when changing report structure |
 | `docs/custom-roles.md` | Project-specific role template | Reference for users creating custom roles |

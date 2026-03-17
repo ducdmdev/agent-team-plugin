@@ -20,6 +20,12 @@ Apply shared Phase 1a (plan detection & preparation) and Phase 1b (decompose fro
 - **Default roles**: 2-3 Reviewers or Auditors (different lenses) + optional Challenger
 - Detect archetype as `audit` — show `Team type: audit (auto-detected)` in Phase 2
 
+**Example decomposition**: For "security audit of the authentication module":
+- Stream 1 (Auditor): OWASP Top 10 lens — injection, broken auth, XSS, etc.
+- Stream 2 (Auditor): Dependency vulnerability lens — CVEs, outdated packages, supply chain
+- Stream 3 (Reviewer): Secrets/credentials lens — hardcoded keys, env leakage, token storage
+- Optional (Challenger): Threat modeling — attack surface analysis across all findings
+
 ## Phase 3 Override: Workspace Setup
 
 Apply shared Phase 3 steps 1-7, with these differences:
