@@ -176,9 +176,9 @@ Plan files used by Agent Team Phase 1a follow these conventions. The Team Lead r
 |--------|---------|--------|
 | (none) | Plan has not been started | — |
 | `IN PROGRESS` | Plan is currently being executed | Team Lead at Phase 3 start |
-| `COMPLETED — Implemented via team {team-name} ({date})` | All plan tasks finished | Team Lead at Phase 5 |
-| `PARTIAL — {N}/{total} tasks completed via team {team-name} ({date}). Remaining: {list}` | Some tasks incomplete | Team Lead at Phase 5 |
-| `ABANDONED — Team {team-name} ({date}). Reason: {reason}` | Team failed or was stopped | Team Lead at Phase 5 |
+| `COMPLETED — Implemented via team {team-name} (YYYY-MM-DD)` | All plan tasks finished | Team Lead at Phase 5 |
+| `PARTIAL — {N}/{total} tasks completed via team {team-name} (YYYY-MM-DD). Remaining: {list}` | Some tasks incomplete | Team Lead at Phase 5 |
+| `ABANDONED — Team {team-name} (YYYY-MM-DD). Reason: {reason}` | Team failed or was stopped | Team Lead at Phase 5 |
 
 ### Scan Behavior
 

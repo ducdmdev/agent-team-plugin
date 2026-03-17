@@ -68,7 +68,7 @@ Scan these locations in priority order, collecting all `.md` candidates:
 | 4 | `plans/`, `.plans/` | `*.md` |
 | 5 | `specs/` | `*.md` |
 | 6 | `docs/` | `*plan*.md`, `*spec*.md`, `*design*.md` |
-| 7 | Project root | `*plan*.md`, `*spec*.md`, `*design*.md` |
+| 7 | Project root (non-recursive, deduplicate against prior results) | `*plan*.md`, `*spec*.md`, `*design*.md` |
 
 **Matching logic:**
 - Rank candidates by relevance to the user's task (keyword overlap between task description and plan title/content)
@@ -113,7 +113,7 @@ If `superpowers:writing-plans` is not installed or fails to invoke, the Team Lea
 - Use the gathered context from Step 2a to produce a plan document directly
 - Follow the same output format (numbered tasks with file references, completion criteria, dependencies)
 - Save to `docs/plans/YYYY-MM-DD-{task-slug}-plan.md`
-- Log a note in the workspace: "Plan created inline (writing-plans skill unavailable)"
+- Note for Phase 3: "Plan created inline (writing-plans skill unavailable)" — log this in `progress.md` Decision Log when the workspace is created
 - Proceed to audit as normal
 
 This ensures the plugin degrades gracefully, consistent with how hooks handle missing `jq`.
@@ -262,6 +262,8 @@ Steps shared by all archetypes. Archetype-specific overrides (file-locks, branch
    - `.agent-team/{team-name}/issues.md` — issue tracker with severity and impact
 
    Populate the `## References` section in `progress.md` with docs identified in Phase 1. If no reference docs were found, leave the table with a single `—` row.
+
+   If the team is based on a plan file, set its `Status:` to `IN PROGRESS` now (add the field if it doesn't exist). This warns other teams during Phase 1a scanning that the plan is being executed.
 
    The workspace is your persistent memory AND the team's shared state. It MUST exist before any tasks are created.
 
@@ -416,13 +418,13 @@ Steps shared by all archetypes. Archetype-specific overrides (completion gate ch
 
 After the archetype-specific completion gate passes and before generating the report, update the source plan file's status. Each archetype's Phase 5 Override references this step at the appropriate point in its sequence.
 
-If the team was based on a plan file (tracked in `progress.md` References), update the plan file's `Status:` field:
+If the team was based on a plan file (tracked in `progress.md` References), add or update the plan file's `Status:` field (insert after existing header metadata if the field doesn't exist yet):
 
 | Team outcome | Status value |
 |-------------|-------------|
-| All plan tasks completed | `Status: COMPLETED — Implemented via team {team-name} ({date})` |
-| Partial completion | `Status: PARTIAL — {N}/{total} tasks completed via team {team-name} ({date}). Remaining: {list}` |
-| Team failed or abandoned | `Status: ABANDONED — Team {team-name} ({date}). Reason: {reason}` |
+| All plan tasks completed | `Status: COMPLETED — Implemented via team {team-name} (YYYY-MM-DD)` |
+| Partial completion | `Status: PARTIAL — {N}/{total} tasks completed via team {team-name} (YYYY-MM-DD). Remaining: {list}` |
+| Team failed or abandoned | `Status: ABANDONED — Team {team-name} (YYYY-MM-DD). Reason: {reason}` |
 
 This ensures future Phase 1a plan scans correctly skip completed/abandoned plans. Skip if no plan file was used. See [workspace-templates.md](workspace-templates.md#plan-file-conventions) for the full status value reference.
 
