@@ -202,6 +202,7 @@ Before creating the team, you MUST present the decomposition and wait for explic
 
 ```
 Team plan for: [task summary]
+Based on: [plan file path] (existing | generated) — omit if no plan
 Team type: [detected-type] (auto-detected from task — say "change to [type]" to override)
 Complexity: standard | complex
   (if complex) Reason: [why — e.g., multi-module, risky refactor, security-sensitive]
