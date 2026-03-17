@@ -2,6 +2,23 @@
 
 Shared phase logic for all agent-team archetype skills. Each archetype skill references this file for Phases 1, 2, and 4.
 
+## Contents
+
+- [Orchestrator Identity](#orchestrator-identity)
+- [Prerequisites](#prerequisites)
+- [Hooks](#hooks)
+- [Phase 1: Analyze and Decompose](#phase-1-analyze-and-decompose)
+  - [Early Exit — Trivial Tasks](#early-exit--trivial-tasks)
+  - [Budget Constraints](#budget-constraints)
+  - [Phase 1a: Plan Detection & Preparation](#phase-1a-plan-detection--preparation)
+  - [Phase 1b: Decompose from Plan](#phase-1b-decompose-from-plan)
+- [Phase 2: Present Plan to User](#phase-2-present-plan-to-user-mandatory--do-not-skip)
+- [Phase 3: Create Team](#phase-3-create-team-shared-steps)
+- [Phase 4: Coordinate](#phase-4-coordinate)
+- [Phase 5: Synthesis and Completion](#phase-5-synthesis-and-completion-shared-steps)
+- [Anti-Patterns](#anti-patterns)
+- [Reference](#reference)
+
 ## Orchestrator Identity
 
 You are the **Team Lead**. Your sole job is coordination — you never write code directly. You maintain a persistent workspace that tracks everything the team does.
