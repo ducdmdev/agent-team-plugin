@@ -165,6 +165,33 @@ Event types: `spawn`, `stop`, `task_start`, `task_complete`, `blocked`, `handoff
 
 Generated during Phase 5 using the template in [report-format.md](report-format.md). This is the final artifact written before shutdown.
 
+## Plan File Conventions
+
+Plan files used by Agent Team Phase 1a follow these conventions. The Team Lead reads and writes these status values during plan scanning and Phase 5 completion.
+
+### Status Values
+
+| Status | Meaning | Set by |
+|--------|---------|--------|
+| (none) | Plan has not been started | — |
+| `IN PROGRESS` | Plan is currently being executed | Team Lead at Phase 3 start |
+| `COMPLETED — Implemented via team {team-name} ({date})` | All plan tasks finished | Team Lead at Phase 5 |
+| `PARTIAL — {N}/{total} tasks completed via team {team-name} ({date}). Remaining: {list}` | Some tasks incomplete | Team Lead at Phase 5 |
+| `ABANDONED — Team {team-name} ({date}). Reason: {reason}` | Team failed or was stopped | Team Lead at Phase 5 |
+
+### Scan Behavior
+
+- Phase 1a Step 1 skips files with `COMPLETED` or `ABANDONED` status
+- `PARTIAL` plans are eligible for re-use — they appear in scan results with their remaining tasks highlighted
+- `IN PROGRESS` plans trigger a warning: "This plan is being executed by another team"
+
+### Minimum Structure
+
+A plan file must contain:
+1. Identifiable task descriptions (numbered sections or markdown headings)
+2. Enough specificity to map tasks to files or modules
+3. A `Status:` field in the header (recommended but not required — absence is treated as "not started")
+
 ## See Also
 
 - [team-archetypes.md](team-archetypes.md) — defines which workspace files are created per team type
