@@ -37,12 +37,13 @@ Source documents for this team's work.
 
 ## Phase Checklist
 
-- [ ] Phase 1: Decomposed task, identified 2+ independent streams
-- [ ] Phase 2: Presented plan, received user confirmation
+- [ ] Phase 1a: Plan detected/created, audited, user approved plan
+- [ ] Phase 1b: Decomposed plan into 2+ independent streams
+- [ ] Phase 2: Presented team decomposition, received user confirmation
 - [ ] Phase 3: TeamCreate, workspace initialized, tasks created, teammates spawned
 - [ ] Phase 4: All teammates sent STARTING, coordination active
 - [ ] Phase 5a: Completion Gate passed (uncommitted, build, lint, integration, security, issues, plan, docs)
-- [ ] Phase 5b: Report generated, teammates shut down, cleanup done
+- [ ] Phase 5b: Plan status updated, report generated, teammates shut down, cleanup done
 
 ## Decision Log
 
