@@ -20,6 +20,12 @@ Apply shared Phase 1a (plan detection & preparation) and Phase 1b (decompose fro
 - **Default roles**: 1-2 Planners or Strategists + Researcher + optional Challenger
 - Detect archetype as `planning` — show `Team type: planning (auto-detected)` in Phase 2
 
+**Example decomposition**: For "design the microservices migration architecture":
+- Stream 1 (Planner): API design concern — service boundaries, contracts, versioning
+- Stream 2 (Planner): Data model concern — database per service, migration strategy, consistency
+- Stream 3 (Strategist): Infrastructure concern — deployment topology, service mesh, observability
+- Optional (Researcher): Prior art — how similar-scale companies approached the same migration
+
 ## Phase 3 Override: Workspace Setup
 
 Apply shared Phase 3 steps 1-7, with these differences:
