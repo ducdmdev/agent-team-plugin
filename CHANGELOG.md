@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-03-17
+
+### Added
+- **Plan-aware Phase 1** — Phase 1 now scans for existing plan files, creates plans via `writing-plans` skill when none exist, and audits all plans through a 7-check gate before team decomposition
+- **Phase 1a: Plan Detection & Preparation** — 5-step workflow (archetype context, scan, create, audit, user decision gate) with graceful fallback when writing-plans skill is unavailable
+- **Phase 1b: Decompose from Plan** — team decomposition now derives parallel streams, file ownership, and dependencies from an approved plan rather than ad-hoc analysis
+- **Plan audit gate** — 7 checks (task completeness, dependency coherence, file reference validity, scope coverage, reference freshness, feasibility, parallelizability) with severity levels
+- **Plan Status Update in Phase 5** — automatically marks source plan as COMPLETED, PARTIAL, or ABANDONED after team finishes
+- **Plan File Conventions** in workspace-templates — documented status values, scan behavior, minimum structure requirements
+- **Early exit for trivial tasks** — skips plan detection for single-file, no-dependency tasks
+- **Budget constraints** — limits scan depth, candidate reads, and context bundle size to keep Phase 1a lightweight
+- **Plan-aware archetype detection** — plan content now informs team type detection alongside trigger patterns
+- **IN PROGRESS status** at Phase 3 — plan file marked as in-progress during workspace init to warn concurrent teams
+
+### Changed
+- **Phase 2 template** — now includes `Based on:` line showing plan file path and source (existing/generated)
+- **Phase Checklist** — updated to reflect Phase 1a/1b split and Phase 5 plan status update
+- **All 5 archetype SKILL.md files** — Phase 1 overrides reference Phase 1a/1b, Phase 5 overrides include Plan Status Update step
+
 ## [2.4.0] - 2026-03-09
 
 ### Added
