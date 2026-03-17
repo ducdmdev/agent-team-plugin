@@ -26,6 +26,8 @@ The lead matches the user's task description against trigger patterns. If multip
 
 **Fallback**: If no clear match, default to Implementation (the most common case). Present the detected archetype in Phase 2 — the user can override.
 
+**Plan-aware detection:** When a plan file is available (from Phase 1a), the lead also considers plan content for archetype detection. A plan with implementation tasks maps to Implementation, research tasks to Research, etc. Plan content takes precedence over trigger word matching when the two disagree — the plan represents the user's confirmed intent.
+
 > **Disambiguation — "evaluate"**: "Evaluate against a standard/checklist" (e.g., "evaluate our security posture") → Audit. "Evaluate alternatives/options" (e.g., "evaluate database options") → Research or Planning. When ambiguous, the Phase 2 override lets the user correct.
 
 > **Disambiguation — "write/document"**: "Write code/feature" → Implementation. "Write documentation/docs/ADRs" or "document X" → Planning (if producing design artifacts) or Hybrid (if updating existing project docs). The Phase 2 override lets the user correct.
