@@ -48,6 +48,134 @@ Phase 1a should remain lightweight relative to the overall team workflow:
 - **Audit**: 7 checks against one plan file. The Team Lead reads the plan once and evaluates all checks in a single pass.
 - **Max candidates scanned**: If a directory contains more than 20 `.md` files, rank by filename date prefix (most recent first) and keyword overlap, then read only the top 5.
 
+### Phase 1a: Plan Detection & Preparation
+
+#### Step 0 — Archetype Context
+
+For **dedicated archetype skills** (`/agent-implement`, `/agent-research`, `/agent-audit`, `/agent-plan`), the archetype is already known at invocation — it was determined by which skill the user triggered. This archetype context is available throughout Phase 1a and informs plan creation if needed.
+
+For **`/agent-team`** (hybrid/catch-all), archetype detection moves to Phase 1b after the plan is approved — plan content helps inform the detection.
+
+#### Step 1 — Scan for Existing Plans
+
+Scan these locations in priority order, collecting all `.md` candidates:
+
+| Priority | Location | Pattern |
+|----------|----------|---------|
+| 1 | User-specified path | Direct path from trigger (e.g., "implement `docs/plans/my-plan.md`") |
+| 2 | `docs/plans/` | `*.md` |
+| 3 | `docs/specs/` | `*.md` |
+| 4 | `plans/`, `.plans/` | `*.md` |
+| 5 | `specs/` | `*.md` |
+| 6 | `docs/` | `*plan*.md`, `*spec*.md`, `*design*.md` |
+| 7 | Project root | `*plan*.md`, `*spec*.md`, `*design*.md` |
+
+**Matching logic:**
+- Rank candidates by relevance to the user's task (keyword overlap between task description and plan title/content)
+- If multiple candidates found, present top 3 to user: "I found these plans — which one applies, or should I create a new one?"
+- If exactly one strong match, propose it: "I found `docs/plans/X.md` — shall I use this?"
+- If zero matches → proceed to plan creation (Step 2)
+- Skip files with `Status: COMPLETED` or `Status: ABANDONED` in frontmatter/header
+- In monorepo structures (detected by multiple `package.json`, workspace configs, etc.), scope the scan to the subdirectory relevant to the user's task
+
+**Minimum plan structure for usability:**
+A plan file must contain at minimum: (a) identifiable task descriptions (numbered or headed sections), and (b) enough specificity to map tasks to files or modules. If a found plan is unstructured prose (e.g., a high-level strategy doc), it can inform context but cannot be used as the decomposition source — treat it as "zero matches" and proceed to plan creation, passing the prose document as a reference.
+
+#### Step 2 — Create Plan (No Plan Found)
+
+**2a. Gather context and references:**
+- Codebase scan: Identify relevant files, modules, and architecture related to the user's task (using Glob, Grep, Read)
+- Reference discovery: Find specs, ADRs, design docs, PRs, existing tests, CLAUDE.md conventions
+- Dependency mapping: Identify which files/modules are touched, what imports what, integration boundaries
+- Conventions check: Read CLAUDE.md, check for existing patterns in the codebase
+
+**2b. Invoke `superpowers:writing-plans` with context:**
+
+Pass a context bundle to the writing-plans skill:
+
+```
+Task: {user's original task description}
+Archetype: {known archetype if dedicated skill, or "to be determined" for /agent-team}
+Context:
+- Relevant files: {list of files/modules identified}
+- References: {specs, ADRs, design docs found}
+- Dependencies: {what touches what}
+- Conventions: {from CLAUDE.md and codebase patterns}
+- Constraints: {anything discovered that limits the solution}
+```
+
+The writing-plans skill produces a plan file at `docs/plans/YYYY-MM-DD-{task-slug}-plan.md`.
+
+**2c. Proceed to audit (Step 3).**
+
+**Fallback — writing-plans skill unavailable:**
+If `superpowers:writing-plans` is not installed or fails to invoke, the Team Lead falls back to inline plan creation:
+- Use the gathered context from Step 2a to produce a plan document directly
+- Follow the same output format (numbered tasks with file references, completion criteria, dependencies)
+- Save to `docs/plans/YYYY-MM-DD-{task-slug}-plan.md`
+- Log a note in the workspace: "Plan created inline (writing-plans skill unavailable)"
+- Proceed to audit as normal
+
+This ensures the plugin degrades gracefully, consistent with how hooks handle missing `jq`.
+
+#### Step 3 — Audit Plan (Common Gate)
+
+Both paths converge here. Every plan is audited before the user sees it.
+
+| # | Check | What it validates | Severity |
+|---|-------|-------------------|----------|
+| 1 | Task completeness | Every task has clear completion criteria, file references, and step-by-step instructions | High |
+| 2 | Dependency coherence | No circular dependencies between tasks. Blocked-by chains resolve. | High |
+| 3 | File reference validity | Files mentioned in the plan actually exist in the codebase (or are explicitly marked as "to be created") | Medium |
+| 4 | Scope coverage | Plan tasks collectively cover the user's original request — nothing major missing | High |
+| 5 | Reference freshness | Referenced specs/ADRs/docs still exist and haven't been superseded | Low |
+| 6 | Feasibility | Tasks are achievable — no references to unavailable tools, APIs, or dependencies | Medium |
+| 7 | Parallelizability | At least 2 tasks can run concurrently (otherwise a team isn't warranted) | High |
+
+**Note on check #7 vs Phase 1b "team warranted" gate:** Check #7 is an early signal during audit — if it fails, the audit status reflects it and the user is warned. If the user chooses "proceed as-is" despite a failed check #7, Phase 1b step 4 performs the definitive evaluation after full decomposition. The audit flags the risk; Phase 1b makes the final call.
+
+**Audit output:**
+- **Status**: `ready` (0 high issues), `needs-revision` (1+ high issues), `insufficient` (plan is too vague to decompose)
+- **Issues list**: Each issue with severity, description, and suggested fix
+- **Parallelism assessment**: How many independent streams the plan supports
+
+The Team Lead performs the audit inline — reading the plan file, cross-referencing codebase state, and evaluating each check. No separate skill invocation needed.
+
+#### Step 4 — User Decision Gate
+
+Present to user regardless of audit status:
+
+```
+Plan: {plan file path}
+Source: {found in project | generated by writing-plans}
+Audit status: {ready | needs-revision | insufficient}
+
+{If issues exist:}
+Issues found:
+- [HIGH] Task 3 references src/auth/middleware.ts which doesn't exist
+- [MEDIUM] No completion criteria for Task 5
+- [LOW] Referenced ADR docs/adr-004.md was last modified 6 months ago
+
+Parallelism: {N independent streams identified}
+
+Options:
+1. Proceed as-is — use this plan for team decomposition
+2. Update — fix the issues above and re-audit
+3. Create new — discard this plan, start fresh with writing-plans
+
+Which option?
+```
+
+**Behavior per option:**
+
+| Option | What happens |
+|--------|-------------|
+| Proceed as-is | Move to Phase 1b with the plan unchanged. Team Lead works around known issues during decomposition. |
+| Update | Team Lead fixes the identified issues in the plan file, re-runs audit, presents again. Max 2 update cycles — if still `insufficient` after 2 rounds, ask user whether to proceed anyway or create new. |
+| Create new | Set aside the current plan. Re-enter the creation path (Step 2) from scratch. Only offered once — if the second plan also fails audit, compare both and proceed with the plan that has fewer High-severity issues. |
+
+**Guard rail:** For `insufficient` status, option 1 (proceed as-is) is presented but with a warning: "This plan may not have enough detail to decompose into parallel work. Proceeding may result in a weaker team structure."
+
 1. **Identify independent work streams** — what can run in parallel without blocking?
 2. **Identify sequential dependencies** — what MUST happen in order?
 3. **Determine if a team is warranted** — if fewer than 2 independent streams exist, tell the user a single session is more efficient and stop here.
