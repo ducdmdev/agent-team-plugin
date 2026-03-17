@@ -278,7 +278,7 @@ Steps shared by all archetypes. Archetype-specific overrides (file-locks, branch
    - **Update workspace**: record all tasks in `tasks.md`
    - **Self-check**: "Does every task have a verifiable completion criterion — something a teammate can confirm as done or not done?" If any task says just "implement X" without a success condition, rewrite it.
 
-5. **Spawn teammates** using the Task tool with `team_name`, `name`, and `subagent_type` parameters. See [teammate-roles.md](teammate-roles.md) for role-specific spawn templates.
+5. **Spawn teammates** using the Task tool with `team_name`, `name`, and `subagent_type` parameters. See [teammate-roles.md](teammate-roles.md) for role overview and [spawn-templates.md](spawn-templates.md) for detailed spawn prompt templates.
 
    **subagent_type**: `"general-purpose"` for full tool access (implementers, challengers, testers). `"Explore"` for read-only research teammates. `"general-purpose"` if a reviewer needs Bash. Optionally set `mode: "plan"` for risky or architectural tasks.
 
@@ -393,6 +393,8 @@ For detailed patterns on these scenarios, see [coordination-patterns.md](coordin
 - **Auto-block on repeated failures** — auto-escalation after 3 blocked attempts
 - **Direct handoff** — authorized peer-to-peer messaging with audit trail
 
+See also [coordination-advanced.md](coordination-advanced.md) for specialized patterns (re-plan, adversarial review, checkpoint/rollback, deadline escalation, and more).
+
 **Periodic scan**: on every context recovery, check `issues.md` for OPEN items and address them before resuming normal coordination.
 
 The phase checklist is embedded in your `progress.md` — check it during workspace reads.
@@ -468,7 +470,9 @@ This ensures future Phase 1a plan scans correctly skip completed/abandoned plans
 
 ## Reference
 
-- [teammate-roles.md](teammate-roles.md) — lead + teammate role definitions and spawn templates
+- [teammate-roles.md](teammate-roles.md) — lead + teammate role definitions and selection guide
+- [spawn-templates.md](spawn-templates.md) — detailed spawn prompt templates for all teammate roles
 - [communication-protocol.md](communication-protocol.md) — structured message formats (canonical source for spawn prompt injection)
-- [coordination-patterns.md](coordination-patterns.md) — conflict resolution, handoff patterns, and communication protocol
+- [coordination-patterns.md](coordination-patterns.md) — core conflict resolution, handoff patterns, and communication protocol
+- [coordination-advanced.md](coordination-advanced.md) — advanced coordination patterns (re-plan, adversarial review, checkpoint/rollback, escalation)
 - [report-format.md](report-format.md) — final report format and generation protocol

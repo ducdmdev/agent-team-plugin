@@ -60,7 +60,7 @@ The lead matches the user's task description against trigger patterns. If multip
 
 **Purpose**: Tasks that clearly combine multiple work types (e.g., "research X then implement Y", "audit and fix").
 
-> **Mid-session archetype change**: If the user requests an archetype change after Phase 3 (e.g., "also fix the issues you found" during an audit), treat it as a re-plan: present the updated plan as Hybrid, get user approval, then adjust workspace (add file-locks.json if needed) and spawn additional teammates. See coordination-patterns.md Re-plan on Block pattern.
+> **Mid-session archetype change**: If the user requests an archetype change after Phase 3 (e.g., "also fix the issues you found" during an audit), treat it as a re-plan: present the updated plan as Hybrid, get user approval, then adjust workspace (add file-locks.json if needed) and spawn additional teammates. See coordination-advanced.md Re-plan on Block pattern.
 
 **Default roles**: Lead composes from the full role catalog based on the combined task types.
 
