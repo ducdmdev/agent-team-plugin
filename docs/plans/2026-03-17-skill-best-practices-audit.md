@@ -7,6 +7,7 @@
 **Architecture:** All changes are documentation restructuring. Two large files get split to stay under the 500-line guidance. Three skills get concrete examples added. One file gets a TOC. All cross-references are updated to point to the correct split files. No scripts, hooks, or code changes.
 
 **Tech Stack:** Markdown documentation files, bash test scripts
+**Status:** COMPLETED — Implemented via team 0317-skill-best-practices (2026-03-17)
 
 **Reference:** `docs/specs/2026-03-17-plan-aware-phase1-design.md` (context only — not the target of this plan)
 
