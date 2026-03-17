@@ -315,6 +315,7 @@ agent-team-plugin/
 │   ├── spawn-templates.md         # Spawn prompt templates for all roles
 │   ├── coordination-patterns.md   # Core conflict resolution and handoff patterns
 │   ├── coordination-advanced.md   # Advanced patterns (re-plan, checkpoint, escalation)
+│   ├── communication-protocol.md  # Structured message formats for teammates
 │   ├── workspace-templates.md   # Workspace file templates for Phase 3
 │   ├── report-format.md         # Final report specification
 │   ├── team-archetypes.md       # Team type definitions and phase profiles
