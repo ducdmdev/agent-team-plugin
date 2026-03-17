@@ -167,11 +167,13 @@ Analyze    -->   Present Plan --> Create Team -->  Coordinate  -->  Synthesize
 
 | Phase | What Happens |
 |-------|-------------|
-| **1. Analyze** | Identify independent streams, dependencies, file ownership |
+| **1. Analyze** | Detect or create a plan, audit it, then decompose into independent streams, dependencies, file ownership |
 | **2. Plan** | Present teammate roles, task breakdown, and dependencies. **You approve before anything starts** |
 | **3. Create** | Create team, initialize workspace, create tasks, spawn teammates with roles and protocols |
 | **4. Coordinate** | Monitor progress, update workspace, resolve blockers, route handoffs between teammates |
 | **5. Synthesize** | Collect results, verify integration, generate final report, shut down team |
+
+**Plan-aware:** Phase 1 scans for existing plan files (`docs/plans/`, `docs/specs/`, etc.). If found, it audits and uses the plan. If not found, it gathers context and creates one (via the `writing-plans` skill or inline). The team decomposition derives from the approved plan.
 
 ### Teammate Roles
 
