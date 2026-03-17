@@ -176,18 +176,23 @@ Which option?
 
 **Guard rail:** For `insufficient` status, option 1 (proceed as-is) is presented but with a warning: "This plan may not have enough detail to decompose into parallel work. Proceeding may result in a weaker team structure."
 
-1. **Identify independent work streams** — what can run in parallel without blocking?
-2. **Identify sequential dependencies** — what MUST happen in order?
-3. **Determine if a team is warranted** — if fewer than 2 independent streams exist, tell the user a single session is more efficient and stop here.
-4. **Map file ownership** — each teammate owns distinct files. No two teammates edit the same file.
-5. **Decomposition strategies** — choose the split that maximizes parallelism:
-   - **By module/area**: frontend vs backend, auth vs payments (best for feature work)
-   - **By concern**: implementation vs verification vs research (best for quality-critical tasks)
-   - **By layer**: data model vs API vs UI (best for full-stack features)
-   - Avoid splits that create heavy cross-dependencies — if two streams need constant handoffs, merge them
-6. **Identify reference documents** — find specs, ADRs, design docs, PRs, or other docs relevant to the task. These populate the workspace References section in Phase 3.
-7. **Integration points** — for each pair of streams, identify where their outputs must connect (shared interfaces, API contracts, database schemas). These become explicit handoff points in Phase 2.
-8. **Check for custom roles** — if `docs/custom-roles.md` exists in the project, read it. Use custom roles alongside built-in roles when they match the task requirements.
+### Phase 1b: Decompose from Plan
+
+User has approved a plan (or no plan — see fallback below). The decomposition steps now derive from the approved plan:
+
+1. **Map plan tasks to parallel streams** — Group plan tasks by independence. Tasks with no mutual dependencies form separate streams. Tasks that share file ownership or blocked-by relationships stay in the same stream.
+2. **Assign file ownership from plan** — Plan tasks reference specific files. Each stream's files become that teammate's owned files. No two teammates edit the same file. If the plan doesn't specify files, the Team Lead infers from task descriptions + codebase scan.
+3. **Derive dependencies from plan** — The plan's task ordering and blocked-by relationships translate directly to Agent Team task dependencies.
+4. **Determine if a team is warranted** — if fewer than 2 independent streams exist, tell the user a single session is more efficient. Offer: "This plan is sequential — shall I execute it directly without a team?" Stop here if not warranted.
+5. **Integration points** — for each pair of streams, identify where plan tasks reference shared interfaces, contracts, or outputs. These become explicit handoff points in Phase 2.
+6. **Identify reference documents** — already gathered during Phase 1a. Carry forward into workspace. If Phase 1a was skipped (trivial task early exit), find specs, ADRs, design docs, PRs, or other docs relevant to the task.
+7. **Check for custom roles** — if `docs/custom-roles.md` exists in the project, read it. Use custom roles alongside built-in roles when they match the task requirements.
+
+**Fallback — no plan available:** If Phase 1a was skipped (trivial task early exit) or the user declined all plans, the Team Lead performs ad-hoc decomposition using the strategies below:
+- **By module/area**: frontend vs backend, auth vs payments (best for feature work)
+- **By concern**: implementation vs verification vs research (best for quality-critical tasks)
+- **By layer**: data model vs API vs UI (best for full-stack features)
+- Avoid splits that create heavy cross-dependencies — if two streams need constant handoffs, merge them
 
 **Self-check**: "Do I have 2+ streams where each can make meaningful progress without waiting on the others? Are integration points identified?" If no, reconsider the split.
 
