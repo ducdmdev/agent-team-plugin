@@ -33,6 +33,21 @@ All hooks exit 0 (allow) if their dependencies are missing — they degrade grac
 
 Analyze the user's task: $ARGUMENTS
 
+### Early Exit — Trivial Tasks
+
+Before entering Phase 1a, apply a quick complexity check:
+- If the task obviously targets a single file with no dependencies (e.g., "fix the typo in README.md"), skip plan detection entirely and proceed to the "team not warranted" determination in Phase 1b step 4
+- Signals: task mentions one file, uses words like "typo", "rename", "bump version", no cross-module impact
+- When in doubt, proceed to Phase 1a — false negatives (skipping a plan for a complex task) are worse than false positives (scanning for a simple task)
+
+### Budget Constraints
+
+Phase 1a should remain lightweight relative to the overall team workflow:
+- **Plan scan**: Limit to scanning directory listings + reading first 20 lines of each candidate (title, status, summary). Full file reads only for the top 3 ranked candidates.
+- **Plan creation**: The writing-plans skill manages its own budget. The context bundle from Step 2a should be concise — key file paths and summaries, not full file contents.
+- **Audit**: 7 checks against one plan file. The Team Lead reads the plan once and evaluates all checks in a single pass.
+- **Max candidates scanned**: If a directory contains more than 20 `.md` files, rank by filename date prefix (most recent first) and keyword overlap, then read only the top 5.
+
 1. **Identify independent work streams** — what can run in parallel without blocking?
 2. **Identify sequential dependencies** — what MUST happen in order?
 3. **Determine if a team is warranted** — if fewer than 2 independent streams exist, tell the user a single session is more efficient and stop here.
