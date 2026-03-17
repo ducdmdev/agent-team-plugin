@@ -15,7 +15,7 @@ Read [shared-phases.md](../../docs/shared-phases.md) for your identity, prerequi
 
 ## Phase 1 Override: Decomposition Strategy
 
-Apply shared Phase 1, then:
+Apply shared Phase 1a (plan detection & preparation) and Phase 1b (decompose from plan), then:
 - **Decompose by audit lens/checklist area** (security, performance, compliance, style)
 - **Default roles**: 2-3 Reviewers or Auditors (different lenses) + optional Challenger
 - Detect archetype as `audit` — show `Team type: audit (auto-detected)` in Phase 2
@@ -46,6 +46,10 @@ Apply shared Phase 5 steps 1-3, then:
 Checks #1-#3 and #8 are N/A for audit teams (no code changes). Note: #4 and #5 assess audit coverage, not code correctness.
 
 Log gate result in `progress.md` Decision Log.
+
+### Plan Status Update
+
+Update the source plan file per shared Phase 5 Plan Status Update section.
 
 ### Generate Report
 

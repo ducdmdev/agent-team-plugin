@@ -15,8 +15,8 @@ Read [shared-phases.md](../../docs/shared-phases.md) for your identity, prerequi
 
 ## Phase 1 Override: Decomposition Strategy
 
-Apply shared Phase 1, then:
-- **Decompose by module/area** (frontend vs backend, auth vs payments) or **by layer** (data model vs API vs UI)
+Apply shared Phase 1a (plan detection & preparation) and Phase 1b (decompose from plan), then:
+- **Decompose by module/area** (frontend vs backend, auth vs payments) or **by layer** (data model vs API vs UI). Plan tasks with implementation verbs (build, refactor, fix, migrate) map to implementer streams.
 - **Default roles**: 1-2 Implementers + Reviewer (standard) or + Reviewer + Tester (complex)
 - Detect archetype as `implementation` — show `Team type: implementation (auto-detected)` in Phase 2
 
@@ -90,6 +90,10 @@ Run checks in order. Items marked ★ are project-specific — PASS automaticall
 | 8 | **Documentation sync** | Assign teammate: "Check if README/docs need updates" | No stale docs | Create doc update task |
 
 Log gate result in `progress.md` Decision Log.
+
+### Plan Status Update
+
+Update the source plan file per shared Phase 5 Plan Status Update section.
 
 ### Generate Report
 
