@@ -412,6 +412,20 @@ Steps shared by all archetypes. Archetype-specific overrides (completion gate ch
 
 3. **Update workspace**: set `progress.md` status to `completing`, update `tasks.md` with final states and teammate notes. See Workspace Update Protocol in Phase 4 for event-to-file mappings.
 
+### Plan Status Update
+
+After the archetype-specific completion gate passes and before generating the report, update the source plan file's status. Each archetype's Phase 5 Override references this step at the appropriate point in its sequence.
+
+If the team was based on a plan file (tracked in `progress.md` References), update the plan file's `Status:` field:
+
+| Team outcome | Status value |
+|-------------|-------------|
+| All plan tasks completed | `Status: COMPLETED — Implemented via team {team-name} ({date})` |
+| Partial completion | `Status: PARTIAL — {N}/{total} tasks completed via team {team-name} ({date}). Remaining: {list}` |
+| Team failed or abandoned | `Status: ABANDONED — Team {team-name} ({date}). Reason: {reason}` |
+
+This ensures future Phase 1a plan scans correctly skip completed/abandoned plans. Skip if no plan file was used. See [workspace-templates.md](workspace-templates.md#plan-file-conventions) for the full status value reference.
+
 4. **Remediation gate** — the Completion Gate resolves most OPEN issues via fix tasks. This step handles residual issues that couldn't be resolved:
    - If **0 OPEN issues** in `issues.md`: skip
    - If **OPEN issues exist** and `progress.md` remediation cycle is already `1`: do NOT spawn another team. Include unresolved issues in the user report:
