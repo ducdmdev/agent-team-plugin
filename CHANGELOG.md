@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] - 2026-03-17
+
+### Changed
+- **Split `coordination-patterns.md`** (633 lines) into core (316) + advanced (332) per skill best practices 500-line guidance
+- **Split `teammate-roles.md`** (536 lines) into overview (168) + spawn-templates (407)
+- **Added TOC to `shared-phases.md`** — explicit Contents section with anchor links
+
+### Added
+- **Concrete decomposition examples** in `agent-research`, `agent-audit`, `agent-plan` SKILL.md files
+- **`docs/coordination-advanced.md`** — advanced coordination patterns (re-plan, adversarial review, checkpoint/rollback, escalation)
+- **`docs/spawn-templates.md`** — detailed spawn prompt templates for all 11 teammate roles
+
+### Fixed
+- Missing `communication-protocol.md` in README Plugin Structure tree (pre-existing)
+
 ## [2.5.0] - 2026-03-17
 
 ### Added
