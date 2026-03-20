@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2026-03-20
+
+### Added
+- **`task-graph.json` workspace file** — centralized DAG with task dependencies, critical path, and convergence points. Created in Phase 3, maintained by lead, read by 3 new hook scripts
+- **`compute-critical-path.sh` hook** (TaskCompleted) — recomputes and displays remaining critical path after each task completion, warns about blocked critical tasks
+- **`detect-resume.sh` hook** (SessionStart) — detects resumable workspaces with smart staleness validation via git timestamps (valid/stale/missing output files)
+- **`check-integration-point.sh` hook** (TaskCompleted) — detects when convergence points (diamond dependencies) become fully unblocked, nudges lead to verify interface compatibility
+- **Critical Path Awareness** in Phase 4 — lead prioritizes critical-path blockers over non-critical work
+- **Resume from Existing Workspace** coordination pattern — valid/stale/remaining protocol with archive option
+- **Integration Checkpoint Response** coordination pattern — lead response protocol for convergence nudges
+- **CP column** in `tasks.md` — ★ marks critical path tasks, convergence notes in the Notes column
+
+### Changed
+- Phase 1b gains convergence point marking (step 6 after integration points)
+- Phase 2 gains critical path display and integration checkpoint preview
+- Phase 3 gains resume detection (step 1a) and `task-graph.json` creation (step 4a)
+- Phase 4 gains critical-path-weighted prioritization and integration checkpoint processing
+- Deadline Escalation gains critical-path acceleration (skip Nudge, go to Warn)
+- Report gains critical path metrics (initial → final length, shift count) and integration checkpoint counts
+- All 5 archetype SKILL.md files reference step 4a
+- `agent-implement` completion gate check #4 gains convergence-point awareness
+
 ## [2.5.1] - 2026-03-17
 
 ### Changed

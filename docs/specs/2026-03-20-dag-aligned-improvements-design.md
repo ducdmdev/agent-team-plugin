@@ -2,7 +2,7 @@
 
 **Date**: 2026-03-20
 **Version**: v2.6.0
-**Status**: DRAFT
+**Status**: IMPLEMENTED
 
 ## Summary
 
