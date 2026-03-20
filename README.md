@@ -322,7 +322,9 @@ agent-team-plugin/
 │   ├── merge-worktrees.sh           # Worktree merge in Phase 5
 │   ├── compute-critical-path.sh     # ComputeCriticalPath hook
 │   ├── detect-resume.sh             # DetectResume hook
-│   └── check-integration-point.sh   # CheckIntegrationPoint hook
+│   ├── check-integration-point.sh   # CheckIntegrationPoint hook
+│   ├── record-demo.sh              # Demo recording utility
+│   └── generate-demo-cast.sh       # Demo asciicast generator
 ├── skills/
 │   ├── agent-team/
 │   │   └── SKILL.md             # Hybrid/catch-all orchestrator
