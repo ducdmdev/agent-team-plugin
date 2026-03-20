@@ -112,5 +112,22 @@ fi
 
 assert_true "Counter separator '--' consistent across $SEPARATOR_MATCHES/$SEPARATOR_EXPECTED sources" "[ $SEPARATOR_MATCHES -ge 2 ]"
 
+# --- Test: workspace-templates.md references task-graph.json ---
+TASK_GRAPH_REF=$(grep -c 'task-graph.json' docs/workspace-templates.md)
+assert_true "workspace-templates.md references task-graph.json" "[ $TASK_GRAPH_REF -gt 0 ]"
+
+# --- Test: All SKILL.md files reference step 4a or task-graph.json ---
+for SKILL_MD in skills/*/SKILL.md; do
+  SKILL_NAME=$(basename "$(dirname "$SKILL_MD")")
+  STEP4A_REF=$(grep -c 'step 4a\|task-graph.json' "$SKILL_MD")
+  assert_true "$SKILL_NAME: SKILL.md references step 4a or task-graph.json" "[ $STEP4A_REF -gt 0 ]"
+done
+
+# --- Test: New DAG scripts referenced in docs ---
+for script_name in compute-critical-path.sh detect-resume.sh check-integration-point.sh; do
+  SCRIPT_REF=$(grep -rl "$script_name" docs/ | wc -l | tr -d ' ')
+  assert_true "$script_name referenced in docs/" "[ $SCRIPT_REF -gt 0 ]"
+done
+
 print_summary
 exit "$TESTS_FAILED"
