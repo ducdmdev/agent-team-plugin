@@ -46,6 +46,9 @@ This plugin registers hooks at the plugin level via `hooks/hooks.json`. They enf
 - **SessionStart(compact)** (`scripts/recover-context.sh`): After context compaction, automatically outputs active workspace paths and recovery instructions. Non-blocking.
 - **PreToolUse(Write|Edit)** (`scripts/check-file-ownership.sh`): Enforces file ownership via `file-locks.json`. Warn-then-block: first violation warns, second blocks. Workspace files (`.agent-team/`) always allowed. Requires `jq`.
 - **SubagentStart / SubagentStop** (`scripts/track-teammate-lifecycle.sh`): Logs teammate spawn and stop events to `.agent-team/{team}/events.log`. Non-blocking.
+- **TaskCompleted** (`scripts/compute-critical-path.sh`): After each task completion, recomputes the critical path from `task-graph.json` and outputs the remaining critical chain. Warns about blocked critical-path tasks. Non-blocking.
+- **TaskCompleted** (`scripts/check-integration-point.sh`): Detects when all upstream tasks of a convergence point complete. Nudges the lead to verify interface compatibility before the downstream task starts. Non-blocking.
+- **SessionStart** (`scripts/detect-resume.sh`): On every session start, scans for incomplete workspaces with `task-graph.json`. Validates completed task staleness via git timestamps and outputs resume context. Non-blocking.
 
 All hooks exit 0 (allow) if their dependencies are missing — they degrade gracefully. Hook paths use `${CLAUDE_PLUGIN_ROOT}`.
 

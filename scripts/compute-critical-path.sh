@@ -39,23 +39,46 @@ fi
 REMAINING=$(echo "$GRAPH" | jq '[.nodes | to_entries[] | select(.value.status != "completed")] | length')
 
 if [ "$REMAINING" -eq 0 ]; then
-  echo "No critical path — all remaining tasks can run in parallel." >&2
+  echo "All tasks completed — no critical path to display." >&2
+  exit 0
+fi
+
+# Cycle detection: check for cycles before computing critical path.
+# A cycle would cause infinite recursion in the DFS.
+HAS_CYCLE=$(echo "$GRAPH" | jq '
+  def has_cycle(id; visited):
+    if (visited | index(id)) then true
+    elif (.nodes[id] == null) then false
+    else
+      . as $g |
+      any(.nodes[id].depends_on[]; . as $dep | $g | has_cycle($dep; visited + [id]))
+    end;
+  . as $root |
+  any(.nodes | keys[]; . as $k | $root | has_cycle($k; []))
+' 2>/dev/null)
+
+if [ "$HAS_CYCLE" = "true" ]; then
+  echo "Warning: Cycle detected in task-graph.json dependency graph. Critical path cannot be computed. Fix the cycle per Circular Dependency Detection in coordination-advanced.md." >&2
   exit 0
 fi
 
 # DFS longest path computation via jq
 # For each remaining node, compute depth = 1 + max(depth of remaining dependencies)
-# Cycle guard: track visited nodes
+# Null guard: treat references to non-existent nodes as leaf nodes (depth 0)
 # Key jq scoping note: inside recursive calls, we must capture the dep ID with
 # `. as $dep_id | $root | depth($dep_id; ...)` to preserve the graph as `.` context.
 CRITICAL_PATH=$(echo "$GRAPH" | jq -r '
   def depth(id; visited):
     if (visited | index(id)) then 0
+    elif (.nodes[id] == null) then 0
     elif (.nodes[id].status == "completed") then 0
     elif (.nodes[id].depends_on | length == 0) then 1
     else
       . as $g |
-      [.nodes[id].depends_on[] | select($g.nodes[.].status != "completed") | . as $dep_id | $g | depth($dep_id; visited + [id])] | max + 1
+      [.nodes[id].depends_on[] | select(. as $d | $g.nodes[$d] != null and $g.nodes[$d].status != "completed") | . as $dep_id | $g | depth($dep_id; visited + [id])] |
+      if length == 0 then 1
+      else max + 1
+      end
     end;
 
   . as $root |
@@ -65,17 +88,19 @@ CRITICAL_PATH=$(echo "$GRAPH" | jq -r '
   if length == 0 then empty
   else
     .[0] as $deepest |
-    def trace_path(id):
-      if ($root.nodes[id].status == "completed") then []
+    def trace_path(id; visited):
+      if (visited | index(id)) then []
+      elif ($root.nodes[id] == null) then []
+      elif ($root.nodes[id].status == "completed") then []
       else
-        [$root.nodes[id].depends_on[] | select($root.nodes[.].status != "completed")] as $remaining_deps |
+        [$root.nodes[id].depends_on[] | select(. as $d | $root.nodes[$d] != null and $root.nodes[$d].status != "completed")] as $remaining_deps |
         if ($remaining_deps | length) == 0 then [id]
         else
           ([$remaining_deps[] | . as $dep_id | $root | {id: $dep_id, depth: depth($dep_id; [])}] | sort_by(-.depth, .id) | .[0].id) as $next |
-          trace_path($next) + [id]
+          trace_path($next; visited + [id]) + [id]
         end
       end;
-    $root | trace_path($deepest.id) | join(" → ")
+    $root | trace_path($deepest.id; []) | join(" → ")
   end
 ' 2>/dev/null)
 
@@ -119,10 +144,12 @@ else
   echo "Task completed (not on critical path). Critical path unchanged: $OLD_CP (length: $(echo "$GRAPH" | jq '.critical_path_length'))" >&2
 fi
 
-# Check for any blocked tasks on the computed critical path
+# Check for any blocked tasks on the computed critical path (only if not already warned about NEXT_CRITICAL)
 if [ -n "$CRITICAL_PATH" ]; then
   CP_NODES=$(echo "$CRITICAL_PATH" | tr '→' '\n' | sed 's/ //g' | grep '.')
   for cp_node in $CP_NODES; do
+    # Skip NEXT_CRITICAL — already handled above
+    [ "$cp_node" = "$NEXT_CRITICAL" ] && continue
     NODE_STATUS=$(echo "$GRAPH" | jq -r --arg id "$cp_node" '.nodes[$id].status // "unknown"')
     if [ "$NODE_STATUS" = "blocked" ]; then
       BLOCKED_BY=$(echo "$GRAPH" | jq -r --arg id "$cp_node" '
