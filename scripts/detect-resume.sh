@@ -73,16 +73,20 @@ for graph_file in "${SORTED_GRAPHS[@]}"; do
         while IFS= read -r ofile; do
           [ -z "$ofile" ] && continue
           FULL_PATH="$CWD/$ofile"
-          if [ -f "$FULL_PATH" ]; then
-            # Use epoch seconds for comparison to handle timezone differences
-            # (git log returns local TZ, completed_at may be UTC)
-            FILE_EPOCH=$(cd "$CWD" && git log -1 --format=%ct -- "$ofile" 2>/dev/null)
-            COMPLETED_EPOCH=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$COMPLETED_AT" "+%s" 2>/dev/null || date -d "$COMPLETED_AT" "+%s" 2>/dev/null)
-            if [ -n "$FILE_EPOCH" ] && [ -n "$COMPLETED_EPOCH" ] && [ "$FILE_EPOCH" -gt "$COMPLETED_EPOCH" ]; then
-              IS_STALE=true
-              STALE_LIST="${STALE_LIST}  Completed (stale): $ID ($SUBJECT) — $ofile modified after completion\n"
-              break
-            fi
+          if [ ! -f "$FULL_PATH" ]; then
+            # Output file was deleted — classify as missing
+            IS_STALE=true
+            STALE_LIST="${STALE_LIST}  Completed (missing): $ID ($SUBJECT) — $ofile no longer exists\n"
+            break
+          fi
+          # Use epoch seconds for comparison to handle timezone differences
+          # (git log returns local TZ, completed_at may be UTC)
+          FILE_EPOCH=$(cd "$CWD" && git log -1 --format=%ct -- "$ofile" 2>/dev/null)
+          COMPLETED_EPOCH=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$COMPLETED_AT" "+%s" 2>/dev/null || date -d "$COMPLETED_AT" "+%s" 2>/dev/null)
+          if [ -n "$FILE_EPOCH" ] && [ -n "$COMPLETED_EPOCH" ] && [ "$FILE_EPOCH" -gt "$COMPLETED_EPOCH" ]; then
+            IS_STALE=true
+            STALE_LIST="${STALE_LIST}  Completed (stale): $ID ($SUBJECT) — $ofile modified after completion\n"
+            break
           fi
         done <<< "$OUTPUT_FILES"
       fi
@@ -105,9 +109,9 @@ for graph_file in "${SORTED_GRAPHS[@]}"; do
   echo ""
   echo "Resumable workspace found: $REL_PATH/"
   echo "  Tasks: $COMPLETED/$TOTAL completed, $REMAINING remaining"
-  [ -n "$VALID_LIST" ] && printf "$VALID_LIST"
-  [ -n "$STALE_LIST" ] && printf "$STALE_LIST"
-  [ -n "$REMAINING_LIST" ] && printf "$REMAINING_LIST"
+  [ -n "$VALID_LIST" ] && printf "%b" "$VALID_LIST"
+  [ -n "$STALE_LIST" ] && printf "%b" "$STALE_LIST"
+  [ -n "$REMAINING_LIST" ] && printf "%b" "$REMAINING_LIST"
 
   # Show remaining critical path if available
   CP=$(echo "$GRAPH" | jq -r '

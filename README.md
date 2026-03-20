@@ -227,7 +227,7 @@ CHECKPOINT #N: intermediate results, artifacts, ready_for=[task IDs]
 
 ## Hooks
 
-Five hooks enforce team discipline automatically:
+Eight hooks enforce team discipline and provide DAG-aware coordination:
 
 ### TaskCompleted
 
