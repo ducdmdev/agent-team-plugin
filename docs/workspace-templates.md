@@ -67,23 +67,23 @@ Cross-teammate information transfers.
 
 ## In Progress
 
-| ID | Subject | Owner | Ref | Notes |
-|----|---------|-------|-----|-------|
+| ID | Subject | Owner | Ref | CP | Notes |
+|----|---------|-------|-----|----|-------|
 
 ## Blocked
 
-| ID | Subject | Owner | Ref | Blocked By | Notes |
-|----|---------|-------|-----|-----------|-------|
+| ID | Subject | Owner | Ref | CP | Blocked By | Notes |
+|----|---------|-------|-----|----|-----------|-------|
 
 ## Pending
 
-| ID | Subject | Owner | Ref | Blocked By | Notes |
-|----|---------|-------|-----|-----------|-------|
+| ID | Subject | Owner | Ref | CP | Blocked By | Notes |
+|----|---------|-------|-----|----|-----------|-------|
 
 ## Completed
 
-| ID | Subject | Owner | Ref | Notes |
-|----|---------|-------|-----|-------|
+| ID | Subject | Owner | Ref | CP | Notes |
+|----|---------|-------|-----|----|-------|
 ````
 
 ## issues.md
@@ -122,9 +122,14 @@ The lead updates workspace files at every significant event. When multiple event
 |-------|------|---------------|
 | Team created | All 3 files | Initialize from templates |
 | Tasks created | tasks.md | Fill task ledger |
+| Tasks created | task-graph.json | Initialize full graph with nodes, compute critical path and convergence points |
 | Teammate spawned | progress.md | Add row to Team Members |
 | Task started | tasks.md | Status -> `in_progress` |
+| Task started | task-graph.json | Node status → `in_progress` |
 | Task completed | tasks.md | Status -> `completed`, add notes |
+| Task completed | task-graph.json | Node status → `completed`, set `completed_at` and `output_files`, recompute `critical_path`. Self-check: read back to verify valid JSON. |
+| Task blocked | task-graph.json | Node status → `blocked` |
+| Re-plan occurs | task-graph.json | Rebuild graph from revised tasks |
 | Decision made | progress.md | Append to Decision Log |
 | Handoff occurs | progress.md | Append to Handoffs |
 | Issue found | issues.md | Append row, update Open count |
@@ -150,6 +155,81 @@ Created during Phase 3 after spawning teammates. Maps each teammate to their own
   "other-teammate": ["src/api/", "tests/api/"]
 }
 ```
+
+### task-graph.json
+
+Created during Phase 3 step 4a immediately after creating all tasks. Contains the full dependency graph as a DAG with critical path and convergence point metadata. Read by `compute-critical-path.sh`, `detect-resume.sh`, and `check-integration-point.sh` hooks.
+
+**When to create**: ALL archetypes.
+
+> After updating, read the file back to verify valid JSON — malformed JSON silently disables all three hook scripts.
+
+#### Schema
+
+```json
+{
+  "team": "{team-name}",
+  "created": "{ISO 8601 timestamp}",
+  "updated": "{ISO 8601 timestamp}",
+  "nodes": {
+    "#{id}": {
+      "subject": "{task subject line}",
+      "owner": "{teammate-name}",
+      "status": "pending|in_progress|completed|blocked",
+      "depends_on": ["#{id}"],
+      "completed_at": "{ISO 8601 timestamp}|null",
+      "output_files": ["{relative file paths}"],
+      "critical_path": true,
+      "convergence_point": true
+    }
+  },
+  "critical_path": ["#{id}"],
+  "critical_path_length": 0
+}
+```
+
+#### Field Reference
+
+| Field | Type | Description |
+|---|---|---|
+| `team` | string | Team name matching TeamCreate |
+| `created` | ISO timestamp | When the graph was first created |
+| `updated` | ISO timestamp | Last modification time |
+| `nodes` | object | Map of task ID → node data |
+| `nodes.*.subject` | string | Task subject line |
+| `nodes.*.owner` | string | Assigned teammate name |
+| `nodes.*.status` | enum | `pending`, `in_progress`, `completed`, `blocked` |
+| `nodes.*.depends_on` | string[] | Task IDs this node depends on |
+| `nodes.*.completed_at` | timestamp/null | When the task was completed (null if not yet) |
+| `nodes.*.output_files` | string[] | Relative file paths produced by this task |
+| `nodes.*.critical_path` | boolean | Whether this node is on the current critical path |
+| `nodes.*.convergence_point` | boolean | Whether this node has 2+ upstream dependencies. Scripts derive converging task IDs from `depends_on` when this is `true` — no separate `converges_from` field needed. |
+| `critical_path` | string[] | Ordered list of task IDs forming the current critical path |
+| `critical_path_length` | number | Number of nodes on the critical path |
+
+#### Lifecycle
+
+| Phase | Action |
+|---|---|
+| Phase 3 step 4a | Create with full graph. Compute initial critical path and convergence points |
+| Phase 4 (STARTING) | Update node status to `in_progress` |
+| Phase 4 (COMPLETED) | Update node status to `completed`, set `completed_at` and `output_files`. Recompute `critical_path`. **Self-check**: read the file back after editing to verify JSON is valid — malformed JSON silently disables all three hook scripts. |
+| Phase 4 (BLOCKED) | Update node status to `blocked` |
+| Phase 4 (re-plan) | Rebuild graph from revised task set |
+| Phase 5 | Final state preserved as audit artifact |
+| Resume | Read by `detect-resume.sh`, stale nodes reset to `pending` |
+
+#### Applicability by Archetype
+
+| Archetype | Create task-graph.json? | Critical path useful? | Convergence points useful? | Resume useful? |
+|---|---|---|---|---|
+| Implementation | Yes | Yes — prioritize build chain | Yes — diamond deps on shared interfaces | Yes — code artifacts have output_files |
+| Research | Yes | Yes — prioritize blocking research angles | Rare — research streams usually independent | Limited — no output files to validate |
+| Audit | Yes | Yes — prioritize blocking audit lenses | Rare — audit lenses usually independent | Limited — no output files to validate |
+| Planning | Yes | Yes — prioritize blocking planning concerns | Sometimes — design decisions may converge | Limited — workspace-only outputs |
+| Hybrid | Yes | Yes | Yes — mixed streams often converge | Yes — implementation components have output_files |
+
+Note: For read-only archetypes (Research, Audit, Planning), `output_files` will typically be empty or reference workspace files. Staleness validation in resume mode uses git-tracked files only, so resume is most valuable for Implementation and Hybrid teams.
 
 ### events.log
 
