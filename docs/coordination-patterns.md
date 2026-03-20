@@ -19,7 +19,9 @@ Patterns for the lead to handle common coordination scenarios during Phase 4.
 - [Synthesis Pattern](#synthesis-pattern) — collecting final results
 - [Error Recovery](#error-recovery) — handling teammate errors
 - [Issue Triage After Context Recovery](#issue-triage-after-context-recovery) — post-compaction review
+- [Resume from Existing Workspace](#resume-from-existing-workspace) — recovering from a previous team session
 - [Direct Handoff](#direct-handoff) — authorized peer-to-peer messaging with audit trail
+- [Integration Checkpoint Response](#integration-checkpoint-response) — handling convergence point nudges
 - [Advanced Patterns](coordination-advanced.md) — re-plan, adversarial review, checkpoint/rollback, deadline escalation, and more
 
 ## Communication Protocol
@@ -160,6 +162,29 @@ Recovery actions for common Phase 3 failures.
 | Workspace directory already exists | Read `progress.md` — if status is `done`, it's stale: ask user to confirm reuse or clean up. If status is `active`, another session may be using it: ask user |
 | Teammate fails to spawn | Check the error. Common causes: tool not available, permission denied. Retry once. If still failing, log to `issues.md`, continue with remaining teammates, reassign orphaned tasks |
 | Context compaction during Phase 3 | On recovery, read workspace files. If they exist but tasks/teammates are incomplete, resume from where you left off. If workspace doesn't exist yet, restart Phase 3 |
+
+## Resume from Existing Workspace
+
+When starting a new team session and the `detect-resume.sh` hook reports a resumable workspace:
+
+### Valid Completed Tasks
+Tasks whose output files are unchanged since `completed_at`. Skip these entirely — do not re-create or re-assign. Their results carry forward.
+
+### Stale Completed Tasks
+Tasks whose output files were modified after `completed_at` (someone edited the files outside the team). These must be re-run:
+- Reset status to `pending` in `task-graph.json`
+- Create new TaskCreate entries for them
+- Assign to appropriate teammates
+- Log in `progress.md` Decision Log: "Resumed — task #N marked stale (output modified after completion)"
+
+### Remaining Tasks
+Tasks that were never completed. Create and assign normally.
+
+### Archive Protocol
+If the user chooses "start fresh" instead of resuming:
+- Rename `.agent-team/{team-name}/` to `.agent-team/{team-name}-archived/`
+- Proceed with normal Phase 3
+- The archived workspace is preserved for reference
 
 ## File Conflict Resolution
 
@@ -310,6 +335,16 @@ For pre-approved information transfers between specific teammates, bypassing the
 ### Key Rule
 
 The audit trail MUST be maintained. Direct handoffs save time but must still be logged via the lead's workspace updates.
+
+## Integration Checkpoint Response
+
+When `check-integration-point.sh` fires an integration nudge after two converging streams complete:
+
+1. **Read the nudge** — identify which convergence point was unblocked and which upstream tasks produced the converging outputs
+2. **Quick compatibility check** — read the `output_files` from both upstream tasks in `task-graph.json`. Do they define compatible interfaces? (e.g., if task #1 exports `TokenResult` and task #2 imports `TokenResult`, do the types match?)
+3. **If compatible** — message the convergence task owner: "Upstream tasks #X and #Y both completed. Interfaces verified compatible. Proceed with task #Z."
+4. **If unclear or incompatible** — message both upstream owners and the convergence owner: "Integration issue at #Z: outputs from #X and #Y may conflict at [interface]. Verify before proceeding." Log in `issues.md` as **medium** severity.
+5. **Log** — record the checkpoint in `progress.md` Decision Log: "Integration checkpoint: #Z unblocked by #X + #Y, compatibility [verified|flagged]"
 
 ## See Also
 
