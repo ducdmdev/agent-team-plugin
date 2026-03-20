@@ -24,6 +24,8 @@ Apply shared Phase 1a (plan detection & preparation) and Phase 1b (decompose fro
 
 Apply shared Phase 3 steps 1-7, plus:
 
+After shared Phase 3 step 4 (create tasks), execute step 4a: create `task-graph.json` with initial critical path and convergence points. See [workspace-templates.md](../../docs/workspace-templates.md#task-graphjson) for schema.
+
 ### file-locks.json
 
 Create `.agent-team/{team-name}/file-locks.json` mapping each teammate to owned files/directories. Used by PreToolUse hook. See [workspace-templates.md](../../docs/workspace-templates.md#file-locksjson) for format.
@@ -83,7 +85,7 @@ Run checks in order. Items marked ★ are project-specific — PASS automaticall
 | 1 | **Uncommitted changes** | `git status` scoped to each implementer's owned files | All owned files committed | Message implementer to commit |
 | 2 | **Build & tests** | Assign teammate: "Run build + test commands, report PASS/FAIL" | Exit 0, all tests pass | Create fix task |
 | 3 | **Lint/format** ★ | Assign teammate: "Run lint, report new warnings/errors" | No new lint errors | Create fix task |
-| 4 | **Integration** | Assign teammate: "Verify cross-module connections" | Cross-teammate outputs connect | Create integration fix task |
+| 4 | **Integration** | Assign teammate: "Verify cross-module connections". If any convergence points in `task-graph.json` were flagged during Phase 4, verify they were resolved. | Cross-teammate outputs connect, flagged convergence points resolved | Create integration fix task |
 | 5 | **Security scan** ★ | Assign teammate: "Check for secrets, OWASP top 10 in changed files" | No new security issues | Create fix task (critical) |
 | 6 | **Workspace issues** | Read `issues.md` | 0 OPEN issues | Route to teammate |
 | 7 | **Plan completion** | Compare Phase 2 plan vs TaskList | Every stream has completed tasks | Create missing tasks |
