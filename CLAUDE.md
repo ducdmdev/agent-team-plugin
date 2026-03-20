@@ -96,7 +96,7 @@ chore:    maintenance (CI, dependencies)
 bash tests/run-tests.sh
 ```
 
-Runs 9 test files (78 assertions) covering all hooks and plugin structure.
+Runs 12 test files (145 assertions) covering all hooks and plugin structure.
 
 ### Validate Plugin
 
@@ -133,7 +133,7 @@ Nine hook entries registered in `hooks/hooks.json`:
 1. Add the script to `scripts/`
 2. Make it executable
 3. Register it in `hooks/hooks.json` using `${CLAUDE_PLUGIN_ROOT}/scripts/your-script.sh`
-4. Document in SKILL.md Hooks section and README
+4. Document in shared-phases.md Hooks section and README
 5. Test: run `claude plugin validate .` then test manually in a team session
 
 ### Adding a New Teammate Role

@@ -13,7 +13,7 @@ The final report is a persistent artifact generated at completion. It lives in t
 
 `.agent-team/{team-name}/report.md` (relative to project root)
 
-This file is generated during Phase 5, step 7. It is the last file written before shutdown.
+This file is generated during the archetype-specific Phase 5 sequence, after the completion gate and before the remediation gate. It is the last major artifact written before shutdown.
 
 ## Template
 

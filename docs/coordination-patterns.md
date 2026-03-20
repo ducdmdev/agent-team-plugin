@@ -37,10 +37,13 @@ When receiving structured messages:
 | Prefix | Lead Action |
 |--------|--------------|
 | STARTING | Update `tasks.md` status to `in_progress`, add note |
-| COMPLETED | Update `tasks.md` status to `completed`, add file list and notes. Check: does this unblock other tasks? If yes, message the dependent teammate |
+| COMPLETED | Update `tasks.md` status to `completed`, add file list and notes. Update `task-graph.json`: set node status to `completed`, record `completed_at` and `output_files`. **Self-check**: read `task-graph.json` back to verify valid JSON. Check: does this unblock other tasks? If yes, message the dependent teammate. The `compute-critical-path.sh` hook will output the updated critical path. |
 | BLOCKED | Add row to `issues.md` immediately. Acknowledge the teammate. Route to resolution |
 | HANDOFF | Extract key details, forward to dependent teammate with actionable context. Log in `progress.md` Handoffs |
 | QUESTION | Check if answer is in workspace files. If yes, answer with file reference. If no, investigate |
+| PROGRESS | Note milestone in `tasks.md` Notes column. If percent indicates near-completion, no action needed. If stalled, trigger Deadline Escalation |
+| CHECKPOINT | If `ready_for` lists task IDs, forward checkpoint details to dependent teammate. Log in `progress.md` Handoffs |
+| (hook: integration checkpoint) | Read the nudge from `check-integration-point.sh`. Before unblocking the convergence task, verify interface compatibility between upstream outputs. If compatible, message the convergence task owner to proceed. If unclear, log in `issues.md` as medium severity. Log checkpoint in `progress.md` Decision Log. |
 
 ### Shared Workspace as Bulletin Board
 
