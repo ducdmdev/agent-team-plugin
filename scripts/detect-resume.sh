@@ -74,8 +74,11 @@ for graph_file in "${SORTED_GRAPHS[@]}"; do
           [ -z "$ofile" ] && continue
           FULL_PATH="$CWD/$ofile"
           if [ -f "$FULL_PATH" ]; then
-            FILE_DATE=$(cd "$CWD" && git log -1 --format=%cI -- "$ofile" 2>/dev/null)
-            if [ -n "$FILE_DATE" ] && [[ "$FILE_DATE" > "$COMPLETED_AT" ]]; then
+            # Use epoch seconds for comparison to handle timezone differences
+            # (git log returns local TZ, completed_at may be UTC)
+            FILE_EPOCH=$(cd "$CWD" && git log -1 --format=%ct -- "$ofile" 2>/dev/null)
+            COMPLETED_EPOCH=$(date -j -f "%Y-%m-%dT%H:%M:%SZ" "$COMPLETED_AT" "+%s" 2>/dev/null || date -d "$COMPLETED_AT" "+%s" 2>/dev/null)
+            if [ -n "$FILE_EPOCH" ] && [ -n "$COMPLETED_EPOCH" ] && [ "$FILE_EPOCH" -gt "$COMPLETED_EPOCH" ]; then
               IS_STALE=true
               STALE_LIST="${STALE_LIST}  Completed (stale): $ID ($SUBJECT) — $ofile modified after completion\n"
               break
