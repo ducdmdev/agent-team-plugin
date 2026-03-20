@@ -10,6 +10,24 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/compute-critical-path.sh",
+            "timeout": 15
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-integration-point.sh",
+            "timeout": 15
+          }
+        ]
       }
     ],
     "TeammateIdle": [
@@ -31,6 +49,15 @@
             "type": "command",
             "command": "${CLAUDE_PLUGIN_ROOT}/scripts/recover-context.sh",
             "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/detect-resume.sh",
+            "timeout": 15
           }
         ]
       }
