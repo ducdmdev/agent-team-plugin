@@ -32,8 +32,8 @@ docs/                  Shared phases + reference docs consumed by skills at runt
 |------|---------|----------------|
 | `.claude-plugin/plugin.json` | Plugin identity | Bump version here on release |
 | `.claude-plugin/marketplace.json` | Marketplace registry | Bump version here too, keep in sync with plugin.json |
-| `hooks/hooks.json` | Hook registration (6 hooks) | Update timeout values, add new hooks, or update hook command paths |
-| `scripts/*.sh` | Hook enforcement logic (7 scripts) | Written in bash (`#!/bin/bash`), degrade gracefully without `jq` |
+| `hooks/hooks.json` | Hook registration (9 hook entries) | Update timeout values, add new hooks, or update hook command paths |
+| `scripts/*.sh` | Hook enforcement logic (12 scripts) | Written in bash (`#!/bin/bash`), degrade gracefully without `jq` |
 | `skills/agent-team/SKILL.md` | Hybrid/catch-all skill | Archetype detection + hybrid-specific overrides |
 | `skills/agent-implement/SKILL.md` | Implementation skill | Implementation-specific Phase 3/5 |
 | `skills/agent-research/SKILL.md` | Research skill | Research-specific Phase 3/5 |
@@ -45,7 +45,7 @@ docs/                  Shared phases + reference docs consumed by skills at runt
 | `docs/communication-protocol.md` | Structured message formats | Update when changing protocol prefixes or role-specific formats |
 | `docs/coordination-patterns.md` | Core conflict resolution, handoffs | Update when adding new core coordination patterns |
 | `docs/coordination-advanced.md` | Advanced coordination patterns | Update when adding new advanced patterns |
-| `docs/workspace-templates.md` | Workspace file templates | Update when adding new workspace files |
+| `docs/workspace-templates.md` | Workspace file templates + `task-graph.json` schema | Update when adding new workspace files or changing DAG schema |
 | `docs/report-format.md` | Final report template | Update when changing report structure |
 | `docs/custom-roles.md` | Project-specific role template | Reference for users creating custom roles |
 | `docs/team-archetypes.md` | Team type definitions + phase profiles | Update when adding new archetypes or modifying phase overrides |
@@ -96,7 +96,7 @@ chore:    maintenance (CI, dependencies)
 bash tests/run-tests.sh
 ```
 
-Runs 9 test files (78 assertions) covering all hooks and plugin structure.
+Runs 12 test files (145 assertions) covering all hooks and plugin structure.
 
 ### Validate Plugin
 
@@ -114,7 +114,7 @@ Then trigger with: "use agent team to [task]"
 
 ### Verify Hooks
 
-Six hooks registered in `hooks/hooks.json`:
+Nine hook entries registered in `hooks/hooks.json`:
 
 1. **TaskCompleted** — try marking a task complete without file changes (should block)
 2. **TeammateIdle** — let a teammate go idle with in-progress tasks (should nudge)
@@ -122,6 +122,9 @@ Six hooks registered in `hooks/hooks.json`:
 4. **PreToolUse(Write|Edit)** — have a teammate edit another's file (should warn, then block)
 5. **SubagentStart** — spawn a teammate (should log to events.log)
 6. **SubagentStop** — teammate shuts down (should log to events.log)
+7. **ComputeCriticalPath** — complete a task and check stderr for critical path update
+8. **DetectResume** — start a new session with an incomplete workspace and check stdout for resume context
+9. **CheckIntegrationPoint** — complete both upstream tasks of a convergence point and check stderr for integration nudge
 
 ## Common Tasks
 
@@ -130,7 +133,7 @@ Six hooks registered in `hooks/hooks.json`:
 1. Add the script to `scripts/`
 2. Make it executable
 3. Register it in `hooks/hooks.json` using `${CLAUDE_PLUGIN_ROOT}/scripts/your-script.sh`
-4. Document in SKILL.md Hooks section and README
+4. Document in shared-phases.md Hooks section and README
 5. Test: run `claude plugin validate .` then test manually in a team session
 
 ### Adding a New Teammate Role

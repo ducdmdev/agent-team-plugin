@@ -14,7 +14,10 @@ Shared phase logic for all agent-team archetype skills. Each archetype skill ref
   - [Phase 1b: Decompose from Plan](#phase-1b-decompose-from-plan)
 - [Phase 2: Present Plan to User](#phase-2-present-plan-to-user-mandatory--do-not-skip)
 - [Phase 3: Create Team](#phase-3-create-team-shared-steps)
+  - [Resume Detection (Step 1a)](#phase-3-create-team-shared-steps)
+  - [Task Graph Creation (Step 4a)](#phase-3-create-team-shared-steps)
 - [Phase 4: Coordinate](#phase-4-coordinate)
+  - [Critical Path Awareness](#critical-path-awareness)
 - [Phase 5: Synthesis and Completion](#phase-5-synthesis-and-completion-shared-steps)
 - [Anti-Patterns](#anti-patterns)
 - [Reference](#reference)
@@ -43,6 +46,9 @@ This plugin registers hooks at the plugin level via `hooks/hooks.json`. They enf
 - **SessionStart(compact)** (`scripts/recover-context.sh`): After context compaction, automatically outputs active workspace paths and recovery instructions. Non-blocking.
 - **PreToolUse(Write|Edit)** (`scripts/check-file-ownership.sh`): Enforces file ownership via `file-locks.json`. Warn-then-block: first violation warns, second blocks. Workspace files (`.agent-team/`) always allowed. Requires `jq`.
 - **SubagentStart / SubagentStop** (`scripts/track-teammate-lifecycle.sh`): Logs teammate spawn and stop events to `.agent-team/{team}/events.log`. Non-blocking.
+- **TaskCompleted** (`scripts/compute-critical-path.sh`): After each task completion, recomputes the critical path from `task-graph.json` and outputs the remaining critical path. Warns about blocked critical-path tasks. Non-blocking.
+- **TaskCompleted** (`scripts/check-integration-point.sh`): Detects when all upstream tasks of a convergence point complete. Nudges the lead to verify interface compatibility before the downstream task starts. Non-blocking.
+- **SessionStart** (`scripts/detect-resume.sh`): On every session start, scans for incomplete workspaces with `task-graph.json`. Validates completed task staleness via git timestamps and outputs resume context. Non-blocking.
 
 All hooks exit 0 (allow) if their dependencies are missing — they degrade gracefully. Hook paths use `${CLAUDE_PLUGIN_ROOT}`.
 
@@ -202,8 +208,9 @@ User has approved a plan (or no plan — see fallback below). The decomposition 
 3. **Derive dependencies from plan** — The plan's task ordering and blocked-by relationships translate directly to Agent Team task dependencies.
 4. **Determine if a team is warranted** — if fewer than 2 independent streams exist, tell the user a single session is more efficient. Offer: "This plan is sequential — shall I execute it directly without a team?" Stop here if not warranted.
 5. **Integration points** — for each pair of streams, identify where plan tasks reference shared interfaces, contracts, or outputs. These become explicit handoff points in Phase 2.
-6. **Identify reference documents** — already gathered during Phase 1a. Carry forward into workspace. If Phase 1a was skipped (trivial task early exit), find specs, ADRs, design docs, PRs, or other docs relevant to the task.
-7. **Check for custom roles** — if `docs/custom-roles.md` exists in the project, read it. Use custom roles alongside built-in roles when they match the task requirements.
+6. **Mark convergence points** — for each task that depends on 2+ upstream tasks, flag it as a convergence point. These become integration checkpoints during Phase 4 — the `check-integration-point.sh` hook will nudge the lead to verify interface compatibility when all upstream tasks complete. Include convergence points in the Phase 2 presentation.
+7. **Identify reference documents** — already gathered during Phase 1a. Carry forward into workspace. If Phase 1a was skipped (trivial task early exit), find specs, ADRs, design docs, PRs, or other docs relevant to the task.
+8. **Check for custom roles** — if `docs/custom-roles.md` exists in the project, read it. Use custom roles alongside built-in roles when they match the task requirements.
 
 **Fallback — no plan available:** If Phase 1a was skipped (trivial task early exit) or the user declined all plans, the Team Lead performs ad-hoc decomposition using the strategies below:
 - **By module/area**: frontend vs backend, auth vs payments (best for feature work)
@@ -236,6 +243,10 @@ Task breakdown:
 2. [task] -> assigned to [role]
 3. [task] -> assigned to [role] (blocked by #1)
 
+Critical path: [#X → #Y → #Z] (length: N)
+  Non-critical (can slip without affecting total time): [#A, #B]
+  Integration checkpoints: [#Y (converges #X + #A — verify interface compatibility)]
+
 Every phase has an owner (omit for pure review tasks):
 - Setup/config: [role]
 - Implementation: [role(s)]
@@ -254,12 +265,30 @@ Estimated teammates: N
 1. "Is this plan complex? Complexity signals: multi-module/area changes, architectural decisions, risky refactors, multiple implementers with cross-dependencies, security-sensitive changes, new integrations. If yes, does the teammate list include a **dedicated reviewer** AND a **dedicated tester** (separate teammates, not combined)? If no, add them before presenting."
 2. "Have I presented this plan AND received user confirmation?" If no, STOP.
 3. "Do any tasks form circular dependencies? Trace each `blocked by` chain — if task A blocks B blocks C blocks A, that's a cycle. If found, restructure: merge the cyclic tasks or break the cycle by removing one dependency."
+4. "Have I identified the critical path? Is it displayed in the plan? Are convergence points marked?"
 
 Wait for user confirmation before proceeding.
 
 ## Phase 3: Create Team (shared steps)
 
 Steps shared by all archetypes. Archetype-specific overrides (file-locks, branches, roles) are in each skill's own Phase 3 section.
+
+1a. **Check for resumable workspace** — if the `detect-resume.sh` hook surfaced a resumable workspace at session start, present the resume option to the user:
+
+```
+Existing workspace found: .agent-team/{team-name}/
+  Completed (valid): {list with task IDs and subjects}
+  Completed (stale): {list — output files modified since completion}
+  Remaining: {list}
+
+Options:
+1. Resume — skip valid completed tasks, re-run stale tasks, continue with remaining
+2. Start fresh — archive existing workspace to .agent-team/{team-name}-archived/, create new
+```
+
+If resuming: skip TeamCreate (team may still exist), reuse workspace, create only remaining + stale tasks. Update `task-graph.json` — reset stale nodes to `pending`, preserve valid completed nodes. Log in `progress.md` Decision Log. Proceed to step 5 (spawn teammates).
+
+If starting fresh: rename existing workspace directory with `-archived` suffix, proceed normally from step 2.
 
 1. **Check for existing team** — read `~/.claude/teams/` to see if a team already exists. If one does, ask the user whether to clean it up first or work within it.
 
@@ -294,6 +323,8 @@ Steps shared by all archetypes. Archetype-specific overrides (file-locks, branch
    - A good task is **completable in one focused session** and produces a **verifiable artifact** (a file changed, a test passing, a report written). If a task requires "implement the whole backend", it's too broad — split it. If a task is "add one import statement", it's too narrow — bundle it into an adjacent task.
    - **Update workspace**: record all tasks in `tasks.md`
    - **Self-check**: "Does every task have a verifiable completion criterion — something a teammate can confirm as done or not done?" If any task says just "implement X" without a success condition, rewrite it.
+
+4a. **Create `task-graph.json`** — immediately after creating all tasks, generate `.agent-team/{team-name}/task-graph.json` with the full dependency graph. Compute the initial critical path (longest chain, tie-break by lowest task ID) and mark convergence points (nodes with 2+ dependencies). Validate the graph is acyclic — if a cycle is detected, fix it before proceeding (see Circular Dependency Detection in [coordination-advanced.md](coordination-advanced.md)). Update `tasks.md` with ★ markers on critical-path tasks and convergence notes. See [workspace-templates.md](workspace-templates.md#task-graphjson) for schema.
 
 5. **Spawn teammates** using the Task tool with `team_name`, `name`, and `subagent_type` parameters. See [teammate-roles.md](teammate-roles.md) for role overview and [spawn-templates.md](spawn-templates.md) for detailed spawn prompt templates.
 
@@ -373,18 +404,30 @@ When receiving structured messages:
 | Prefix | Lead Action |
 |--------|--------------|
 | STARTING | Update `tasks.md` status to `in_progress`, add note |
-| COMPLETED | Update `tasks.md` status to `completed`, add file list and notes. Check: does this unblock other tasks? If yes, message the dependent teammate |
+| COMPLETED | Update `tasks.md` status to `completed`, add file list and notes. Update `task-graph.json`: set node status to `completed`, record `completed_at` and `output_files`. **Self-check**: read `task-graph.json` back to verify valid JSON — malformed JSON silently disables all three hook scripts. Check: does this unblock other tasks? If yes, message the dependent teammate. The `compute-critical-path.sh` hook will output the updated critical path. |
 | BLOCKED | Add row to `issues.md` immediately. Acknowledge the teammate. Route to resolution |
 | HANDOFF | Extract key details, forward to dependent teammate with actionable context. Log in `progress.md` Handoffs |
 | QUESTION | Check if answer is in workspace files. If yes, answer with file reference. If no, investigate |
 | PROGRESS | Note milestone in `tasks.md` Notes column. If percent indicates near-completion, no action needed. If stalled, trigger Deadline Escalation |
 | CHECKPOINT | If `ready_for` lists task IDs, forward checkpoint details to dependent teammate. Log in `progress.md` Handoffs |
+| (hook: integration checkpoint) | Read the nudge from `check-integration-point.sh`. Before unblocking the convergence task, verify interface compatibility between upstream outputs. If compatible, message the convergence task owner to proceed. If unclear, log in `issues.md` as medium severity. Log checkpoint in `progress.md` Decision Log. |
 
 #### Plan Approval Handling
 
 When a teammate spawned with `mode: "plan"` finishes planning, they send a `plan_approval_request` message to the lead. You must respond via SendMessage with `type: "plan_approval_response"`, the teammate as `recipient`, the `request_id` from their request, and `approve: true` or `approve: false`. If rejecting, include `content` with specific feedback so the teammate can revise their plan. The teammate cannot proceed with implementation until the plan is approved.
 
 For high-frequency handoffs between specific teammates, you may authorize direct communication — see the Direct Handoff pattern in [coordination-patterns.md](coordination-patterns.md). The audit trail must still be maintained in `progress.md`.
+
+### Critical Path Awareness
+
+The critical path determines total execution time. The `compute-critical-path.sh` hook outputs the remaining critical path after every task completion. Use it to prioritize:
+
+- **BLOCKED on critical path** → resolve immediately (highest-priority coordination action)
+- **BLOCKED on non-critical path** → resolve normally (slippage has slack)
+- **Teammate idle on critical path** → reassign work to keep the critical path moving
+- **Teammate idle on non-critical path** → lower priority, consider assigning critical-path support tasks
+
+After every task completion, read the hook output. If the critical path shifted (a previously non-critical chain is now longest), update `task-graph.json` and the ★ markers in `tasks.md`.
 
 ### Coordination Patterns
 

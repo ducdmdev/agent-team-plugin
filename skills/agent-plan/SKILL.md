@@ -29,6 +29,8 @@ Apply shared Phase 1a (plan detection & preparation) and Phase 1b (decompose fro
 ## Phase 3 Override: Workspace Setup
 
 Apply shared Phase 3 steps 1-7, with these differences:
+
+After shared Phase 3 step 4 (create tasks), execute step 4a: create `task-graph.json` with initial critical path and convergence points. See [workspace-templates.md](../../docs/workspace-templates.md#task-graphjson) for schema.
 - **SKIP file-locks.json** — Planners write docs to workspace, not project files
 - **SKIP branch instructions** — no code branches
 - If multiple Planners, assign distinct workspace sub-paths (e.g., `{workspace}/planner-1/`) to avoid write conflicts

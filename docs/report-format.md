@@ -13,7 +13,7 @@ The final report is a persistent artifact generated at completion. It lives in t
 
 `.agent-team/{team-name}/report.md` (relative to project root)
 
-This file is generated during Phase 5, step 7. It is the last file written before shutdown.
+This file is generated during the archetype-specific Phase 5 sequence, after the completion gate and before the remediation gate. It is the last major artifact written before shutdown.
 
 ## Template
 
@@ -62,6 +62,9 @@ This file is generated during Phase 5, step 7. It is the last file written befor
 | Blocked events | {count} |
 | Remediation cycles | {0 or 1} |
 | Re-plans | {count, 0 if none} |
+| Critical path length | {initial} → {final} (shifted {count} times) |
+| Integration checkpoints | {count} ({passed}/{flagged}) |
+| Resumed tasks | {count valid}/{count stale}/{count remaining} (or "N/A — fresh start") |
 
 ---
 
@@ -75,9 +78,9 @@ This file is generated during Phase 5, step 7. It is the last file written befor
 
 ### Task Ledger
 
-| ID | Subject | Owner | Status | Notes |
-|----|---------|-------|--------|-------|
-| {id} | {subject} | {owner} | completed / deferred | {outcome notes} |
+| ID | Subject | Owner | Status | CP | Notes |
+|----|---------|-------|--------|----|-------|
+| {id} | {subject} | {owner} | completed / deferred | {★ if critical path} | {outcome notes} |
 
 ### Decision Log
 

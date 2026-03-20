@@ -227,7 +227,7 @@ CHECKPOINT #N: intermediate results, artifacts, ready_for=[task IDs]
 
 ## Hooks
 
-Five hooks enforce team discipline automatically:
+Nine hooks enforce team discipline and provide DAG-aware coordination:
 
 ### TaskCompleted
 
@@ -261,6 +261,27 @@ Tracks teammate lifecycle in `events.log`:
 - Logs spawn and stop events with timestamps and teammate metadata
 - Provides post-mortem analysis data
 
+### ComputeCriticalPath (TaskCompleted)
+
+Recomputes and displays the critical path after each task completion:
+- Reads `task-graph.json` for the dependency graph
+- Outputs remaining critical path and identifies blocked critical tasks
+- Informational only — always allows task completion
+
+### DetectResume (SessionStart)
+
+Detects resumable workspaces at session start:
+- Scans for incomplete `task-graph.json` files in `.agent-team/`
+- Validates completed task output files via git timestamps (valid/stale/missing)
+- Outputs resume context with options to resume or start fresh
+
+### CheckIntegrationPoint (TaskCompleted)
+
+Detects when convergence points become fully unblocked:
+- Checks if all upstream tasks of a convergence point are completed
+- Nudges the lead to verify interface compatibility before downstream task starts
+- Informational only — silent when no convergence point is ready
+
 All hooks degrade gracefully — exit 0 if `jq` is missing.
 
 ## Workspace
@@ -270,9 +291,10 @@ Each team creates a persistent workspace at `.agent-team/{team-name}/` in your p
 ```
 .agent-team/0304-refactor-auth/
 ├── progress.md      # Team status, members, decisions, handoffs
-├── tasks.md         # Task ledger with status and dependencies
+├── tasks.md         # Task ledger with status tracking
 ├── issues.md        # Issue tracker with severity and resolution
 ├── file-locks.json  # File ownership map (teammate -> files/directories)
+├── task-graph.json  # DAG: task dependencies, critical path, convergence points
 ├── events.log       # Structured JSON event log for post-mortem analysis
 └── report.md        # Final report (generated at completion)
 ```
@@ -297,7 +319,12 @@ agent-team-plugin/
 │   ├── check-file-ownership.sh      # PreToolUse(Write|Edit) hook
 │   ├── track-teammate-lifecycle.sh  # SubagentStart/Stop hook
 │   ├── setup-worktree.sh            # Worktree creation for isolation mode
-│   └── merge-worktrees.sh           # Worktree merge in Phase 5
+│   ├── merge-worktrees.sh           # Worktree merge in Phase 5
+│   ├── compute-critical-path.sh     # ComputeCriticalPath hook
+│   ├── detect-resume.sh             # DetectResume hook
+│   ├── check-integration-point.sh   # CheckIntegrationPoint hook
+│   ├── record-demo.sh              # Demo recording utility
+│   └── generate-demo-cast.sh       # Demo asciicast generator
 ├── skills/
 │   ├── agent-team/
 │   │   └── SKILL.md             # Hybrid/catch-all orchestrator

@@ -187,6 +187,11 @@ Proactive time-based escalation to prevent tasks from exceeding the user's time 
    What's your progress? Use PROGRESS or COMPLETED format.
    If blocked, use BLOCKED so I can log and route it.
    ```
+
+   When checking stalled tasks, prioritize **critical-path tasks** (marked with `critical_path: true` in `task-graph.json`). A stalled critical-path task directly delays total completion. A stalled non-critical task has slack before it affects the timeline. Adjust escalation urgency accordingly:
+   - Critical-path task stalled → skip Nudge, go directly to **Warn**
+   - Non-critical task stalled → follow normal Nudge → Warn → Escalate ladder
+
 3. **Escalation ladder**:
    - **Nudge** (first check): request status update
    - **Warn** (second check, ~5 min later): "Task #N is at risk. Need status or BLOCKED report."

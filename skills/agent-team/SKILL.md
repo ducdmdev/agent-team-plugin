@@ -44,6 +44,8 @@ Then in Phase 1b, apply the shared decomposition steps plus:
 
 Apply shared Phase 3 steps 1-7, plus:
 
+After shared Phase 3 step 4 (create tasks), execute step 4a: create `task-graph.json` with initial critical path and convergence points. See [workspace-templates.md](../../docs/workspace-templates.md#task-graphjson) for schema.
+
 ### file-locks.json (conditional)
 
 Create **only if ANY teammate writes project files** (implementers, writers with file ownership). Skip if all teammates are read-only.

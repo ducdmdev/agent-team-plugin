@@ -112,6 +112,73 @@ setup_mock_git_repo() {
   )
 }
 
+# --- Mock task-graph.json ---
+# Creates a task-graph.json inside an existing mock workspace.
+# Usage: setup_mock_task_graph "my-team" '{...json...}'
+# If no JSON provided, creates a default 4-task graph (2 parallel + 1 convergence + 1 review)
+setup_mock_task_graph() {
+  local team_name="$1"
+  local custom_json="${2:-}"
+  local graph_file="$TEST_TEMP_DIR/.agent-team/$team_name/task-graph.json"
+
+  if [ -n "$custom_json" ]; then
+    echo "$custom_json" > "$graph_file"
+    return
+  fi
+
+  cat > "$graph_file" <<'GRAPH'
+{
+  "team": "test",
+  "created": "2026-03-20T10:00:00Z",
+  "updated": "2026-03-20T10:00:00Z",
+  "nodes": {
+    "#1": {
+      "subject": "Implement auth",
+      "owner": "impl-1",
+      "status": "pending",
+      "depends_on": [],
+      "completed_at": null,
+      "output_files": ["src/auth.ts"],
+      "critical_path": true,
+      "convergence_point": false
+    },
+    "#2": {
+      "subject": "Implement session",
+      "owner": "impl-2",
+      "status": "pending",
+      "depends_on": [],
+      "completed_at": null,
+      "output_files": ["src/session.ts"],
+      "critical_path": false,
+      "convergence_point": false
+    },
+    "#3": {
+      "subject": "Integrate middleware",
+      "owner": "impl-1",
+      "status": "pending",
+      "depends_on": ["#1", "#2"],
+      "completed_at": null,
+      "output_files": ["src/middleware.ts"],
+      "critical_path": true,
+      "convergence_point": true
+    },
+    "#4": {
+      "subject": "Review all",
+      "owner": "reviewer",
+      "status": "pending",
+      "depends_on": ["#3"],
+      "completed_at": null,
+      "output_files": [],
+      "critical_path": true,
+      "convergence_point": false
+    }
+  },
+  "critical_path": ["#1", "#3", "#4"],
+  "critical_path_length": 3
+}
+GRAPH
+}
+
 # --- Run a hook script ---
 # Feeds JSON via stdin, captures exit code and stderr.
 # Usage: run_hook "$script" "$json_input"
@@ -124,6 +191,23 @@ run_hook() {
   local input="$2"
   HOOK_STDERR=$(echo "$input" | bash "$script" 2>&1 1>/dev/null)
   HOOK_EXIT=$?
+}
+
+# --- Run hook capturing stdout separately ---
+# Like run_hook but also captures stdout (needed for detect-resume.sh which outputs to stdout).
+# Usage: run_hook_full "$script" "$json_input"
+# Sets: HOOK_EXIT, HOOK_STDOUT, HOOK_STDERR
+HOOK_STDOUT=""
+
+run_hook_full() {
+  local script="$1"
+  local input="$2"
+  local stdout_file
+  stdout_file=$(mktemp "${TMPDIR:-/tmp}/hook-stdout.XXXXXX")
+  HOOK_STDERR=$(echo "$input" | bash "$script" 2>&1 1>"$stdout_file")
+  HOOK_EXIT=$?
+  HOOK_STDOUT=$(cat "$stdout_file")
+  rm -f "$stdout_file"
 }
 
 # --- Assertions ---
@@ -154,6 +238,21 @@ assert_stderr_contains() {
     TESTS_FAILED=$((TESTS_FAILED + 1))
     printf "  ${RED}FAIL${RESET} %s (stderr missing pattern '%s')\n" "$test_name" "$pattern"
     printf "        stderr was: %s\n" "$stderr_output"
+  fi
+}
+
+assert_stdout_contains() {
+  local pattern="$1"
+  local stdout_output="$2"
+  local test_name="$3"
+  TESTS_TOTAL=$((TESTS_TOTAL + 1))
+  if echo "$stdout_output" | grep -qi "$pattern"; then
+    TESTS_PASSED=$((TESTS_PASSED + 1))
+    printf "  ${GREEN}PASS${RESET} %s\n" "$test_name"
+  else
+    TESTS_FAILED=$((TESTS_FAILED + 1))
+    printf "  ${RED}FAIL${RESET} %s (stdout missing pattern '%s')\n" "$test_name" "$pattern"
+    printf "        stdout was: %s\n" "$stdout_output"
   fi
 }
 
