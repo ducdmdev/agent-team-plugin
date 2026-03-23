@@ -2,11 +2,16 @@
 
 **Date**: 2026-03-23
 **Status**: Draft
-**Approach**: Pipeline Extensions (Approach B)
+**Approach**: Pipeline Skills + Phase Extensions (Approach B)
 
 ## Overview
 
-Integrate 4 workflow orchestration capabilities into the agent-team-plugin's existing 5-phase structure as pipeline extensions (pre-steps and post-steps). No phase renumbering. All features are additive and non-breaking.
+Two major changes to the agent-team-plugin:
+
+1. **Skill restructure**: Replace 5 archetype-based skills with 4 pipeline-stage skills (`agent-team:start`, `agent-team:plan`, `agent-team:execute`, `agent-team:audit`)
+2. **Workflow extensions**: Integrate 4 workflow orchestration capabilities into the pipeline stages
+
+All features are additive. The 5-phase internal logic is preserved but redistributed across pipeline stages.
 
 ### Guidelines Being Addressed
 
@@ -21,39 +26,231 @@ From the user's workflow orchestration philosophy:
 
 ### Gaps Addressed
 
-| # | Gap | Phase Extension | Type |
-|---|-----|-----------------|------|
-| 1 | Self-Improvement Loop | Phase 1 pre-step + Phase 5 post-step | Pre + Post |
-| 2 | Plan-Mode Orchestration | Phase 2 extension | Extension |
-| 3 | Error Recovery Loop | Phase 4 extension | Extension |
-| 4 | Elegance Checks | Phase 5 post-step | Post |
+| # | Gap | Pipeline Stage | Extension Type |
+|---|-----|---------------|----------------|
+| 1 | Self-Improvement Loop | `plan` (load context) + `audit` (capture lessons) | Pre-load + Post-capture |
+| 2 | Plan-Mode Orchestration | `plan` | Gate extension |
+| 3 | Error Recovery Loop | `execute` | Coordination extension |
+| 4 | Elegance Checks | `audit` | Verification extension |
 
 ---
 
-## Section 1: Phase 1 Pre-Step — `load-prior-context`
+## Section 1: Skill Restructure — Archetype-Based → Pipeline-Stage
+
+### Current Structure (Being Replaced)
+
+```
+skills/
+├── agent-team/SKILL.md          ← hybrid/catch-all
+├── agent-implement/SKILL.md     ← implementation archetype
+├── agent-research/SKILL.md      ← research archetype
+├── agent-audit/SKILL.md         ← audit archetype
+└── agent-plan/SKILL.md          ← planning archetype
+```
+
+5 skills sharing ~70% logic via `docs/shared-phases.md`. Archetype differences are limited to Phase 3 spawn config and Phase 5 completion gates. With the new workflow extensions, shared logic grows even further.
+
+### New Structure
+
+```
+skills/
+├── start/                        → agent-team:start
+│   └── SKILL.md                  Entry point — chains plan → execute → audit
+│
+├── plan/                         → agent-team:plan
+│   ├── SKILL.md                  Stage 1: analyze + decompose + plan-mode proposals
+│   ├── references/
+│   │   ├── plan-mode-protocol.md     Plan-mode gate rules, message formats, revision limits
+│   │   └── prior-context-loading.md  How to scan lessons + error patterns, relevance filtering
+│   ├── examples/
+│   │   └── plan-proposal-example.md  Sample PLAN_PROPOSAL exchange
+│   └── agents/
+│       └── plan-reviewer.md          Prompt for reviewing teammate proposals
+│
+├── execute/                      → agent-team:execute
+│   ├── SKILL.md                  Stage 2: spawn + coordinate + error recovery
+│   ├── references/
+│   │   ├── error-recovery-protocol.md    Decision tree, bounds, tracking
+│   │   ├── coordination-patterns.md      Core conflict resolution, handoffs
+│   │   └── communication-protocol.md     Structured message formats
+│   ├── agents/
+│   │   └── spawn-templates.md            Teammate spawn prompts for all roles
+│   └── scripts/
+│       └── (hook scripts remain in plugin-root hooks/ and scripts/)
+│
+└── audit/                        → agent-team:audit
+    ├── SKILL.md                  Stage 3: verify + elegance + lessons + report
+    ├── references/
+    │   ├── completion-gates.md       Archetype-specific gate checks
+    │   ├── elegance-rubric.md        5-dimension scoring rubric
+    │   └── report-format.md          Final report template + variants
+    ├── examples/
+    │   └── lessons-example.md        Sample lessons.md from a completed team
+    └── agents/
+        └── elegance-reviewer.md      Prompt for the Elegance Reviewer
+```
+
+### How Pipeline Stages Map to Phases
+
+| Pipeline Stage | Phases Covered | What It Owns |
+|---------------|----------------|--------------|
+| `agent-team:start` | Orchestration layer | Chains plan → execute → audit; detects archetype; can re-invoke individual stages |
+| `agent-team:plan` | Phase 1 + Phase 2 | Analyze task, load prior context, decompose, plan-mode gate, present plan for user approval |
+| `agent-team:execute` | Phase 3 + Phase 4 | Create workspace, spawn teammates, coordinate, error recovery loop, track progress |
+| `agent-team:audit` | Phase 5 | Completion gate, elegance review, lessons capture, pattern library update, report generation, shutdown |
+
+### Archetype as Configuration, Not Separate Skill
+
+The archetype (implementation, research, audit, planning, hybrid) becomes a **configuration parameter** passed between stages, not a separate skill. It determines:
+
+- Which completion gates apply (owned by `audit` stage)
+- Which roles are spawned (owned by `execute` stage)
+- Plan-mode defaults (owned by `plan` stage)
+- Report variant (owned by `audit` stage)
+
+The `start` skill detects the archetype from the task description (same detection logic currently in `agent-team/SKILL.md`) and passes it as context to each stage.
+
+### Independent Invocation
+
+Each stage can be invoked independently:
+
+| Command | Use Case |
+|---------|----------|
+| `/agent-team:start refactor auth` | Full pipeline — plan → execute → audit |
+| `/agent-team:plan refactor auth` | Just planning — analyze, decompose, get user approval. Stops after Phase 2 |
+| `/agent-team:execute` | Resume from existing plan — reads approved plan from workspace, spawns and coordinates. Requires a workspace with approved plan |
+| `/agent-team:audit` | Re-run verification — reads completed workspace, runs completion gate + elegance + lessons. Requires a workspace with completed tasks |
+
+### Where Shared Content Lives
+
+Content that is truly shared across stages stays in plugin-root `docs/`. Stage-specific content moves into the skill folder.
+
+**Stays in `docs/` (shared across stages)**:
+
+| File | Why shared |
+|------|-----------|
+| `docs/workspace-templates.md` | All stages read/write workspace files |
+| `docs/teammate-roles.md` | `plan` selects roles, `execute` spawns them, `audit` reviews their output |
+| `docs/team-archetypes.md` | `start` detects archetype, all stages use it as config |
+| `docs/custom-roles.md` | Reference for users, not stage-specific |
+
+**Moves into skill folders (stage-specific)**:
+
+| Current Location | New Location | Reason |
+|-----------------|-------------|--------|
+| `docs/shared-phases.md` Phase 1+2 content | `skills/plan/SKILL.md` + `skills/plan/references/` | Owned entirely by plan stage |
+| `docs/shared-phases.md` Phase 3+4 content | `skills/execute/SKILL.md` + `skills/execute/references/` | Owned entirely by execute stage |
+| `docs/shared-phases.md` Phase 5 content | `skills/audit/SKILL.md` + `skills/audit/references/` | Owned entirely by audit stage |
+| `docs/spawn-templates.md` | `skills/execute/agents/spawn-templates.md` | Only execute stage spawns teammates |
+| `docs/communication-protocol.md` | `skills/execute/references/communication-protocol.md` | Execute stage coordinates communication |
+| `docs/coordination-patterns.md` | `skills/execute/references/coordination-patterns.md` | Execute stage handles coordination |
+| `docs/coordination-advanced.md` | `skills/execute/references/coordination-advanced.md` | Execute stage handles advanced patterns |
+| `docs/report-format.md` | `skills/audit/references/report-format.md` | Audit stage generates reports |
+
+**Deleted after migration**:
+- `docs/shared-phases.md` — content distributed across 3 stage skills
+- `skills/agent-team/SKILL.md` — replaced by `skills/start/SKILL.md`
+- `skills/agent-implement/SKILL.md` — absorbed into archetype config
+- `skills/agent-research/SKILL.md` — absorbed into archetype config
+- `skills/agent-audit/SKILL.md` — absorbed into archetype config (note: different from `skills/audit/` which is the pipeline stage)
+- `skills/agent-plan/SKILL.md` — absorbed into archetype config (note: different from `skills/plan/` which is the pipeline stage)
+
+### SKILL.md Frontmatter
+
+Each skill's frontmatter follows the standard pattern:
+
+**`skills/start/SKILL.md`**:
+```yaml
+---
+name: start
+description: >
+  Orchestrate parallel work via Agent Teams. Triggers when a task has 2+
+  independent work streams. Chains plan → execute → audit stages.
+  Triggers: "create a team", "work in parallel", "use agent team",
+  "spawn teammates", "implement in parallel", "research with a team",
+  "audit with a team", "plan with a team".
+argument-hint: "[task description]"
+allowed-tools: [Read, Glob, Grep, Bash, Agent, TaskCreate, TaskUpdate, TaskList, TaskGet, TeamCreate, TeamDelete, SendMessage]
+---
+```
+
+**`skills/plan/SKILL.md`**:
+```yaml
+---
+name: plan
+description: >
+  Agent Team planning stage. Analyzes task, loads prior lessons, decomposes into
+  parallel work streams, applies plan-mode gate, presents plan for user approval.
+  Use independently to plan without executing.
+  Triggers: "plan in parallel", "design with a team", "architect with teammates".
+argument-hint: "[task description]"
+allowed-tools: [Read, Glob, Grep, Bash, TaskCreate, TaskUpdate, TaskList, TaskGet]
+---
+```
+
+**`skills/execute/SKILL.md`**:
+```yaml
+---
+name: execute
+description: >
+  Agent Team execution stage. Creates workspace, spawns teammates, coordinates
+  parallel work, handles error recovery. Requires an approved plan (from plan stage
+  or workspace). Triggers: "execute the plan", "spawn the team", "start execution".
+argument-hint: "[workspace path or plan reference]"
+allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Agent, TaskCreate, TaskUpdate, TaskList, TaskGet, TeamCreate, TeamDelete, SendMessage]
+---
+```
+
+**`skills/audit/SKILL.md`**:
+```yaml
+---
+name: audit
+description: >
+  Agent Team audit stage. Runs completion gates, elegance review, captures
+  lessons learned, updates error pattern library, generates final report.
+  Requires completed workspace. Triggers: "audit the team work", "review team results",
+  "run verification", "check team output".
+argument-hint: "[workspace path]"
+allowed-tools: [Read, Write, Glob, Grep, Bash, Agent, TaskCreate, TaskUpdate, TaskList, TaskGet, TeamCreate, SendMessage]
+---
+```
+
+### Migration Path
+
+This is a **major version bump** (skill names change, folder structure changes). Migration steps:
+
+1. Create new skill folders (`start/`, `plan/`, `execute/`, `audit/`) with SKILL.md and supporting files
+2. Distribute `shared-phases.md` content into the 3 stage skills
+3. Move stage-specific docs into skill folders
+4. Update `hooks/hooks.json` if any hooks reference skill paths
+5. Delete old skill folders (`agent-team/`, `agent-implement/`, `agent-research/`, `agent-audit/`, `agent-plan/`)
+6. Delete `docs/shared-phases.md`
+7. Update README, CLAUDE.md, CHANGELOG
+8. Update test suite
+
+---
+
+## Section 2: `agent-team:plan` — Load Prior Context + Plan-Mode Gate
 
 ### Purpose
 
-Before decomposing the new task, load lessons and error patterns from prior teams to inform better planning.
+Owns Phase 1 (analyze + decompose) and Phase 2 (present plan + user approval). New: loads prior lessons before decomposing and enables plan-mode for non-trivial teammates.
 
-### Trigger
+### Prior Context Loading (Phase 1 Pre-Step)
 
-Always runs at the start of Phase 1, before plan detection.
-
-### Mechanism
+Runs at the start of Phase 1, before plan detection.
 
 1. **Scan `.agent-team/*/lessons.md`** — find all completed teams' lessons files, sorted by date (newest first)
 2. **Scan global `~/.claude/agent-team-patterns.json`** — the error pattern library (shared across all projects)
-3. **Relevance filter** — match prior lessons by keyword overlap with current task description (e.g., if task mentions "auth", pull lessons from teams that touched auth)
-4. **Inject context** — append a `## Learned Context` block to `progress.md` (created during Phase 3 workspace setup) containing:
+3. **Relevance filter** — match prior lessons by keyword overlap with current task description
+4. **Inject context** — append a `## Learned Context` block to `progress.md` (created during execute stage workspace setup) containing:
    - Top 3 most relevant lessons (with source team name)
    - Known error patterns for files/modules in scope
    - Estimation adjustments (e.g., "prior auth team underestimated by 2x")
-   - This block is also surfaced in the Phase 2 plan presentation so the user can see what prior context informed the decomposition
+   - This block is also surfaced in the Phase 2 plan presentation so the user sees what informed the decomposition
+5. If no prior lessons or patterns exist, this step is a no-op
 
-### New Templates
-
-#### `lessons.md` (per-team workspace file)
+#### `lessons.md` Template (per-team workspace file)
 
 ```markdown
 # Lessons Learned — {team-name}
@@ -76,7 +273,7 @@ Always runs at the start of Phase 1, before plan detection.
 - {recommendation}
 ```
 
-#### `error-patterns.json` (global, at `~/.claude/agent-team-patterns.json`)
+#### `error-patterns.json` Schema (global, at `~/.claude/agent-team-patterns.json`)
 
 ```json
 {
@@ -95,35 +292,11 @@ Always runs at the start of Phase 1, before plan detection.
 }
 ```
 
-### File Changes
+### Plan-Mode Gate (Phase 2 Extension)
 
-| File | Change |
-|------|--------|
-| `docs/shared-phases.md` Phase 1 | Add "Pre-step: Load Prior Context" section |
-| `docs/workspace-templates.md` | Add `lessons.md` template + `error-patterns.json` schema |
-| All 5 `skills/*/SKILL.md` Phase 1 | Reference the pre-step |
+Activates when task complexity ≥ standard (3+ steps or architectural decisions).
 
-### Invariants
-
-- Plan detection (Phase 1a) and decomposition logic remain untouched
-- Pre-step runs before them and only adds context
-- If no prior lessons or patterns exist, pre-step is a no-op
-
----
-
-## Section 2: Phase 2 Extension — `plan-mode-gate`
-
-### Purpose
-
-For non-trivial tasks, teammates propose their approach before executing. Lead reviews and approves, preventing wasted work on wrong approaches.
-
-### Trigger
-
-Activates when task complexity ≥ standard (3+ steps or architectural decisions). Lead sets `plan_mode: true` per-teammate in the Phase 2 plan presentation.
-
-### Mechanism
-
-1. **Lead marks plan-mode teammates** during Phase 2 plan presentation:
+1. **Lead marks plan-mode teammates** in plan presentation:
    ```
    Teammates (3 total):
    - auth-impl-1 (Implementer, plan-mode): token validation → proposes approach before coding
@@ -132,7 +305,7 @@ Activates when task complexity ≥ standard (3+ steps or architectural decisions
    ```
    User can override: "make all teammates plan-mode" or "skip plan-mode"
 
-2. **Spawn with plan-mode instruction** — plan-mode teammates get an additional spawn directive:
+2. **Spawn with plan-mode instruction** — plan-mode teammates get an additional directive:
    ```
    PLAN-MODE ACTIVE: Before writing any code, send a PLAN_PROPOSAL message to the lead.
    Do NOT write/edit files until you receive PLAN_APPROVED.
@@ -149,107 +322,88 @@ Activates when task complexity ≥ standard (3+ steps or architectural decisions
    ```
 
 4. **Lead evaluates proposals**:
-   - If acceptable → sends `PLAN_APPROVED #N` via SendMessage
-   - If needs revision → sends `PLAN_REVISION #N: {feedback}` — teammate revises and resubmits
-   - Max 2 revision rounds, then lead decides (accept or reassign)
+   - Acceptable → `PLAN_APPROVED #N`
+   - Needs revision → `PLAN_REVISION #N: {feedback}` — max 2 rounds, then lead decides
+   - Proposals tracked in `progress.md` under `## Plan Proposals` section
 
-5. **Workspace tracking** — proposals logged in `progress.md` under new section:
-   ```markdown
-   ## Plan Proposals
-   | Teammate | Task | Proposal | Status | Revisions |
-   |----------|------|----------|--------|-----------|
-   | auth-impl-1 | #1 | Refactor via adapter pattern | Approved | 0 |
-   ```
+5. **Archetype defaults**:
 
-### Archetype Defaults
-
-| Archetype | Plan-mode default |
-|-----------|-------------------|
-| Implementation | ON for complexity ≥ standard |
-| Research | OFF (researchers explore freely) |
-| Audit | OFF (auditors follow checklists) |
-| Planning | ON always (planners should propose before drafting) |
-| Hybrid | Follows detected archetype rules |
-
-User can always override during Phase 2 approval.
-
-### File Changes
-
-| File | Change |
-|------|--------|
-| `docs/shared-phases.md` Phase 2 | Add plan-mode gate documentation: when to enable, override rules |
-| `docs/communication-protocol.md` | Add `PLAN_PROPOSAL`, `PLAN_APPROVED`, `PLAN_REVISION` message formats |
-| `docs/spawn-templates.md` | Add plan-mode variant directive block (injected into any role's spawn prompt) |
-| `docs/workspace-templates.md` | Add "Plan Proposals" section template for `progress.md` |
-| `docs/coordination-patterns.md` | Add "Plan-Mode Coordination" pattern (evaluate → approve/revise → unblock) |
-| `docs/team-archetypes.md` | Add plan-mode defaults per archetype (from Archetype Defaults table above) |
-| All 5 `skills/*/SKILL.md` Phase 2 | Reference plan-mode gate; archetype defaults |
+   | Archetype | Plan-mode default |
+   |-----------|-------------------|
+   | Implementation | ON for complexity ≥ standard |
+   | Research | OFF (researchers explore freely) |
+   | Audit | OFF (auditors follow checklists) |
+   | Planning | ON always (planners should propose before drafting) |
+   | Hybrid | Follows detected archetype rules |
 
 ### Relationship to Existing `mode: "plan"`
 
-This plan-mode gate is distinct from the Claude Code platform's `mode: "plan"` spawn parameter. The platform `mode: "plan"` gates individual tool use (teammate must get approval before each tool call). The plan-mode gate described here is an **orchestration-level pattern** where the teammate proposes their overall approach via `PLAN_PROPOSAL` messages before the lead authorizes execution. Both can be used together but serve different purposes.
+This plan-mode gate is distinct from the Claude Code platform's `mode: "plan"` spawn parameter. The platform `mode: "plan"` gates individual tool use. The plan-mode gate described here is an **orchestration-level pattern** where the teammate proposes their overall approach via `PLAN_PROPOSAL` messages before the lead authorizes execution. Both can be used together but serve different purposes.
+
+### Stage-Specific Files
+
+| File | Content |
+|------|---------|
+| `skills/plan/references/plan-mode-protocol.md` | Plan-mode rules, message formats, revision limits, archetype defaults |
+| `skills/plan/references/prior-context-loading.md` | Lessons scanning, pattern library querying, relevance filtering algorithm |
+| `skills/plan/examples/plan-proposal-example.md` | Sample PLAN_PROPOSAL → PLAN_APPROVED exchange |
+| `skills/plan/agents/plan-reviewer.md` | Prompt for reviewing teammate proposals (used by lead during plan-mode evaluation) |
 
 ### Invariants
 
+- Plan detection (existing Phase 1a) and decomposition logic are preserved
 - Phase 2's core approval gate (user approves full team plan) is unchanged
-- Plan-mode is an additional layer within that
-- User sees which teammates are plan-mode and can override
+- Plan-mode is an additional layer within Phase 2
+- Prior context loading is a no-op if no prior data exists
 
 ---
 
-## Section 3: Phase 4 Extension — `error-recovery-loop`
+## Section 3: `agent-team:execute` — Coordination + Error Recovery
 
 ### Purpose
 
-When a teammate hits a blocker, classify the error, check the pattern library, and attempt bounded recovery before escalating.
+Owns Phase 3 (create workspace, spawn teammates) and Phase 4 (coordinate, track progress). New: error classification and bounded auto-recovery.
 
-### Trigger
+### Error Recovery Loop (Phase 4 Extension)
 
-Activates whenever the lead receives a `BLOCKED` message during Phase 4 coordination.
+Activates whenever the lead receives a `BLOCKED` message.
 
-### Extended BLOCKED Message Format
-
-Teammates now include `error_type`:
+#### Extended BLOCKED Message Format
 
 ```
 BLOCKED #N: severity={critical|high|medium|low}, error_type={retry|recoverable|design_flaw|unknown},
            {blocker description}, impact={what can't proceed}
 ```
 
-Classification guide:
-
 | error_type | When to use | Examples |
 |------------|-------------|---------|
-| `retry` | Transient/flaky failure, might work on second attempt | Timeout, rate limit, flaky test |
-| `recoverable` | Fixable with a different approach, no re-plan needed | Wrong import path, missing dependency, type mismatch |
-| `design_flaw` | Fundamental approach won't work, needs re-plan | Interface incompatibility, wrong architecture choice |
-| `unknown` | Can't classify — let the lead decide | Novel errors |
+| `retry` | Transient/flaky failure | Timeout, rate limit, flaky test |
+| `recoverable` | Fixable with different approach, no re-plan | Wrong import path, missing dependency |
+| `design_flaw` | Fundamental approach won't work | Interface incompatibility, wrong architecture |
+| `unknown` | Can't classify | Novel errors |
 
-### Recovery Decision Tree
+#### Recovery Decision Tree
 
 ```
 On BLOCKED received:
 ├── error_type = retry
-│   ├── Check retry count for this task (from issues.md)
 │   ├── retries < 2 → Tell teammate: "Retry with: {strategy from pattern library or 'try again'}"
 │   └── retries ≥ 2 → Escalate (reclassify as recoverable or design_flaw)
 │
 ├── error_type = recoverable
-│   ├── Query error-patterns.json for matching pattern
-│   ├── Match found → Tell teammate: "Try recovery strategy: {strategy}, success rate: {N/M}"
-│   ├── No match → Lead suggests fix based on blocker description
-│   └── If fix fails → Escalate (reclassify as design_flaw or surface to user)
+│   ├── Pattern match found → "Try: {strategy}, success rate: {N/M}"
+│   ├── No match → Lead suggests fix
+│   └── Fix fails → Escalate (reclassify or surface to user)
 │
 ├── error_type = design_flaw
-│   ├── Check if task has fallback_approach in task-graph.json
-│   ├── Fallback exists → Reassign task with fallback approach
-│   └── No fallback → Trigger re-plan pattern (from coordination-advanced.md)
+│   ├── Fallback exists in task-graph.json → Reassign with fallback approach
+│   └── No fallback → Trigger re-plan pattern
 │
 └── error_type = unknown
-    └── Lead classifies based on description, then re-enters decision tree
+    └── Lead classifies, re-enters tree
 ```
 
-### Fallback Approaches in task-graph.json
+#### Fallback Approaches in task-graph.json
 
 Optional field on task nodes:
 
@@ -263,9 +417,7 @@ Optional field on task nodes:
 }
 ```
 
-### Recovery Tracking in issues.md
-
-Extended format:
+#### Recovery Tracking in issues.md
 
 ```markdown
 ## ISS-003: Token validation timeout
@@ -279,81 +431,71 @@ Extended format:
 - **Pattern captured**: Yes (pattern-012)
 ```
 
-### Generic Recovery Behavior (Role-Based, Not Archetype-Based)
+#### Generic Recovery Behavior (Role-Based)
 
-Recovery behavior is determined by the teammate's role characteristics, not the team archetype:
+Recovery is determined by the teammate's role, not the team archetype:
 
 | Role characteristic | Recovery behavior |
 |---------------------|-------------------|
-| **Has write access** (Implementer, Tester) | Full recovery loop: retry → recover → fallback → escalate |
-| **Read-only, produces findings** (Reviewer, Auditor, Analyst, Scout) | No retries — flag as finding, continue with remaining scope |
-| **Read-only, produces report** (Researcher, Challenger, Strategist) | Skip blocker, report as gap, move to next research angle |
-| **Produces docs** (Planner, Writer) | Recover only — try alternative framing/approach, no code retries |
+| **Has write access** (Implementer, Tester) | Full: retry → recover → fallback → escalate |
+| **Read-only, produces findings** (Reviewer, Auditor, Analyst, Scout) | Flag as finding, continue with remaining scope |
+| **Read-only, produces report** (Researcher, Challenger, Strategist) | Report as gap, move to next angle |
+| **Produces docs** (Planner, Writer) | Recover only — try alternative framing |
 
-This means:
-- The archetype does NOT dictate recovery — the teammate's role does
-- A hybrid team with 2 implementers + 1 researcher naturally gets full recovery for implementers and skip-and-report for the researcher
-- Custom roles inherit recovery behavior based on their tool access category
+The `docs/teammate-roles.md` role definitions gain a new field: `recovery_class: full | report-gap | skip-and-continue | recover-only`.
 
-The `docs/teammate-roles.md` role definitions gain a new field: `recovery_class: full | report-gap | skip-and-continue | recover-only`, derived from the role's tool access.
-
-### Bounds and Safety
+#### Bounds and Safety
 
 - Max 2 retries per task for `retry` type
 - Max 1 recovery attempt for `recoverable` type
-- `design_flaw` always escalates immediately (fallback or re-plan)
-- Total recovery budget per team: max 3 recovery cycles across all tasks. After that, surface to user. Track total cycles in `progress.md` using a new field `**Recovery cycles**: 0` (analogous to the existing `**Remediation cycle**: 0` field). Increment on each recovery attempt
+- `design_flaw` always escalates immediately
+- Total recovery budget: max 3 cycles per team. Track in `progress.md` as `**Recovery cycles**: 0`
 - All recovery attempts logged in `issues.md` and `events.log`
 
-### File Changes
+### Stage-Specific Files
 
-| File | Change |
-|------|--------|
-| `docs/shared-phases.md` Phase 4 | Add "Error Recovery Loop" section with decision tree |
-| `docs/communication-protocol.md` | Add `error_type` field to BLOCKED format |
-| `docs/coordination-patterns.md` | Add "Error Recovery" pattern with retry/recover/escalate protocol |
-| `docs/coordination-advanced.md` | Extend "Re-plan on Block" to reference error classification; add "Fallback Approach" pattern |
-| `docs/workspace-templates.md` | Add `fallback_approach` and `fallback_reason` fields to task-graph.json schema; extend issues.md with recovery attempts |
-| `docs/teammate-roles.md` | Add `recovery_class` field to each role definition |
-| All 5 `skills/*/SKILL.md` Phase 4 | Reference error recovery loop |
+| File | Content |
+|------|---------|
+| `skills/execute/references/error-recovery-protocol.md` | Decision tree, error_type classification guide, bounds, tracking format |
+| `skills/execute/references/coordination-patterns.md` | Core conflict resolution, handoffs, error recovery pattern (migrated from `docs/`) |
+| `skills/execute/references/communication-protocol.md` | All message formats including extended BLOCKED with error_type (migrated from `docs/`) |
+| `skills/execute/agents/spawn-templates.md` | All teammate spawn prompts including plan-mode directive (migrated from `docs/`) |
 
 ### Invariants
 
-- Existing BLOCKED handling (lead decides) still works — `error_type` is a new field, not a replacement
-- If teammate sends BLOCKED without `error_type`, lead classifies it as `unknown` and follows the decision tree
+- Existing BLOCKED handling still works — `error_type` is additive
+- If teammate sends BLOCKED without `error_type`, lead classifies as `unknown`
 - Recovery is bounded and always terminates
 
 ---
 
-## Section 4: Phase 5 Post-Step — `quality-and-learning`
+## Section 4: `agent-team:audit` — Elegance + Lessons + Report
 
 ### Purpose
 
-After the existing completion gate passes, run an elegance review, capture lessons learned, and update the global error pattern library.
+Owns Phase 5 (completion gate, report, shutdown). New: elegance review, lessons capture, and pattern library update.
 
-### Trigger
-
-Always runs after Phase 5's existing completion gate checks pass and after the remediation gate (if triggered). Runs before report generation and team shutdown. Specifically, the Phase 5 order becomes:
+### Phase 5 Ordering
 
 1. Pre-shutdown commit (existing)
 2. Completion gate (existing)
 3. Remediation gate (existing, if open issues)
-4. **Quality-and-learning post-step** (new — this section)
-5. Report generation (existing, now includes elegance + lessons data)
-6. Team shutdown (existing)
-7. Cleanup (existing)
+4. **Elegance gate** (new — Sub-step 1)
+5. **Lessons capture** (new — Sub-step 2)
+6. **Pattern library update** (new — Sub-step 3)
+7. Report generation (existing, now includes elegance + lessons data)
+8. Team shutdown (existing)
+9. Cleanup (existing)
 
-### Three Sub-Steps (Sequential)
+### Sub-step 1: Elegance Gate
 
-#### Sub-step 1: Elegance Gate
-
-**When**: Only for teams that produced code changes (has at least one teammate with write access who completed tasks). Skipped for pure research/audit/planning teams.
+**When**: Only for teams that produced code changes (at least one write-access teammate completed tasks). Skipped for pure research/audit/planning teams.
 
 **New Role — Elegance Reviewer**:
 - Tools: Read, Grep, Glob, Bash (read-only)
 - Scope: Only files touched by implementers (from `file-locks.json`)
-- Recovery class: `skip-and-continue` (read-only role)
-- **Lifecycle**: Spawned after the remediation gate but before report generation. Included in the normal shutdown sequence. Does NOT count toward the initial team size limit (it is a post-step addition, not part of the original team plan). The team remains alive during this sub-step; the Elegance Reviewer is shut down with the rest of the team in step 6.
+- Recovery class: `skip-and-continue`
+- **Lifecycle**: Spawned after the remediation gate but before report generation. Does NOT count toward the initial team size limit (post-step addition). Shut down with the rest of the team in step 8.
 
 **Rubric** (scored 1-5 per dimension):
 
@@ -374,54 +516,70 @@ ELEGANCE_REVIEW:
   findings=[{file, line_range, dimension, suggestion, severity=nitpick|improve|refactor}]
 ```
 
-**Completion gate integration**: Elegance gate is **advisory, not blocking**. Findings go into the final report. The lead includes a summary but does NOT spawn fix tasks unless the user explicitly asks.
+**Advisory, not blocking.** Findings go into the final report. No fix tasks spawned unless user explicitly asks.
 
-#### Sub-step 2: Capture Lessons
+### Sub-step 2: Capture Lessons
 
-**Inputs the lead reviews**:
-- `issues.md` — what went wrong, how it was resolved
-- `progress.md` — decisions, handoffs, blockers
-- `events.log` — timeline, duration per teammate
-- `task-graph.json` — estimate vs actual (from `created_at` vs `completed_at` timestamps)
-- Recovery attempts from the error-recovery-loop
-- Elegance review findings
+Lead synthesizes lessons from the entire team execution.
 
-**Output**: `lessons.md` written to workspace using the template from Section 1.
+**Inputs**: `issues.md`, `progress.md`, `events.log`, `task-graph.json` timestamps, recovery attempts, elegance findings.
 
-**Lead fills in**:
-- What worked / what failed (from issues + blockers)
-- Estimation accuracy (from task-graph timestamps)
-- Integration friction points (from handoff and convergence events)
-- Recommendations (synthesized from all of the above)
+**Output**: `lessons.md` written to workspace using the template defined in Section 2.
 
-#### Sub-step 3: Update Global Pattern Library
+**Lead fills in**: What worked/failed, estimation accuracy, integration friction points, recommendations.
 
-**Rules**:
-- Only patterns from **resolved** issues get captured (unresolved = we don't know the fix)
-- If a matching pattern already exists, update its `success_rate` counters and `last_seen` date
-- If new, create a new entry with `success_rate: {attempts: 1, successes: 1}`
-- Deduplication: match by `error_regex` similarity — don't create near-duplicate patterns
+### Sub-step 3: Update Global Pattern Library
 
-**Bounds**: Max 5 new patterns per team. If more issues were resolved, capture the 5 with highest severity.
+- Only patterns from **resolved** issues get captured
+- If matching pattern exists → update `success_rate` and `last_seen`
+- If new → create entry with `success_rate: {attempts: 1, successes: 1}`
+- Deduplication by `error_regex` similarity
+- Max 5 new patterns per team (highest severity first)
+- If `~/.claude/agent-team-patterns.json` doesn't exist, create with `{"patterns": []}`
 
-### File Changes
+### Stage-Specific Files
 
-| File | Change |
-|------|--------|
-| `docs/shared-phases.md` Phase 5 | Add "Post-step: Quality and Learning" with 3 sub-steps |
-| `docs/teammate-roles.md` | Add Elegance Reviewer role definition with rubric |
-| `docs/spawn-templates.md` | Add Elegance Reviewer spawn template |
-| `docs/communication-protocol.md` | Add `ELEGANCE_REVIEW` message format |
-| `docs/workspace-templates.md` | Extend `report.md` template with elegance metrics (uses `lessons.md` template already defined in Section 1) |
-| `docs/report-format.md` | Add "Elegance Review" section and "Lessons Summary" section to report template |
-| `README.md` | Add Elegance Reviewer to Teammate Roles table (13 roles total) |
-| All 5 `skills/*/SKILL.md` Phase 5 | Reference quality-and-learning post-step |
+| File | Content |
+|------|---------|
+| `skills/audit/references/completion-gates.md` | Archetype-specific gate checks (migrated from Phase 5 overrides in old skills) |
+| `skills/audit/references/elegance-rubric.md` | 5-dimension rubric with scoring guide and examples |
+| `skills/audit/references/report-format.md` | Report template + variants + new elegance/lessons sections (migrated from `docs/`) |
+| `skills/audit/examples/lessons-example.md` | Sample `lessons.md` from a completed team |
+| `skills/audit/agents/elegance-reviewer.md` | Spawn prompt for Elegance Reviewer |
 
 ### Invariants
 
-- Existing completion gate checks are unchanged
-- Post-step runs after them, not instead of them
-- Report generation moves to after the post-step (so it includes elegance findings and lessons summary)
+- Existing completion gate checks unchanged
+- Post-steps run after them, not instead
+- Report generation now includes elegance and lessons data
+
+---
+
+## Section 5: `agent-team:start` — Entry Point
+
+### Purpose
+
+The user-facing entry point that chains all 3 pipeline stages. Detects archetype, then orchestrates plan → execute → audit.
+
+### Behavior
+
+1. **Receive task description** from user
+2. **Detect archetype** (same logic currently in `agent-team/SKILL.md`):
+   - Implementation: build, refactor, fix, migrate
+   - Research: investigate, analyze, compare
+   - Audit: review, assess, evaluate
+   - Planning: design, architect, produce specs
+   - Hybrid: mixed or unclear
+3. **Invoke `agent-team:plan`** with task + archetype config
+4. **Wait for user approval** (plan stage handles this)
+5. **Invoke `agent-team:execute`** with approved plan
+6. **Invoke `agent-team:audit`** with completed workspace
+
+If any stage fails or the user cancels, the pipeline stops. Workspace persists for resumption.
+
+### Skill File
+
+`skills/start/SKILL.md` is lightweight — primarily archetype detection logic and stage chaining. No `references/`, `examples/`, or `agents/` subfolders needed.
 
 ---
 
@@ -431,36 +589,69 @@ ELEGANCE_REVIEW:
 
 | File | Purpose |
 |------|---------|
-| `docs/specs/2026-03-23-workflow-orchestration-integration-design.md` | This spec |
-| `~/.claude/agent-team-patterns.json` | Global error pattern library (created at runtime by Phase 5 post-step if not present, initialized with `{"patterns": []}`) |
+| `skills/start/SKILL.md` | Entry point skill |
+| `skills/plan/SKILL.md` | Plan stage skill |
+| `skills/plan/references/plan-mode-protocol.md` | Plan-mode rules and formats |
+| `skills/plan/references/prior-context-loading.md` | Lessons/pattern loading algorithm |
+| `skills/plan/examples/plan-proposal-example.md` | Sample proposal exchange |
+| `skills/plan/agents/plan-reviewer.md` | Proposal review prompt |
+| `skills/execute/SKILL.md` | Execute stage skill |
+| `skills/execute/references/error-recovery-protocol.md` | Error recovery decision tree |
+| `skills/execute/references/coordination-patterns.md` | Migrated + extended from `docs/` |
+| `skills/execute/references/communication-protocol.md` | Migrated + extended from `docs/` |
+| `skills/execute/agents/spawn-templates.md` | Migrated from `docs/` |
+| `skills/audit/SKILL.md` | Audit stage skill |
+| `skills/audit/references/completion-gates.md` | Archetype-specific gates |
+| `skills/audit/references/elegance-rubric.md` | 5-dimension rubric |
+| `skills/audit/references/report-format.md` | Migrated + extended from `docs/` |
+| `skills/audit/examples/lessons-example.md` | Sample lessons.md |
+| `skills/audit/agents/elegance-reviewer.md` | Elegance Reviewer prompt |
+| `~/.claude/agent-team-patterns.json` | Global error pattern library (created at runtime if not present) |
 
-### Modified Files (Documentation)
+### Deleted Files
 
-| File | Sections Added/Changed |
-|------|----------------------|
-| `docs/shared-phases.md` | Phase 1 pre-step, Phase 2 plan-mode gate, Phase 4 error recovery loop, Phase 5 post-step |
-| `docs/communication-protocol.md` | `PLAN_PROPOSAL`, `PLAN_APPROVED`, `PLAN_REVISION`, `error_type` in BLOCKED, `ELEGANCE_REVIEW` |
-| `docs/spawn-templates.md` | Plan-mode directive block, Elegance Reviewer template |
-| `docs/workspace-templates.md` | `lessons.md` template, `error-patterns.json` schema, `fallback_approach` and `fallback_reason` in task-graph.json, "Plan Proposals" section in progress.md, recovery attempts and `Recovery cycles` counter in issues.md/progress.md |
-| `docs/coordination-patterns.md` | "Plan-Mode Coordination" pattern, "Error Recovery" pattern |
-| `docs/coordination-advanced.md` | Extend "Re-plan on Block" with error classification, add "Fallback Approach" pattern |
-| `docs/teammate-roles.md` | Add Elegance Reviewer role, add `recovery_class` field to all roles |
-| `docs/report-format.md` | Add "Elegance Review" and "Lessons Summary" sections |
+| File | Reason |
+|------|--------|
+| `skills/agent-team/SKILL.md` | Replaced by `skills/start/SKILL.md` |
+| `skills/agent-implement/SKILL.md` | Absorbed into archetype config |
+| `skills/agent-research/SKILL.md` | Absorbed into archetype config |
+| `skills/agent-audit/SKILL.md` | Absorbed into archetype config |
+| `skills/agent-plan/SKILL.md` | Absorbed into archetype config |
+| `docs/shared-phases.md` | Content distributed across 3 stage skills |
+| `docs/spawn-templates.md` | Migrated to `skills/execute/agents/` |
+| `docs/communication-protocol.md` | Migrated to `skills/execute/references/` |
+| `docs/coordination-patterns.md` | Migrated to `skills/execute/references/` |
+| `docs/coordination-advanced.md` | Merged into `skills/execute/references/coordination-patterns.md` |
+| `docs/report-format.md` | Migrated to `skills/audit/references/` |
+
+### Modified Files
+
+| File | Change |
+|------|--------|
+| `docs/workspace-templates.md` | Add `lessons.md` template, `error-patterns.json` schema, `fallback_approach`/`fallback_reason` in task-graph.json, Plan Proposals section in progress.md, recovery tracking in issues.md, Recovery cycles counter |
+| `docs/teammate-roles.md` | Add Elegance Reviewer role (13 total), add `recovery_class` field to all roles |
 | `docs/team-archetypes.md` | Add plan-mode defaults per archetype |
+| `hooks/hooks.json` | Update any hook paths that reference old skill folders (if any) |
+| `.claude-plugin/plugin.json` | Major version bump |
+| `.claude-plugin/marketplace.json` | Major version bump (sync) |
+| `README.md` | Update skill commands, folder structure, Teammate Roles table (13 roles), pipeline stage documentation |
+| `CLAUDE.md` | Update architecture, file ownership table, skill editing guidelines, common tasks |
+| `CHANGELOG.md` | Add major version entry |
+| `tests/` | Update structure tests for new skill folders, add pipeline stage tests |
 
-### Modified Files (Skills)
+### Preserved Files (No Changes)
 
-| File | Changes |
-|------|---------|
-| `skills/agent-team/SKILL.md` | Reference all 4 extensions |
-| `skills/agent-implement/SKILL.md` | Reference all 4 extensions (full recovery, elegance gate ON) |
-| `skills/agent-research/SKILL.md` | Reference pre-step + plan-mode OFF + role-based recovery + lessons only (no elegance gate) |
-| `skills/agent-audit/SKILL.md` | Reference pre-step + plan-mode OFF + role-based recovery + lessons only (no elegance gate) |
-| `skills/agent-plan/SKILL.md` | Reference pre-step + plan-mode ON + recovery (recover-only) + lessons only |
+| File | Reason |
+|------|--------|
+| `docs/custom-roles.md` | Reference for users, not stage-specific |
+| `hooks/hooks.json` | Hook scripts remain in plugin-root `scripts/` (unless paths change) |
+| `scripts/*.sh` | All 12 hook scripts unchanged |
 
-### Version Impact
+---
 
-This is a **minor version bump** (additive features, no breaking changes). All existing behavior is preserved.
+## Version Impact
+
+This is a **major version bump** (breaking change: skill names change from `agent-team:agent-*` to `agent-team:start/plan/execute/audit`).
 
 ---
 
@@ -468,50 +659,56 @@ This is a **minor version bump** (additive features, no breaking changes). All e
 
 | Risk | Likelihood | Mitigation |
 |------|-----------|------------|
-| Plan-mode adds latency to simple tasks | Medium | Defaults are conservative (OFF for research/audit); user can always skip |
-| Error recovery loops extend execution time | Low | Hard bounds: 2 retries, 3 cycles total per team |
-| Elegance reviewer disagreements with implementer | Low | Advisory only, not blocking |
+| Breaking change for existing users | High | Major version bump, migration guide in CHANGELOG |
+| Plan-mode adds latency to simple tasks | Medium | Defaults conservative (OFF for research/audit); user can skip |
+| Error recovery loops extend execution time | Low | Hard bounds: 2 retries, 3 cycles per team |
+| Elegance reviewer disagreements | Low | Advisory only, not blocking |
 | Global pattern library grows unbounded | Low | Max 5 patterns per team; deduplication |
-| Lessons.md becomes noisy/unhelpful | Medium | Structured template constrains output; relevance filter limits injection |
+| Lessons.md becomes noisy | Medium | Structured template; relevance filter |
+| Stage-specific docs drift from shared docs | Medium | Clear ownership table; tests validate references |
 
 ---
 
 ## Testing Plan
 
-### New Structure Tests
+### Skill Structure Tests
 
 | Test | Validates |
 |------|-----------|
-| Elegance Reviewer role in `teammate-roles.md` | New role exists with rubric and `recovery_class` |
-| Elegance Reviewer in `README.md` Teammate Roles table | User-facing docs updated (13 roles) |
-| `recovery_class` field on all roles in `teammate-roles.md` | Every role has a `recovery_class` value |
-| `PLAN_PROPOSAL` format in `communication-protocol.md` | New message type documented |
-| `PLAN_APPROVED` / `PLAN_REVISION` in `communication-protocol.md` | Response message types documented |
-| `error_type` field in BLOCKED format in `communication-protocol.md` | Extended format documented |
-| `ELEGANCE_REVIEW` format in `communication-protocol.md` | New message type documented |
-| `lessons.md` template in `workspace-templates.md` | Template exists with required sections |
-| `error-patterns.json` schema in `workspace-templates.md` | Schema exists with required fields |
-| `fallback_approach` and `fallback_reason` in task-graph.json schema | New optional fields documented |
-| Plan-mode defaults in `team-archetypes.md` | Each archetype has a plan-mode default |
-| Plan-mode directive in `spawn-templates.md` | Directive block exists |
-| Elegance Reviewer spawn template in `spawn-templates.md` | Template exists |
+| `skills/start/SKILL.md` exists with valid frontmatter | Entry point skill |
+| `skills/plan/SKILL.md` exists with valid frontmatter | Plan stage skill |
+| `skills/execute/SKILL.md` exists with valid frontmatter | Execute stage skill |
+| `skills/audit/SKILL.md` exists with valid frontmatter | Audit stage skill |
+| Old skill folders deleted | No `skills/agent-team/`, `skills/agent-implement/`, etc. |
+| Each stage skill has required subfolders | `references/`, `examples/`, `agents/` as applicable |
+| No orphaned doc references | All relative paths in SKILL.md resolve to existing files |
 
-### New Workspace Template Validation
+### New Feature Tests
 
 | Test | Validates |
 |------|-----------|
-| `lessons.md` template has all 5 sections | What Worked, What Failed, Estimation Accuracy, Integration Friction, Recommendations |
-| `progress.md` template has Plan Proposals section | New section added |
-| `progress.md` template has Recovery cycles field | New tracking field added |
-| `issues.md` template has Recovery attempts subsection | Extended format documented |
+| Elegance Reviewer role in `teammate-roles.md` | Role exists with rubric and `recovery_class` |
+| Elegance Reviewer in `README.md` | User-facing docs updated (13 roles) |
+| `recovery_class` on all roles | Every role has a value |
+| `PLAN_PROPOSAL` in communication protocol | New message type documented |
+| `error_type` in BLOCKED format | Extended format documented |
+| `ELEGANCE_REVIEW` in communication protocol | New message type documented |
+| `lessons.md` template in `workspace-templates.md` | Template with 5 required sections |
+| `error-patterns.json` schema in `workspace-templates.md` | Schema with required fields |
+| `fallback_approach`/`fallback_reason` in task-graph.json schema | New optional fields |
+| Plan-mode defaults in `team-archetypes.md` | Each archetype has a default |
 
 ### Integration Tests (Manual)
 
 | Test | How to verify |
 |------|--------------|
-| Phase 1 pre-step loads lessons | Create a completed workspace with `lessons.md`, start a new team touching similar files, verify `## Learned Context` appears in `progress.md` |
-| Phase 2 plan-mode gate | Start an implementation team with complexity ≥ standard, verify plan-mode teammates are marked, approve, verify teammates send `PLAN_PROPOSAL` before coding |
-| Phase 4 error recovery | Have a teammate send `BLOCKED` with `error_type=retry`, verify lead attempts recovery before escalating |
-| Phase 5 elegance gate | Complete an implementation team, verify Elegance Reviewer is spawned and `ELEGANCE_REVIEW` message appears |
-| Phase 5 lessons capture | Complete any team, verify `lessons.md` is written to workspace |
-| Phase 5 pattern library update | Complete a team with resolved issues, verify `~/.claude/agent-team-patterns.json` is created/updated |
+| `/agent-team:start` chains all 3 stages | Invoke with a task, verify plan → execute → audit sequence |
+| `/agent-team:plan` works independently | Invoke, verify it stops after user approval |
+| `/agent-team:execute` resumes from plan | Create workspace with plan, invoke execute, verify it spawns from existing plan |
+| `/agent-team:audit` re-runs verification | Complete a workspace, invoke audit, verify gates + elegance + lessons |
+| Prior context loading | Create completed workspace with lessons.md, start new team, verify Learned Context appears |
+| Plan-mode gate | Start implementation team, verify plan-mode teammates send PLAN_PROPOSAL |
+| Error recovery | Have teammate send BLOCKED with error_type=retry, verify auto-recovery |
+| Elegance gate | Complete implementation team, verify Elegance Reviewer spawns |
+| Lessons capture | Complete any team, verify lessons.md written |
+| Pattern library update | Complete team with resolved issues, verify `~/.claude/agent-team-patterns.json` updated |
