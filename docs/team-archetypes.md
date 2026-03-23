@@ -5,6 +5,7 @@ The lead auto-detects the team archetype from the user's request in Phase 1. Eac
 ## Contents
 
 - [Archetype Detection](#archetype-detection) — how the lead selects an archetype
+- [Plan-Mode Defaults](#plan-mode-defaults) — default plan-mode settings per archetype
 - [Implementation Team](#implementation-team) — build, refactor, fix code
 - [Research Team](#research-team) — investigate, analyze, compare
 - [Audit Team](#audit-team) — review, assess, evaluate
@@ -31,6 +32,18 @@ The lead matches the user's task description against trigger patterns. If multip
 > **Disambiguation — "evaluate"**: "Evaluate against a standard/checklist" (e.g., "evaluate our security posture") → Audit. "Evaluate alternatives/options" (e.g., "evaluate database options") → Research or Planning. When ambiguous, the Phase 2 override lets the user correct.
 
 > **Disambiguation — "write/document"**: "Write code/feature" → Implementation. "Write documentation/docs/ADRs" or "document X" → Planning (if producing design artifacts) or Hybrid (if updating existing project docs). The Phase 2 override lets the user correct.
+
+## Plan-Mode Defaults
+
+Each archetype has a default plan-mode setting. The user can override during Phase 2 approval.
+
+| Archetype | Plan-mode default | Rationale |
+|-----------|-------------------|-----------|
+| Implementation | ON for complexity >= standard | Prevents wasted coding effort on wrong approach |
+| Research | OFF | Researchers explore freely; constraining defeats purpose |
+| Audit | OFF | Auditors follow checklists; proposals add overhead |
+| Planning | ON always | Planners should propose before drafting |
+| Hybrid | Follows detected archetype rules | Mixed teams use the most relevant default |
 
 ## Implementation Team
 
@@ -60,7 +73,7 @@ The lead matches the user's task description against trigger patterns. If multip
 
 **Purpose**: Tasks that clearly combine multiple work types (e.g., "research X then implement Y", "audit and fix").
 
-> **Mid-session archetype change**: If the user requests an archetype change after Phase 3 (e.g., "also fix the issues you found" during an audit), treat it as a re-plan: present the updated plan as Hybrid, get user approval, then adjust workspace (add file-locks.json if needed) and spawn additional teammates. See coordination-advanced.md Re-plan on Block pattern.
+> **Mid-session archetype change**: If the user requests an archetype change after Phase 3 (e.g., "also fix the issues you found" during an audit), treat it as a re-plan: present the updated plan as Hybrid, get user approval, then adjust workspace (add file-locks.json if needed) and spawn additional teammates. See skills/execute/references/coordination-patterns.md Re-plan on Block pattern.
 
 **Default roles**: Lead composes from the full role catalog based on the combined task types.
 
@@ -134,8 +147,8 @@ Senior implementers spawn subagents for independent subtasks within their scope.
 
 ## See Also
 
-- `/agent-implement` — Implementation archetype skill
-- `/agent-research` — Research archetype skill
-- `/agent-audit` — Audit archetype skill
-- `/agent-plan` — Planning archetype skill
-- `/agent-team` — Hybrid/catch-all orchestrator skill
+- `/agent-team:execute` — Execute stage (for implementation teams)
+- `/agent-team:start` — Entry point (specify research archetype)
+- `/agent-team:audit` — Audit stage (for re-running verification)
+- `/agent-team:plan` — Plan stage (for standalone planning)
+- `/agent-team:start` — Full pipeline orchestrator
