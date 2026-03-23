@@ -27,8 +27,10 @@ The plan stage creates the workspace directory at the start (before Phase 1):
 1. Generate team name: `MMDD-{task-slug}` (e.g., `0323-refactor-auth`)
 2. Create `.agent-team/{team-name}/`
 3. Initialize `progress.md` with `**Stage**: plan`, `**Archetype**: {detected type}`, and Learned Context (from prior-context loading)
-4. Initialize empty `tasks.md` and `task-graph.json`
+4. Initialize empty `tasks.md`, `issues.md`, and `task-graph.json`
 5. Add `.agent-team/` to `.gitignore` if not already excluded
+
+> **All 4 workspace tracking files must be created**: `progress.md`, `tasks.md`, `issues.md`, `task-graph.json`. The TaskCompleted hook requires `issues.md` to exist. Omitting it will block teammates from updating task status.
 
 ### Team Creation
 
@@ -229,6 +231,34 @@ User has approved a plan (or no plan -- see fallback below). The decomposition s
 - Avoid splits that create heavy cross-dependencies -- if two streams need constant handoffs, merge them
 
 **Self-check**: "Do I have 2+ streams where each can make meaningful progress without waiting on the others? Are integration points identified?" If no, reconsider the split.
+
+### Populate task-graph.json
+
+After decomposition, write the task dependency graph to `.agent-team/{team-name}/task-graph.json`. Each task becomes a node:
+
+```json
+{
+  "team": "{team-name}",
+  "created": "{ISO timestamp}",
+  "updated": "{ISO timestamp}",
+  "nodes": {
+    "#1": {
+      "subject": "{task description}",
+      "owner": "{teammate-name}",
+      "status": "pending",
+      "depends_on": [],
+      "completed_at": null,
+      "output_files": ["{expected files}"],
+      "critical_path": false,
+      "convergence_point": false
+    }
+  }
+}
+```
+
+Include `depends_on` arrays reflecting the dependency graph from step 3. Mark `convergence_point: true` for tasks identified in step 6. This graph is read by hooks (`compute-critical-path.sh`, `check-integration-point.sh`, `detect-resume.sh`) during execution.
+
+Also populate `tasks.md` with the task ledger matching the graph nodes.
 
 ## Phase 2: Present Plan
 

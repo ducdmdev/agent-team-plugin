@@ -56,7 +56,12 @@ Read: .agent-team/{team-name}/task-graph.json
 ### Phase 5 Ordering
 
 1. **TeamCreate** — create audit team with same team name from workspace
-2. **Spawn audit teammates** — Reviewer (always), Elegance Reviewer (if code changes exist), Audit Reviewer (always)
+2. **Spawn audit teammates** — you MUST spawn these roles:
+   - **Reviewer** (ALWAYS) — runs completion gate checks. See `agents/reviewer.md` for spawn prompt.
+   - **Elegance Reviewer** (if ANY teammate had write access and completed tasks) — scores code quality. See `agents/elegance-reviewer.md` for spawn prompt. Skip ONLY for pure research/audit/planning teams with zero code changes.
+   - **Audit Reviewer** (ALWAYS) — validates the final report. See `agents/audit-reviewer.md` for spawn prompt.
+
+   > **Do not skip spawning.** The audit team needs all applicable roles to produce a thorough review. Spawn them in parallel — they work on different aspects and don't conflict.
 3. Reviewer validates work (completion gate checks per archetype — see `references/completion-gates.md`)
 4. Remediation gate (if open issues — lead coordinates fixes)
 5. Elegance gate (Elegance Reviewer teammate scores code quality)
