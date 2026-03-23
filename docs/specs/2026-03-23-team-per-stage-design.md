@@ -294,7 +294,7 @@ Each invocation is fully self-contained: TeamCreate → work → TeamDelete.
 
 ### Version Impact
 
-This is a **minor version bump** (3.0.0 → 3.1.0). No skill names change. Additive: each stage gains team management. Workspace format gains one new field.
+Included in **v3.0.0** (not yet released). No additional version bump needed. No skill names change. Additive: each stage gains team management. Workspace format gains new fields.
 
 ---
 

@@ -5,23 +5,6 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.1.0] - 2026-03-23
-
-### Added
-- **Team per stage** — each pipeline stage (plan, execute, audit) creates and manages its own team
-- Plan stage team: Researcher(s) + Analyst + Plan Reviewer
-- Audit stage team: Reviewer + Elegance Reviewer + Audit Reviewer
-- New spawn templates: `researcher.md`, `analyst.md`, `reviewer.md` (audit stage)
-- `**Pipeline status**` and `**Stage**` and `**Archetype**` fields in `progress.md` for cross-stage handoff
-- `FINDING` and `ANALYSIS` message types for plan stage communication
-
-### Changed
-- Plan stage frontmatter gains `Agent, TeamCreate, TeamDelete, SendMessage`
-- Execute stage now owns full lifecycle (TeamCreate through TeamDelete)
-- Audit stage gains `TeamDelete`, creates its own team with 12-step Phase 5 ordering
-- Workspace creation moved from execute stage to plan stage
-- Review agents (plan-reviewer, execute-reviewer, audit-reviewer, elegance-reviewer) now communicate via SendMessage as team members
-
 ## [3.0.0] - 2026-03-23
 
 ### Breaking Changes
@@ -41,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`recovery_class` field** — each teammate role now declares its error recovery behavior (full, report-gap, skip-and-continue, recover-only)
 - **Plan-mode defaults** in `docs/team-archetypes.md` — each archetype has a default plan-mode setting
 - **Stage-specific subfolders** — `references/`, `examples/`, `agents/` per stage skill for self-contained content
+- **Team per stage** — each pipeline stage creates and manages its own ephemeral team (plan: Researcher + Analyst + Plan Reviewer; execute: Implementers + Tester + Reviewer + Execute Reviewer; audit: Reviewer + Elegance Reviewer + Audit Reviewer)
+- New spawn templates: `researcher.md`, `analyst.md` (plan stage), `reviewer.md` (audit stage)
+- `**Pipeline status**`, `**Stage**`, and `**Archetype**` fields in `progress.md` for cross-stage handoff
+- `FINDING` and `ANALYSIS` message types for plan stage team communication
 
 ### Removed
 - `docs/shared-phases.md` — phase logic inlined into each stage skill
