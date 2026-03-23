@@ -138,5 +138,26 @@ for script_name in compute-critical-path.sh detect-resume.sh check-integration-p
   assert_true "$script_name referenced in docs/ or skills/" "[ $SCRIPT_REF -gt 0 ]"
 done
 
+# --- Test: Plan stage has team spawn templates ---
+assert_true "Plan stage has researcher.md" "[ -f skills/plan/agents/researcher.md ]"
+assert_true "Plan stage has analyst.md" "[ -f skills/plan/agents/analyst.md ]"
+
+# --- Test: Audit stage has reviewer spawn template ---
+assert_true "Audit stage has reviewer.md" "[ -f skills/audit/agents/reviewer.md ]"
+
+# --- Test: FINDING and ANALYSIS in communication protocol ---
+COMM_PROTO="skills/execute/references/communication-protocol.md"
+assert_true "FINDING message type defined" "grep -q 'FINDING' $COMM_PROTO"
+assert_true "ANALYSIS message type defined" "grep -q 'ANALYSIS' $COMM_PROTO"
+
+# --- Test: Pipeline status field in workspace templates ---
+assert_true "Pipeline status field in workspace-templates.md" "grep -q 'Pipeline status' docs/workspace-templates.md"
+
+# --- Test: Plan stage frontmatter has TeamCreate ---
+assert_true "Plan stage has TeamCreate" "grep -q 'TeamCreate' skills/plan/SKILL.md"
+
+# --- Test: Audit stage frontmatter has TeamDelete ---
+assert_true "Audit stage has TeamDelete" "grep -q 'TeamDelete' skills/audit/SKILL.md"
+
 print_summary
 exit "$TESTS_FAILED"

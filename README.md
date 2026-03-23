@@ -171,6 +171,11 @@ The pipeline is split into four stages, each a separate skill:
 | **Execute** | Creates team, initializes workspace, spawns teammates, coordinates work, resolves blockers, runs error recovery |
 | **Audit** | Runs completion gates, elegance review, generates final report, captures lessons learned |
 
+Each stage creates its own team:
+- **Plan team** (2-3): Researchers scan the codebase + Analyst evaluates complexity + Plan Reviewer validates the plan
+- **Execute team** (2-4): Implementers write code + Tester verifies + Reviewer validates + Execute Reviewer smoke-tests
+- **Audit team** (2-3): Reviewer runs completion gates + Elegance Reviewer scores quality + Audit Reviewer validates report
+
 Each stage has an optional **inter-stage review agent** (plan-reviewer, execute-reviewer, audit-reviewer) that validates output before the next stage begins.
 
 **Plan-aware:** The plan stage scans for existing plan files (`docs/plans/`, `docs/specs/`, etc.). If found, it audits and uses the plan. If not found, it gathers context and creates one. The team decomposition derives from the approved plan.

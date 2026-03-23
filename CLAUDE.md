@@ -31,6 +31,7 @@ docs/                  Shared reference docs (roles, archetypes, workspace templ
 - **`${CLAUDE_PLUGIN_ROOT}`** is the only valid path variable in hooks.json — it resolves to the plugin install directory at runtime
 - **Each stage skill is self-contained** — stage-specific references, examples, and agents live in subfolders (`references/`, `examples/`, `agents/`) alongside SKILL.md
 - **Shared docs** (`docs/`) contain only cross-cutting references: teammate roles, workspace templates, team archetypes, custom roles
+- **Team per stage** — each pipeline stage (plan, execute, audit) creates and manages its own ephemeral team. Teams communicate with the lead via SendMessage. Workspace files are the only handoff between stages.
 - **No `disable-model-invocation`** — the skill auto-invokes on matching trigger phrases
 
 ## File Ownership
