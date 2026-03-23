@@ -334,7 +334,7 @@ Event types: `spawn`, `stop`, `task_start`, `task_complete`, `blocked`, `handoff
 
 ### report.md
 
-Generated during Phase 5 using the template in [report-format.md](report-format.md). This is the final artifact written before shutdown.
+Generated during Phase 5 using the template in [report-format.md](../skills/audit/references/report-format.md). This is the final artifact written before shutdown.
 
 ## Plan File Conventions
 

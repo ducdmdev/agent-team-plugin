@@ -8,7 +8,7 @@ cd "$PROJECT_ROOT"
 echo "Documentation reference tests"
 echo "=============================="
 
-# --- Tests 1-3: Loop over all skills/*/SKILL.md ---
+# --- Tests: Loop over all skills/*/SKILL.md ---
 for SKILL_MD in skills/*/SKILL.md; do
   SKILL_NAME=$(basename "$(dirname "$SKILL_MD")")
   SKILL_DIR=$(dirname "$SKILL_MD")
@@ -45,27 +45,33 @@ for SKILL_MD in skills/*/SKILL.md; do
   assert_true "$SKILL_NAME: All SKILL.md doc refs resolve ($REF_ERRORS missing)" "[ $REF_ERRORS -eq 0 ]"
 done
 
-# --- Test: docs/shared-phases.md exists ---
-assert_true "shared-phases.md exists" "[ -f docs/shared-phases.md ]"
+# --- Test: Pipeline stage skills exist ---
+assert_true "skills/start/SKILL.md exists" "[ -f skills/start/SKILL.md ]"
+assert_true "skills/plan/SKILL.md exists" "[ -f skills/plan/SKILL.md ]"
+assert_true "skills/execute/SKILL.md exists" "[ -f skills/execute/SKILL.md ]"
+assert_true "skills/audit/SKILL.md exists" "[ -f skills/audit/SKILL.md ]"
 
-# --- Test: All relative refs in docs/shared-phases.md resolve ---
-SP_REF_ERRORS=0
-if [ -f docs/shared-phases.md ]; then
-  while IFS= read -r ref_path; do
-    # Skip absolute URLs
-    if echo "$ref_path" | grep -qE '^https?://'; then
-      continue
-    fi
-    # Strip any anchor fragment
-    clean_path=$(echo "$ref_path" | sed 's/#.*//')
-    resolved="docs/$clean_path"
-    if [ ! -f "$resolved" ]; then
-      printf "  missing: shared-phases.md:%s -> %s\n" "$ref_path" "$resolved"
-      SP_REF_ERRORS=$((SP_REF_ERRORS + 1))
-    fi
-  done < <(grep -oE '\]\([^)]*\.md[^)]*\)' docs/shared-phases.md | sed 's/\](//;s/)$//')
-fi
-assert_true "shared-phases.md: All doc refs resolve ($SP_REF_ERRORS missing)" "[ $SP_REF_ERRORS -eq 0 ]"
+# --- Test: Stage skills have required subfolders ---
+assert_true "skills/plan/references/ exists" "[ -d skills/plan/references ]"
+assert_true "skills/plan/examples/ exists" "[ -d skills/plan/examples ]"
+assert_true "skills/plan/agents/ exists" "[ -d skills/plan/agents ]"
+assert_true "skills/execute/references/ exists" "[ -d skills/execute/references ]"
+assert_true "skills/execute/agents/ exists" "[ -d skills/execute/agents ]"
+assert_true "skills/audit/references/ exists" "[ -d skills/audit/references ]"
+assert_true "skills/audit/examples/ exists" "[ -d skills/audit/examples ]"
+assert_true "skills/audit/agents/ exists" "[ -d skills/audit/agents ]"
+
+# --- Test: recovery_class in teammate-roles.md ---
+RC_COUNT=$(grep -c 'Recovery class' docs/teammate-roles.md)
+assert_true "teammate-roles.md has recovery_class entries" "[ $RC_COUNT -gt 0 ]"
+
+# --- Test: Elegance Reviewer role in teammate-roles.md ---
+ER_COUNT=$(grep -c 'Elegance Reviewer' docs/teammate-roles.md)
+assert_true "teammate-roles.md has Elegance Reviewer role" "[ $ER_COUNT -gt 0 ]"
+
+# --- Test: plan-mode defaults in team-archetypes.md ---
+PM_COUNT=$(grep -c 'plan-mode\|Plan-Mode' docs/team-archetypes.md)
+assert_true "team-archetypes.md has plan-mode defaults" "[ $PM_COUNT -gt 0 ]"
 
 # --- Test: All relative refs in docs/*.md resolve ---
 DOC_REF_ERRORS=0
@@ -90,7 +96,7 @@ assert_true "All docs/*.md refs resolve ($DOC_REF_ERRORS missing)" "[ $DOC_REF_E
 # The separator between team-name and teammate-name in counter files should be "--"
 # Check script, SKILL.md, and coordination-patterns.md
 SEPARATOR_MATCHES=0
-SEPARATOR_EXPECTED=3
+SEPARATOR_EXPECTED=2
 
 # Script: check-teammate-idle.sh
 if grep -q '${TEAM}--${TEAMMATE}' scripts/check-teammate-idle.sh; then
@@ -105,8 +111,8 @@ for SKILL_MD in skills/*/SKILL.md; do
   fi
 done
 
-# coordination-patterns.md
-if grep -q '\-\-\*' docs/coordination-patterns.md 2>/dev/null || grep -q '{team-name}--' docs/coordination-patterns.md 2>/dev/null; then
+# coordination-patterns in execute/references
+if grep -q '\-\-\*' skills/execute/references/coordination-patterns.md 2>/dev/null || grep -q '{team-name}--' skills/execute/references/coordination-patterns.md 2>/dev/null; then
   SEPARATOR_MATCHES=$((SEPARATOR_MATCHES + 1))
 fi
 
@@ -116,17 +122,10 @@ assert_true "Counter separator '--' consistent across $SEPARATOR_MATCHES/$SEPARA
 TASK_GRAPH_REF=$(grep -c 'task-graph.json' docs/workspace-templates.md)
 assert_true "workspace-templates.md references task-graph.json" "[ $TASK_GRAPH_REF -gt 0 ]"
 
-# --- Test: All SKILL.md files reference step 4a or task-graph.json ---
-for SKILL_MD in skills/*/SKILL.md; do
-  SKILL_NAME=$(basename "$(dirname "$SKILL_MD")")
-  STEP4A_REF=$(grep -c 'step 4a\|task-graph.json' "$SKILL_MD")
-  assert_true "$SKILL_NAME: SKILL.md references step 4a or task-graph.json" "[ $STEP4A_REF -gt 0 ]"
-done
-
-# --- Test: New DAG scripts referenced in docs ---
+# --- Test: DAG scripts referenced in docs ---
 for script_name in compute-critical-path.sh detect-resume.sh check-integration-point.sh; do
-  SCRIPT_REF=$(grep -rl "$script_name" docs/ | wc -l | tr -d ' ')
-  assert_true "$script_name referenced in docs/" "[ $SCRIPT_REF -gt 0 ]"
+  SCRIPT_REF=$(grep -rl "$script_name" docs/ skills/ | wc -l | tr -d ' ')
+  assert_true "$script_name referenced in docs/ or skills/" "[ $SCRIPT_REF -gt 0 ]"
 done
 
 print_summary

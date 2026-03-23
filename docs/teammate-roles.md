@@ -10,7 +10,7 @@ Generic role definitions for agent team teammates. Select roles based on the tas
 - [Role Selection Guide](#role-selection-guide) — which roles for which tasks
 - [Team Size Limits](#team-size-limits) — caps and self-checks
 - [Subagent Usage Within Teammates](#subagent-usage-within-teammates) — when to spawn sub-tasks
-- [Spawn Templates](spawn-templates.md) — detailed spawn prompt templates for all roles
+- [Spawn Templates](../skills/execute/agents/spawn-templates.md) — detailed spawn prompt templates for all roles
 
 ## Leader
 
@@ -69,77 +69,77 @@ Everything else — .env files, config files, source code, test files, documenta
 **When to use**: Investigation, audit, documentation review, dependency analysis.
 **Typical tools**: Read, Grep, Glob, WebFetch, WebSearch
 **Recovery class**: report-gap
-**Spawn template**: See [spawn-templates.md](spawn-templates.md#researcher)
+**Spawn template**: See [spawn-templates.md](../skills/execute/agents/spawn-templates.md#researcher)
 
 ### Implementer
 **Purpose**: Write code, create files, build features.
 **When to use**: Feature implementation, bug fixes, refactoring, migration.
 **Typical tools**: Read, Write, Edit, Bash, Grep, Glob
 **Recovery class**: full
-**Spawn template**: See [spawn-templates.md](spawn-templates.md#implementer)
+**Spawn template**: See [spawn-templates.md](../skills/execute/agents/spawn-templates.md#implementer)
 
 ### Reviewer
 **Purpose**: Validate code quality, find issues, verify correctness.
 **When to use**: Code review, security audit, test validation, compliance check.
 **Typical tools**: Read, Grep, Glob, Bash (read-only commands; Bash for verification commands)
 **Recovery class**: skip-and-continue
-**Spawn template**: See [spawn-templates.md](spawn-templates.md#reviewer)
+**Spawn template**: See [spawn-templates.md](../skills/execute/agents/spawn-templates.md#reviewer)
 
 ### Challenger
 **Purpose**: Stress-test assumptions, find edge cases, play devil's advocate.
 **When to use**: Design review, hypothesis testing, competing analysis, adversarial testing.
 **Typical tools**: Read, Grep, Glob, Bash, WebSearch
 **Recovery class**: report-gap
-**Spawn template**: See [spawn-templates.md](spawn-templates.md#challenger)
+**Spawn template**: See [spawn-templates.md](../skills/execute/agents/spawn-templates.md#challenger)
 
 ### Tester
 **Purpose**: Run tests, verify builds, check runtime behavior.
 **When to use**: Test execution, build verification, integration testing, runtime validation. Required for complex plans.
 **Typical tools**: Read, Grep, Glob, Bash
 **Recovery class**: full
-**Spawn template**: See [spawn-templates.md](spawn-templates.md#tester)
+**Spawn template**: See [spawn-templates.md](../skills/execute/agents/spawn-templates.md#tester)
 
 ### Analyst
 **Purpose**: Deep-dive into data, metrics, logs, performance profiling. More quantitative than Researcher.
 **When to use**: Performance analysis, data investigation, metrics review, log analysis.
 **Typical tools**: Read, Grep, Glob, Bash (read-only commands for data queries)
 **Recovery class**: skip-and-continue
-**Spawn template**: See [spawn-templates.md](spawn-templates.md#analyst)
+**Spawn template**: See [spawn-templates.md](../skills/execute/agents/spawn-templates.md#analyst)
 
 ### Planner
 **Purpose**: Produce specs, architecture designs, decision documents.
 **When to use**: Architecture design, technical specification, decision documents, migration planning.
 **Typical tools**: Read, Write (docs only), Grep, Glob, WebSearch
 **Recovery class**: recover-only
-**Spawn template**: See [spawn-templates.md](spawn-templates.md#planner)
+**Spawn template**: See [spawn-templates.md](../skills/execute/agents/spawn-templates.md#planner)
 
 ### Writer
 **Purpose**: Produce documentation, ADRs, guides, user-facing content.
 **When to use**: Documentation creation, ADR writing, README updates, user guides, API docs.
 **Typical tools**: Read, Write (docs only), Grep, Glob
 **Recovery class**: recover-only
-**Spawn template**: See [spawn-templates.md](spawn-templates.md#writer)
+**Spawn template**: See [spawn-templates.md](../skills/execute/agents/spawn-templates.md#writer)
 
 ### Strategist
 **Purpose**: Evaluate trade-offs, compare alternatives, recommend direction.
 **When to use**: Technology evaluation, approach comparison, decision support, roadmap input.
 **Typical tools**: Read, Grep, Glob, WebFetch, WebSearch
 **Recovery class**: report-gap
-**Spawn template**: See [spawn-templates.md](spawn-templates.md#strategist)
+**Spawn template**: See [spawn-templates.md](../skills/execute/agents/spawn-templates.md#strategist)
 
 ### Auditor
 **Purpose**: Systematic checks against a standard, checklist, or compliance requirement.
 **When to use**: Security audit, compliance check, accessibility review, best-practices assessment.
 **Typical tools**: Read, Grep, Glob, Bash (read-only commands)
 **Recovery class**: skip-and-continue
-**Spawn template**: See [spawn-templates.md](spawn-templates.md#auditor)
+**Spawn template**: See [spawn-templates.md](../skills/execute/agents/spawn-templates.md#auditor)
 
 ### Scout
 **Purpose**: Quick reconnaissance — scan a codebase, API, or documentation and report structure and key findings.
 **When to use**: Codebase orientation, API surface mapping, dependency inventory, quick assessment before deeper work.
 **Typical tools**: Read, Grep, Glob, Bash (read-only)
 **Recovery class**: skip-and-continue
-**Spawn template**: See [spawn-templates.md](spawn-templates.md#scout)
+**Spawn template**: See [spawn-templates.md](../skills/execute/agents/spawn-templates.md#scout)
 
 ### Elegance Reviewer
 
@@ -203,4 +203,4 @@ Teammates can spawn subagents (Task tool) for self-contained subtasks that don't
 ### Standard Usage
 Use subagents to parallelize within your own scope — e.g., writing tests while implementing, or reading multiple files simultaneously. Do NOT use subagents when the subtask needs input from another teammate.
 
-For nested task decomposition by senior implementers, see [spawn-templates.md](spawn-templates.md#nested-task-decomposition-senior-implementers).
+For nested task decomposition by senior implementers, see [spawn-templates.md](../skills/execute/agents/spawn-templates.md#nested-task-decomposition-senior-implementers).
