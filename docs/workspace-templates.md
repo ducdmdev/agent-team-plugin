@@ -19,6 +19,9 @@ Templates for the 3 workspace tracking files initialized during Phase 3. The lea
 
 **Task**: {one-line description of the overall task}
 **Status**: active | completing | done
+**Stage**: {plan|execute|audit}
+**Pipeline status**: {approved|executed|audited}
+**Archetype**: {implementation|research|audit|planning|hybrid}
 **Created**: {timestamp}
 **Last updated**: {timestamp}
 **Remediation cycle**: 0
@@ -65,6 +68,12 @@ Cross-teammate information transfers.
 
 - [{timestamp}] {source} → {target}: {what was handed off}
 ````
+
+### Field Documentation
+
+- **Stage**: Which pipeline stage last wrote to this workspace (plan, execute, or audit)
+- **Pipeline status**: Cross-stage handoff state. Distinct from the `**Status**` field which tracks team lifecycle. Values: `approved` (plan complete, user approved), `executed` (execute complete, work done), `audited` (audit complete, report generated). Absence of this field means "not gated" for backward compatibility.
+- **Archetype**: The detected team archetype. Set by the plan stage (or start skill) during workspace creation. Read by execute and audit stages to determine role selection, completion gates, and report variant.
 
 ## tasks.md
 

@@ -6,6 +6,7 @@ Canonical definition of structured messages used by all teammates. The lead read
 
 - [Structured Messages](#structured-messages)
 - [Extended Messages (Optional)](#extended-messages-optional)
+- [Plan Stage Messages](#plan-stage-messages)
 - [Plan-Mode Messages](#plan-mode-messages)
 - [Inter-Stage Review Messages](#inter-stage-review-messages)
 - [Reviewer/Auditor Findings Format](#reviewerauditor-findings-format)
@@ -85,6 +86,28 @@ HANDOFF #N: priority={critical|high|normal|low}, {what I produced, key details}
 Default is `normal` — omit the field for routine work. Use `critical` only when the task blocks multiple teammates or has a deadline.
 
 **Lead processing**: Prioritize `critical` and `high` messages. For `critical` HANDOFF, forward immediately (don't batch).
+
+## Plan Stage Messages
+
+### FINDING
+
+Sent by Researchers during plan stage to report codebase discoveries:
+
+```
+FINDING: {what was found}, relevance={high|medium|low}, files=[{paths}]
+```
+
+**Lead processing**: Collect findings, use high-relevance findings to inform decomposition. Prioritize findings that reveal dependencies, coupling, or risks.
+
+### ANALYSIS
+
+Sent by Analyst during plan stage to report complexity assessment:
+
+```
+ANALYSIS: complexity={low|medium|high}, risks=[{risk list}], estimate={scope description}, parallelizable={yes|no|partial}
+```
+
+**Lead processing**: Use analysis to set task complexity, plan-mode defaults, and team sizing for the execute stage.
 
 ## Plan-Mode Messages
 

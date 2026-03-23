@@ -55,7 +55,18 @@ Before invoking the plan stage, determine the team archetype from the user's tas
 
 ## Pipeline Flow
 
-Execute the following stages sequentially. Each stage's logic is defined in its own SKILL.md — read and follow that file inline.
+Each stage creates and destroys its own team. The workspace is the only handoff:
+
+1. Detect archetype, generate team name (`MMDD-{task-slug}`)
+2. Read and follow `../plan/SKILL.md` — creates planning team, produces plan, shuts down team
+3. Wait for user approval
+4. Read and follow `../execute/SKILL.md` — creates execution team, does work, shuts down team
+5. Read and follow `../audit/SKILL.md` — creates audit team, reviews, reports, shuts down team
+
+Full pipeline with review agents:
+```
+plan team → [plan-review] → user approval → execute team → [execute-review] → audit team → [audit-review] → report
+```
 
 ### Stage 1: Plan (Phase 1 + Phase 2)
 
