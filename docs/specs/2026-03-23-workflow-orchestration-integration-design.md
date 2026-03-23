@@ -108,7 +108,7 @@ The archetype (implementation, research, audit, planning, hybrid) becomes a **co
 - Plan-mode defaults (owned by `plan` stage)
 - Report variant (owned by `audit` stage)
 
-The `start` skill detects the archetype from the task description (same detection logic currently in `agent-team/SKILL.md`) and passes it as context to each stage.
+The `start` skill detects the archetype from the task description (same detection logic currently in `agent-team/SKILL.md`) and writes it to the workspace `progress.md` as `**Archetype**: {type}`. Each stage reads archetype config from this field. When `plan` is invoked independently, it detects the archetype itself and writes it.
 
 ### Independent Invocation
 
@@ -118,8 +118,8 @@ Each stage can be invoked independently:
 |---------|----------|
 | `/agent-team:start refactor auth` | Full pipeline — plan → execute → audit |
 | `/agent-team:plan refactor auth` | Just planning — analyze, decompose, get user approval. Stops after Phase 2 |
-| `/agent-team:execute` | Resume from existing plan — reads approved plan from workspace, spawns and coordinates. Requires a workspace with approved plan |
-| `/agent-team:audit` | Re-run verification — reads completed workspace, runs completion gate + elegance + lessons. Requires a workspace with completed tasks |
+| `/agent-team:execute` | Resume from existing plan. **Preconditions**: workspace directory exists at `.agent-team/{name}/` with `progress.md` (containing `**Archetype**` and `**Status**: approved`), `tasks.md` (with task breakdown), and `task-graph.json` (with pending tasks) |
+| `/agent-team:audit` | Re-run verification. **Preconditions**: workspace directory exists with `task-graph.json` where at least one task has `status: completed`. Incomplete tasks are flagged as ABANDONED in the report. If all tasks are incomplete, audit exits with "nothing to audit" |
 
 ### Where Shared Content Lives
 
@@ -144,7 +144,7 @@ Content that is truly shared across stages stays in plugin-root `docs/`. Stage-s
 | `docs/spawn-templates.md` | `skills/execute/agents/spawn-templates.md` | Only execute stage spawns teammates |
 | `docs/communication-protocol.md` | `skills/execute/references/communication-protocol.md` | Execute stage coordinates communication |
 | `docs/coordination-patterns.md` | `skills/execute/references/coordination-patterns.md` | Execute stage handles coordination |
-| `docs/coordination-advanced.md` | `skills/execute/references/coordination-advanced.md` | Execute stage handles advanced patterns |
+| `docs/coordination-advanced.md` | Merged into `skills/execute/references/coordination-patterns.md` | Single file for all coordination patterns (core + advanced) |
 | `docs/report-format.md` | `skills/audit/references/report-format.md` | Audit stage generates reports |
 
 **Deleted after migration**:
@@ -170,7 +170,7 @@ description: >
   "spawn teammates", "implement in parallel", "research with a team",
   "audit with a team", "plan with a team".
 argument-hint: "[task description]"
-allowed-tools: [Read, Glob, Grep, Bash, Agent, TaskCreate, TaskUpdate, TaskList, TaskGet, TeamCreate, TeamDelete, SendMessage]
+allowed-tools: Read, Glob, Grep, Bash, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, TaskGet, TeamCreate, TeamDelete, SendMessage
 ---
 ```
 
@@ -184,7 +184,7 @@ description: >
   Use independently to plan without executing.
   Triggers: "plan in parallel", "design with a team", "architect with teammates".
 argument-hint: "[task description]"
-allowed-tools: [Read, Glob, Grep, Bash, TaskCreate, TaskUpdate, TaskList, TaskGet]
+allowed-tools: Read, Glob, Grep, Bash, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, TaskGet
 ---
 ```
 
@@ -197,7 +197,7 @@ description: >
   parallel work, handles error recovery. Requires an approved plan (from plan stage
   or workspace). Triggers: "execute the plan", "spawn the team", "start execution".
 argument-hint: "[workspace path or plan reference]"
-allowed-tools: [Read, Write, Edit, Glob, Grep, Bash, Agent, TaskCreate, TaskUpdate, TaskList, TaskGet, TeamCreate, TeamDelete, SendMessage]
+allowed-tools: Read, Write, Edit, Glob, Grep, Bash, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, TaskGet, TeamCreate, TeamDelete, SendMessage
 ---
 ```
 
@@ -211,9 +211,11 @@ description: >
   Requires completed workspace. Triggers: "audit the team work", "review team results",
   "run verification", "check team output".
 argument-hint: "[workspace path]"
-allowed-tools: [Read, Write, Glob, Grep, Bash, Agent, TaskCreate, TaskUpdate, TaskList, TaskGet, TeamCreate, SendMessage]
+allowed-tools: Read, Write, Glob, Grep, Bash, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, TaskGet, TeamCreate, SendMessage
 ---
 ```
+
+> **Note on plugin naming**: Claude Code plugins namespace skills as `{plugin-name}:{skill-name}`. Since `plugin.json` sets the plugin name to `agent-team`, skills named `start`, `plan`, `execute`, `audit` in their folder/frontmatter are invoked as `agent-team:start`, `agent-team:plan`, etc.
 
 ### Migration Path
 
@@ -222,11 +224,31 @@ This is a **major version bump** (skill names change, folder structure changes).
 1. Create new skill folders (`start/`, `plan/`, `execute/`, `audit/`) with SKILL.md and supporting files
 2. Distribute `shared-phases.md` content into the 3 stage skills
 3. Move stage-specific docs into skill folders
-4. Update `hooks/hooks.json` if any hooks reference skill paths
-5. Delete old skill folders (`agent-team/`, `agent-implement/`, `agent-research/`, `agent-audit/`, `agent-plan/`)
-6. Delete `docs/shared-phases.md`
-7. Update README, CLAUDE.md, CHANGELOG
-8. Update test suite
+4. Update `docs/custom-roles.md` and `docs/team-archetypes.md` cross-references
+5. Update test suite for new structure
+6. **Verify**: Run `bash tests/run-tests.sh` — all new tests must pass
+7. Delete old skill folders (`agent-team/`, `agent-implement/`, `agent-research/`, `agent-audit/`, `agent-plan/`)
+8. Delete migrated `docs/` files (`shared-phases.md`, `spawn-templates.md`, etc.)
+9. **Verify again**: Run `bash tests/run-tests.sh` — confirm no regressions
+10. Update README, CLAUDE.md, CHANGELOG
+11. Bump version in `plugin.json` and `marketplace.json`
+
+### Relative Path Convention
+
+Files within a skill folder use relative paths:
+- Skill-local references: `references/plan-mode-protocol.md` (from SKILL.md)
+- Shared docs in plugin root: `../../../docs/teammate-roles.md` (from `skills/plan/SKILL.md` → `docs/`)
+- Cross-stage references: avoid where possible; use shared `docs/` files instead
+
+### Test Suite Migration
+
+Key test breakages to address in `tests/structure/test-doc-references.sh`:
+- Remove: assertion that `docs/shared-phases.md` exists (it's deleted)
+- Remove: assertions for `skills/agent-*/SKILL.md` glob pattern (old skills deleted)
+- Add: assertions for `skills/start/SKILL.md`, `skills/plan/SKILL.md`, `skills/execute/SKILL.md`, `skills/audit/SKILL.md`
+- Add: assertions that each stage skill's relative refs resolve (e.g., `references/plan-mode-protocol.md` exists)
+- Update: `docs/*.md` reference checks to exclude migrated files
+- Add: cross-reference validation for `docs/team-archetypes.md` and `docs/custom-roles.md` pointing to valid targets
 
 ---
 
@@ -305,11 +327,12 @@ Activates when task complexity ≥ standard (3+ steps or architectural decisions
    ```
    User can override: "make all teammates plan-mode" or "skip plan-mode"
 
-2. **Spawn with plan-mode instruction** — plan-mode teammates get an additional directive:
+2. **Plan-mode directive** (injected by the `execute` stage during spawning, not by `plan` stage):
    ```
    PLAN-MODE ACTIVE: Before writing any code, send a PLAN_PROPOSAL message to the lead.
    Do NOT write/edit files until you receive PLAN_APPROVED.
    ```
+   The `plan` stage only *marks* which teammates get plan-mode in the approved plan. The `execute` stage reads these marks and *injects the directive* into spawn prompts. PLAN_PROPOSAL evaluation also happens during `execute` (Phase 4 coordination), not during `plan`.
 
 3. **New message type `PLAN_PROPOSAL`**:
    ```
@@ -442,7 +465,7 @@ Recovery is determined by the teammate's role, not the team archetype:
 | **Read-only, produces report** (Researcher, Challenger, Strategist) | Report as gap, move to next angle |
 | **Produces docs** (Planner, Writer) | Recover only — try alternative framing |
 
-The `docs/teammate-roles.md` role definitions gain a new field: `recovery_class: full | report-gap | skip-and-continue | recover-only`.
+The `docs/teammate-roles.md` role definitions gain a new field: `recovery_class: full | report-gap | skip-and-continue | recover-only`. Added as a bold field in each role's markdown section (e.g., `**Recovery class**: full`), consistent with the existing field format (`**Tools**: ...`).
 
 #### Bounds and Safety
 
@@ -492,9 +515,9 @@ Owns Phase 5 (completion gate, report, shutdown). New: elegance review, lessons 
 **When**: Only for teams that produced code changes (at least one write-access teammate completed tasks). Skipped for pure research/audit/planning teams.
 
 **New Role — Elegance Reviewer**:
-- Tools: Read, Grep, Glob, Bash (read-only)
+- Tools: Read, Grep, Glob, Bash (read-only — limited to verification commands like `npm test`, `npm run lint`, `tsc --noEmit`; no write operations)
 - Scope: Only files touched by implementers (from `file-locks.json`)
-- Recovery class: `skip-and-continue`
+- Recovery class: `skip-and-continue` (appropriate because the role is advisory — if it hits a blocker, skip and continue; findings are informational, not blocking)
 - **Lifecycle**: Spawned after the remediation gate but before report generation. Does NOT count toward the initial team size limit (post-step addition). Shut down with the rest of the team in step 8.
 
 **Rubric** (scored 1-5 per dimension):
@@ -535,13 +558,14 @@ Lead synthesizes lessons from the entire team execution.
 - If new → create entry with `success_rate: {attempts: 1, successes: 1}`
 - Deduplication by `error_regex` similarity
 - Max 5 new patterns per team (highest severity first)
-- If `~/.claude/agent-team-patterns.json` doesn't exist, create with `{"patterns": []}`
+- Global library cap: 200 patterns maximum. When cap is reached, evict patterns with the lowest `success_rate` (least useful) before adding new ones
+- If `~/.claude/agent-team-patterns.json` doesn't exist, create `~/.claude/` directory if needed (`mkdir -p`) and initialize with `{"patterns": []}`
 
 ### Stage-Specific Files
 
 | File | Content |
 |------|---------|
-| `skills/audit/references/completion-gates.md` | Archetype-specific gate checks (migrated from Phase 5 overrides in old skills) |
+| `skills/audit/references/completion-gates.md` | Archetype-specific gate checks: maps each archetype to its required checks (e.g., Implementation → 8 checks, Research → 2 checks). Migrated from the per-archetype Phase 5 overrides in the old `agent-implement/SKILL.md`, `agent-research/SKILL.md`, etc. This is the single source of truth for "which gates apply to which archetype" |
 | `skills/audit/references/elegance-rubric.md` | 5-dimension rubric with scoring guide and examples |
 | `skills/audit/references/report-format.md` | Report template + variants + new elegance/lessons sections (migrated from `docs/`) |
 | `skills/audit/examples/lessons-example.md` | Sample `lessons.md` from a completed team |
@@ -577,9 +601,21 @@ The user-facing entry point that chains all 3 pipeline stages. Detects archetype
 
 If any stage fails or the user cancels, the pipeline stops. Workspace persists for resumption.
 
+### Stage Chaining Mechanism
+
+The `start` skill chains stages by **inlining their logic sequentially within a single skill execution**. It does NOT use the Skill tool to invoke other skills or spawn subagents per stage. Instead:
+
+1. `start/SKILL.md` contains the archetype detection logic and a sequential orchestration flow
+2. Each stage's SKILL.md defines the logic for that stage; `start` reads and follows the same logic inline
+3. The workspace directory (`.agent-team/{name}/`) is the handoff mechanism between stages — each stage reads workspace state left by the previous stage
+
+When stages are invoked independently (e.g., `/agent-team:execute`), they read workspace state directly. When chained via `start`, the lead executes each stage's logic in sequence within the same session.
+
+This means `start/SKILL.md` references the other 3 skills' logic via `Read` instructions (e.g., "Read `../plan/SKILL.md` and follow Phase 1+2"). The actual phase logic lives in the stage skills; `start` orchestrates the order.
+
 ### Skill File
 
-`skills/start/SKILL.md` is lightweight — primarily archetype detection logic and stage chaining. No `references/`, `examples/`, or `agents/` subfolders needed.
+`skills/start/SKILL.md` is lightweight — primarily archetype detection logic, stage ordering, and Read references to the 3 stage skills. No `references/`, `examples/`, or `agents/` subfolders needed.
 
 ---
 
@@ -631,7 +667,8 @@ If any stage fails or the user cancels, the pipeline stops. Workspace persists f
 | `docs/workspace-templates.md` | Add `lessons.md` template, `error-patterns.json` schema, `fallback_approach`/`fallback_reason` in task-graph.json, Plan Proposals section in progress.md, recovery tracking in issues.md, Recovery cycles counter |
 | `docs/teammate-roles.md` | Add Elegance Reviewer role (13 total), add `recovery_class` field to all roles |
 | `docs/team-archetypes.md` | Add plan-mode defaults per archetype |
-| `hooks/hooks.json` | Update any hook paths that reference old skill folders (if any) |
+| `docs/custom-roles.md` | Update `/agent-team` reference to `/agent-team:start` |
+| `docs/team-archetypes.md` | Add plan-mode defaults; fix cross-references to migrated docs (e.g., `coordination-advanced.md` → `skills/execute/references/coordination-patterns.md`) |
 | `.claude-plugin/plugin.json` | Major version bump |
 | `.claude-plugin/marketplace.json` | Major version bump (sync) |
 | `README.md` | Update skill commands, folder structure, Teammate Roles table (13 roles), pipeline stage documentation |
@@ -643,9 +680,9 @@ If any stage fails or the user cancels, the pipeline stops. Workspace persists f
 
 | File | Reason |
 |------|--------|
-| `docs/custom-roles.md` | Reference for users, not stage-specific |
-| `hooks/hooks.json` | Hook scripts remain in plugin-root `scripts/` (unless paths change) |
+| `hooks/hooks.json` | All hook paths reference `scripts/*.sh`, not skill folders — no changes needed |
 | `scripts/*.sh` | All 12 hook scripts unchanged |
+| `docs/plans/` | Historical plan files — left as-is (they reference old skill paths but are historical records, not active references) |
 
 ---
 
@@ -663,7 +700,7 @@ This is a **major version bump** (breaking change: skill names change from `agen
 | Plan-mode adds latency to simple tasks | Medium | Defaults conservative (OFF for research/audit); user can skip |
 | Error recovery loops extend execution time | Low | Hard bounds: 2 retries, 3 cycles per team |
 | Elegance reviewer disagreements | Low | Advisory only, not blocking |
-| Global pattern library grows unbounded | Low | Max 5 patterns per team; deduplication |
+| Global pattern library grows unbounded | Low | Max 5 patterns per team; deduplication; 200 pattern global cap with LRU eviction |
 | Lessons.md becomes noisy | Medium | Structured template; relevance filter |
 | Stage-specific docs drift from shared docs | Medium | Clear ownership table; tests validate references |
 
