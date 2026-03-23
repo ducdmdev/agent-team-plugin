@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2026-03-23
+
+### Breaking Changes
+- **Skill restructure: 5 archetype skills to 4 pipeline stages** — replaced `agent-team`, `agent-implement`, `agent-research`, `agent-audit`, `agent-plan` skills with `start`, `plan`, `execute`, `audit` pipeline stages
+- **Migrated shared docs into stage skills** — `docs/shared-phases.md`, `docs/spawn-templates.md`, `docs/communication-protocol.md`, `docs/coordination-patterns.md`, `docs/coordination-advanced.md`, `docs/report-format.md` moved into stage-specific `references/`, `agents/`, `examples/` subfolders
+
+### Added
+- **Pipeline entry point** (`skills/start/SKILL.md`) — type detection, prior context loading, routing to plan/execute/audit
+- **Prior context loading** — plan stage scans for existing plans, specs, and design docs to bootstrap decomposition
+- **Plan-mode gate** — user approval checkpoint between plan and execute stages
+- **Error recovery loop** — execute stage retries failed tasks with structured escalation (retry, reassign, simplify, skip)
+- **Elegance review** — audit stage spawns an Elegance Reviewer agent to assess code quality beyond correctness
+- **Lessons capture** — audit stage extracts reusable lessons for future teams
+- **Pattern library** — audit stage builds coordination pattern recommendations from team experience
+- **Inter-stage review agents** — plan-reviewer, execute-reviewer, audit-reviewer validate output between stages
+- **Elegance Reviewer role** — new teammate role for post-execution quality assessment (auto-spawned by audit stage)
+- **`recovery_class` field** — each teammate role now declares its error recovery behavior (full, report-gap, skip-and-continue, recover-only)
+- **Plan-mode defaults** in `docs/team-archetypes.md` — each archetype has a default plan-mode setting
+- **Stage-specific subfolders** — `references/`, `examples/`, `agents/` per stage skill for self-contained content
+
+### Removed
+- `docs/shared-phases.md` — phase logic inlined into each stage skill
+- `docs/spawn-templates.md` — migrated to `skills/execute/agents/spawn-templates.md`
+- `docs/communication-protocol.md` — migrated to `skills/execute/references/communication-protocol.md`
+- `docs/coordination-patterns.md` — migrated to `skills/execute/references/coordination-patterns.md`
+- `docs/coordination-advanced.md` — merged into `skills/execute/references/coordination-patterns.md`
+- `docs/report-format.md` — migrated to `skills/audit/references/report-format.md`
+- `skills/agent-team/` — replaced by `skills/start/`
+- `skills/agent-implement/` — replaced by `skills/execute/`
+- `skills/agent-research/` — replaced by `skills/execute/` (team type detection in start stage)
+- `skills/agent-audit/` — replaced by `skills/audit/`
+- `skills/agent-plan/` — replaced by `skills/plan/`
+
 ## [2.6.0] - 2026-03-20
 
 ### Added
