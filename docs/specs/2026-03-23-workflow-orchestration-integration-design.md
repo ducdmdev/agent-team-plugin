@@ -68,18 +68,19 @@ skills/
 │       └── plan-reviewer.md          Prompt for reviewing teammate proposals
 │
 ├── execute/                      → agent-team:execute
-│   ├── SKILL.md                  Stage 2: spawn + coordinate + error recovery
+│   ├── SKILL.md                  Spawn + coordinate + error recovery
 │   ├── references/
 │   │   ├── error-recovery-protocol.md    Decision tree, bounds, tracking
 │   │   ├── coordination-patterns.md      Core conflict resolution, handoffs
 │   │   └── communication-protocol.md     Structured message formats
 │   ├── agents/
-│   │   └── spawn-templates.md            Teammate spawn prompts for all roles
+│   │   ├── spawn-templates.md            Teammate spawn prompts for all roles
+│   │   └── execute-reviewer.md           Smoke test before audit handoff
 │   └── scripts/
 │       └── (hook scripts remain in plugin-root hooks/ and scripts/)
 │
 └── audit/                        → agent-team:audit
-    ├── SKILL.md                  Stage 3: verify + elegance + lessons + report
+    ├── SKILL.md                  Verify + elegance + lessons + report
     ├── references/
     │   ├── completion-gates.md       Archetype-specific gate checks
     │   ├── elegance-rubric.md        5-dimension scoring rubric
@@ -87,7 +88,8 @@ skills/
     ├── examples/
     │   └── lessons-example.md        Sample lessons.md from a completed team
     └── agents/
-        └── elegance-reviewer.md      Prompt for the Elegance Reviewer
+        ├── elegance-reviewer.md      Prompt for the Elegance Reviewer
+        └── audit-reviewer.md         Meta-review of report quality
 ```
 
 ### How Pipeline Stages Map to Phases
@@ -265,7 +267,7 @@ Runs at the start of Phase 1, before plan detection.
 1. **Scan `.agent-team/*/lessons.md`** — find all completed teams' lessons files, sorted by date (newest first)
 2. **Scan global `~/.claude/agent-team-patterns.json`** — the error pattern library (shared across all projects)
 3. **Relevance filter** — match prior lessons by keyword overlap with current task description
-4. **Inject context** — append a `## Learned Context` block to `progress.md` (created during execute stage workspace setup) containing:
+4. **Inject context** — collect a `## Learned Context` block in memory during the plan stage. This block is written to `progress.md` after the execute stage creates the workspace (or the plan stage creates a minimal `progress.md` if invoked independently). Contents:
    - Top 3 most relevant lessons (with source team name)
    - Known error patterns for files/modules in scope
    - Estimation adjustments (e.g., "prior auth team underestimated by 2x")
@@ -780,8 +782,8 @@ This means `start/SKILL.md` references the other 3 skills' logic via `Read` inst
 | File | Change |
 |------|--------|
 | `docs/workspace-templates.md` | Add `lessons.md` template, `error-patterns.json` schema, `fallback_approach`/`fallback_reason` in task-graph.json, Plan Proposals section in progress.md, recovery tracking in issues.md, Recovery cycles counter |
-| `docs/teammate-roles.md` | Add Elegance Reviewer role (13 total), add `recovery_class` field to all roles |
-| `docs/team-archetypes.md` | Add plan-mode defaults per archetype; fix cross-references to migrated docs (e.g., `coordination-advanced.md` → `skills/execute/references/coordination-patterns.md`) |
+| `docs/teammate-roles.md` | Add Elegance Reviewer role (13 entries total: Leader + 12 teammate roles), add `recovery_class` field to all roles |
+| `docs/team-archetypes.md` | Add plan-mode defaults per archetype; fix cross-references to migrated docs (e.g., `coordination-advanced.md` → `skills/execute/references/coordination-patterns.md`); update "See Also" section skill references from old names (`/agent-implement`, `/agent-research`, etc.) to new names (`/agent-team:start`, `/agent-team:plan`, etc.) |
 | `docs/custom-roles.md` | Update `/agent-team` reference to `/agent-team:start` |
 | `.claude-plugin/plugin.json` | Major version bump |
 | `.claude-plugin/marketplace.json` | Major version bump (sync) |
