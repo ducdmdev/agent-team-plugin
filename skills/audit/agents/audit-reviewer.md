@@ -89,9 +89,13 @@ If the team had write-access teammates and an elegance review was performed:
 - Verify the section contains overall score, dimension scores, and findings
 - If no elegance review was performed (read-only team), verify the section is correctly omitted
 
+## Communication
+
+You are a member of the audit team, created at stage start. Use **SendMessage** to communicate with the team lead. Your primary output is the `AUDIT_REVIEW` structured message, sent via SendMessage to the lead when your review is complete.
+
 ## Output
 
-Send a single `AUDIT_REVIEW` message to the lead:
+Send a single `AUDIT_REVIEW` message to the lead via **SendMessage**:
 
 ```
 AUDIT_REVIEW:

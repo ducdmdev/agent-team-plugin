@@ -6,7 +6,7 @@ description: >
   Requires completed workspace. Triggers: "audit the team work", "review team results",
   "run verification", "check team output".
 argument-hint: "[workspace path]"
-allowed-tools: Read, Write, Glob, Grep, Bash, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, TaskGet, TeamCreate, SendMessage
+allowed-tools: Read, Write, Glob, Grep, Bash, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, TaskGet, TeamCreate, TeamDelete, SendMessage
 ---
 
 # Audit Stage Orchestrator
@@ -41,6 +41,8 @@ Before proceeding, validate the workspace:
 4. **If ALL tasks are incomplete** (zero completed nodes), exit with: "Nothing to audit — no tasks have been completed. Run the execute stage first or complete tasks manually."
 5. **If some tasks are incomplete**, flag them as ABANDONED in `tasks.md` and `task-graph.json` and proceed with the audit for completed work
 
+> **Pipeline gate**: Check `progress.md` for `**Pipeline status**: executed`. If absent (legacy/manual workspace), proceed with a warning but do not block — treat absence as "not gated" for backward compatibility.
+
 Read workspace state:
 ```
 Read: .agent-team/{team-name}/progress.md
@@ -51,7 +53,22 @@ Read: .agent-team/{team-name}/task-graph.json
 
 ## Phase 5: Synthesize
 
-Execute these 10 steps in order. Each step references its detailed specification below or in supporting files.
+### Phase 5 Ordering
+
+1. **TeamCreate** — create audit team with same team name from workspace
+2. **Spawn audit teammates** — Reviewer (always), Elegance Reviewer (if code changes exist), Audit Reviewer (always)
+3. Reviewer validates work (completion gate checks per archetype — see `references/completion-gates.md`)
+4. Remediation gate (if open issues — lead coordinates fixes)
+5. Elegance gate (Elegance Reviewer teammate scores code quality)
+6. Lessons capture (lead synthesizes from workspace data)
+7. Pattern library update (lead writes to `~/.claude/agent-team-patterns.json`)
+8. Report generation (lead writes `report.md`)
+9. Audit Reviewer validates report (sends AUDIT_REVIEW message)
+10. **Shutdown teammates** (parallel shutdown requests)
+11. **TeamDelete**
+12. Cleanup — write `**Pipeline status**: audited` and `**Stage**: audit` to `progress.md`
+
+Execute these 12 steps in order. Each step references its detailed specification below or in supporting files.
 
 ### Step 1: Pre-Shutdown Commit
 
@@ -108,7 +125,7 @@ Review `issues.md` for OPEN items after the completion gate:
 
 See [Elegance Gate](#elegance-gate) section below for details and [references/elegance-rubric.md](references/elegance-rubric.md) for the scoring rubric.
 
-Spawn the Elegance Reviewer agent using the prompt in [agents/elegance-reviewer.md](agents/elegance-reviewer.md).
+The Elegance Reviewer is spawned with the audit team at stage start (step 2). It is a regular team member, not a post-step addition.
 
 Process the `ELEGANCE_REVIEW` message and include findings in the report. This gate is **advisory only** — findings do not block completion.
 
