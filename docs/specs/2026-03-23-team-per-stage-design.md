@@ -72,7 +72,7 @@ FINDING: {what was found}, relevance={high|medium|low}, files=[{paths}]
 
 Analyst sends:
 ```
-ANALYSIS: complexity={low|medium|high}, risks=[{risk list}], estimate={scope description}
+ANALYSIS: complexity={low|medium|high}, risks=[{risk list}], estimate={scope description}, parallelizable={yes|no|partial}
 ```
 
 Plan Reviewer sends (unchanged):
@@ -95,7 +95,6 @@ allowed-tools: Read, Glob, Grep, Bash, Agent, AskUserQuestion, TaskCreate, TaskU
 | `skills/plan/agents/plan-reviewer.md` | Update from subagent prompt to teammate spawn template |
 | `skills/plan/agents/researcher.md` | New: spawn template for plan-stage researcher |
 | `skills/plan/agents/analyst.md` | New: spawn template for plan-stage analyst |
-| `skills/execute/agents/spawn-templates.md` | Add Researcher and Analyst spawn templates for plan-stage reference (or note plan stage owns its own) |
 | `skills/execute/references/communication-protocol.md` | Add FINDING and ANALYSIS message types |
 | `docs/workspace-templates.md` | Add `**Stage**: {plan\|execute\|audit}` field to progress.md template |
 
@@ -279,16 +278,16 @@ Each invocation is fully self-contained: TeamCreate → work → TeamDelete.
 
 | File | Change |
 |------|--------|
-| `skills/start/SKILL.md` | Update orchestration narrative: each stage creates/destroys its own team. Remove TeamCreate/TeamDelete from start's own usage (delegates to stages). |
+| `skills/start/SKILL.md` | Update orchestration narrative: each stage creates/destroys its own team. **Keep** TeamCreate/TeamDelete/SendMessage in frontmatter (start inlines stage logic and needs all stage tools). Update Pipeline Flow text only. |
 | `skills/plan/SKILL.md` | Add TeamCreate/TeamDelete/SendMessage to tools. Add workspace creation, team creation, coordination, shutdown. |
-| `skills/plan/agents/plan-reviewer.md` | Subagent prompt → teammate spawn template |
-| `skills/execute/SKILL.md` | Own TeamDelete (no longer delegated to audit). Write `**Pipeline status**: executed`. |
-| `skills/execute/agents/execute-reviewer.md` | Subagent prompt → teammate spawn template |
+| `skills/plan/agents/plan-reviewer.md` | Add `## Communication` section with SendMessage protocol; update SKILL.md references from "spawn subagent" to "spawn teammate" |
+| `skills/execute/SKILL.md` | Own TeamDelete (no longer delegated to audit). Write `**Pipeline status**: executed`. Update preconditions to check `**Pipeline status**: approved` (with backward-compat fallback). Gate Phase 3 workspace creation: skip if workspace already exists (plan stage created it). |
+| `skills/execute/agents/execute-reviewer.md` | Add `## Communication` section with SendMessage protocol; update SKILL.md references from "spawn subagent" to "spawn teammate" |
 | `skills/execute/references/communication-protocol.md` | Add FINDING and ANALYSIS message types |
-| `skills/audit/SKILL.md` | Add TeamCreate. Own full lifecycle. Update to 12-step ordering. |
-| `skills/audit/agents/elegance-reviewer.md` | Subagent prompt → teammate spawn template |
-| `skills/audit/agents/audit-reviewer.md` | Subagent prompt → teammate spawn template |
-| `docs/workspace-templates.md` | Add `**Stage**` and `**Pipeline status**` fields to progress.md template (distinct from existing `**Status**` field) |
+| `skills/audit/SKILL.md` | Add TeamDelete to allowed-tools (TeamCreate already present). Own full lifecycle. Update to 12-step ordering. Add `**Pipeline status**: executed` precondition with backward-compat fallback. |
+| `skills/audit/agents/elegance-reviewer.md` | Add `## Communication` section with SendMessage protocol; update SKILL.md references from "spawn subagent" to "spawn teammate" |
+| `skills/audit/agents/audit-reviewer.md` | Add `## Communication` section with SendMessage protocol; update SKILL.md references from "spawn subagent" to "spawn teammate" |
+| `docs/workspace-templates.md` | Add `**Stage**`, `**Pipeline status**`, and `**Archetype**` fields to progress.md template (distinct from existing `**Status**` field) |
 | `README.md` | Update How It Works to show 3 teams |
 | `CLAUDE.md` | Update architecture description |
 | `CHANGELOG.md` | Add team-per-stage entry |

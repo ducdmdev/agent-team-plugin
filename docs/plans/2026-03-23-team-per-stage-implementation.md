@@ -230,15 +230,20 @@ In the Phase 1 section, after the prior context loading pre-step, add a note:
 > **Team context**: Researchers scan the codebase in parallel during Phase 1a. Their FINDING messages inform the lead's plan detection and decomposition. The Analyst evaluates complexity after researchers report.
 ```
 
-- [ ] **Step 4: Update plan-reviewer.md to teammate format**
+- [ ] **Step 4: Update Learned Context reference**
 
-Read current `skills/plan/agents/plan-reviewer.md`. Update it from a subagent prompt to a teammate spawn template. Key changes:
-- Add `## Communication` section with `SendMessage` protocol
-- Change output from "report back" to "send PLAN_REVIEW message to lead"
-- Add `## Rules` section consistent with other spawn templates
-- Keep the 6 checks and behavior rules unchanged
+In Phase 1 Pre-step section, find the line "Written to `progress.md` after workspace creation (execute stage)" and update to: "Written to `progress.md` during plan stage workspace creation (Team Management section above)."
 
-- [ ] **Step 5: Commit**
+Also in "Step 0 -- Archetype Context" section (~line 54), update any references to "execute stage writes Archetype" to "plan stage writes `**Archetype**` during workspace creation."
+
+- [ ] **Step 5: Update plan-reviewer.md for team communication**
+
+Read current `skills/plan/agents/plan-reviewer.md`. The file already has `## Role`, `## Tools`, `## Checks`, `## Output`, `## Behavior` sections — it's structurally close to a spawn template. Minimal changes:
+- Add `## Communication` section before `## Checks` explaining that this teammate uses `SendMessage` to send the `PLAN_REVIEW` message to the lead
+- In the existing Output section, clarify messages are sent via SendMessage (not returned as a subagent report)
+- Keep all 6 checks and behavior rules unchanged
+
+- [ ] **Step 6: Commit**
 
 ```bash
 git add skills/plan/SKILL.md skills/plan/agents/plan-reviewer.md
@@ -270,23 +275,32 @@ After execute-reviewer passes (or one remediation cycle completes):
 
 Remove any references to "audit stage handles shutdown" if present.
 
-- [ ] **Step 2: Update execute SKILL.md — workspace already exists**
+- [ ] **Step 2: Update execute SKILL.md preconditions**
 
-In Phase 3 preconditions, add:
+In the Preconditions section, update the existing check from `**Status**: approved` to also accept `**Pipeline status**: approved`:
 
 ```markdown
-> **Workspace**: The plan stage creates the workspace. The execute stage reads and extends it — does NOT re-create `progress.md`, `tasks.md`, or `task-graph.json`. If workspace doesn't exist (independent invocation without plan stage), create it here.
+> **Pipeline gate**: Check `progress.md` for `**Pipeline status**: approved`. If this field is absent (legacy/manual workspace), proceed without blocking — treat absence as "not gated" for backward compatibility.
 ```
 
-- [ ] **Step 3: Update execute-reviewer.md to teammate format**
+- [ ] **Step 3: Gate workspace creation in Phase 3**
 
-Read current `skills/execute/agents/execute-reviewer.md`. Update from subagent prompt to teammate spawn template:
-- Add `## Communication` section with SendMessage protocol
-- Change output to "send EXECUTE_REVIEW message to lead"
-- Add `## Rules` section
-- Keep the 7 checks unchanged
+In Phase 3 Step 3 ("Initialize Workspace"), wrap the workspace creation in a conditional:
 
-- [ ] **Step 4: Commit**
+```markdown
+> **Workspace**: If `.agent-team/{team-name}/progress.md` already exists (plan stage created it), skip workspace initialization — read and extend existing files. Only create workspace if it doesn't exist (independent invocation without plan stage).
+```
+
+This prevents the execute stage from overwriting plan-stage data (`**Stage**: plan`, `**Pipeline status**`, Learned Context, Archetype).
+
+- [ ] **Step 4: Update execute-reviewer.md for team communication**
+
+Read current `skills/execute/agents/execute-reviewer.md`. The file already has structured sections. Minimal changes:
+- Add `## Communication` section explaining messages are sent via SendMessage
+- In Output section, clarify EXECUTE_REVIEW is sent via SendMessage to lead
+- Keep all 7 checks unchanged
+
+- [ ] **Step 5: Commit**
 
 ```bash
 git add skills/execute/SKILL.md skills/execute/agents/execute-reviewer.md
@@ -330,31 +344,37 @@ Replace the current 10-step ordering with the 12-step version from the spec:
 12. Cleanup — write `**Pipeline status**: audited`, `**Stage**: audit` to `progress.md`
 ```
 
-- [ ] **Step 3: Remove old Elegance Reviewer lifecycle note**
+- [ ] **Step 3: Add Pipeline status precondition**
 
-Find and remove text about "Spawned after the remediation gate but before report generation. Does NOT count toward the initial team size limit." Replace with:
+In the Preconditions section of audit SKILL.md, add:
+
+```markdown
+> **Pipeline gate**: Check `progress.md` for `**Pipeline status**: executed`. If absent (legacy/manual workspace), proceed with a warning but do not block — treat absence as "not gated" for backward compatibility.
+```
+
+- [ ] **Step 4: Update Elegance Reviewer lifecycle note**
+
+In the Elegance Gate section, add a note clarifying the new lifecycle:
 
 ```markdown
 The Elegance Reviewer is spawned with the audit team at stage start (step 2). It is a regular team member, not a post-step addition.
 ```
 
-- [ ] **Step 4: Update elegance-reviewer.md to teammate format**
+- [ ] **Step 5: Update elegance-reviewer.md for team communication**
 
-Update from subagent prompt to teammate spawn template:
-- Add `## Communication` section
-- Change output to "send ELEGANCE_REVIEW message to lead via SendMessage"
-- Add `## Rules` section
+Read current `skills/audit/agents/elegance-reviewer.md`. Already has structured sections. Minimal changes:
+- Add `## Communication` section explaining ELEGANCE_REVIEW is sent via SendMessage
+- Update existing Output section to reference SendMessage
 - Keep rubric and scope unchanged
 
-- [ ] **Step 5: Update audit-reviewer.md to teammate format**
+- [ ] **Step 6: Update audit-reviewer.md for team communication**
 
-Update from subagent prompt to teammate spawn template:
-- Add `## Communication` section
-- Change output to "send AUDIT_REVIEW message to lead via SendMessage"
-- Add `## Rules` section
+Read current `skills/audit/agents/audit-reviewer.md`. Already has structured sections. Minimal changes:
+- Add `## Communication` section explaining AUDIT_REVIEW is sent via SendMessage
+- Update existing Output section to reference SendMessage
 - Keep 6 checks and behavior rules unchanged
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add skills/audit/SKILL.md skills/audit/agents/elegance-reviewer.md skills/audit/agents/audit-reviewer.md
@@ -386,21 +406,23 @@ Each stage creates and destroys its own team. The workspace is the only handoff:
 5. Read and follow `../audit/SKILL.md` — creates audit team, reviews, reports, shuts down team
 ```
 
-Remove TeamCreate/TeamDelete from start's own tool usage description (it delegates to stages).
+**Keep** TeamCreate/TeamDelete/SendMessage in start's frontmatter `allowed-tools` — start inlines stage logic and needs all tools the stages need. Only update the narrative text in the Pipeline Flow section.
 
-- [ ] **Step 2: Add Pipeline status and Stage fields to workspace-templates.md**
+- [ ] **Step 2: Add Pipeline status, Stage, and Archetype fields to workspace-templates.md**
 
 In the `progress.md` template section, add after existing fields:
 
 ```markdown
 **Stage**: {plan|execute|audit}
 **Pipeline status**: {approved|executed|audited}
+**Archetype**: {implementation|research|audit|planning|hybrid}
 ```
 
 Add field docs:
 ```markdown
 - **Stage**: Which pipeline stage last wrote to this workspace (plan, execute, or audit)
 - **Pipeline status**: Cross-stage handoff state. Distinct from the `**Status**` field which tracks team lifecycle. Values: `approved` (plan complete, user approved), `executed` (execute complete, work done), `audited` (audit complete, report generated). Absence of this field means "not gated" for backward compatibility.
+- **Archetype**: The detected team archetype. Set by the plan stage (or start skill) during workspace creation. Read by execute and audit stages to determine role selection, completion gates, and report variant.
 ```
 
 - [ ] **Step 3: Add FINDING and ANALYSIS to communication protocol**
