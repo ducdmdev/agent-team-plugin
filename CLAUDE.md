@@ -46,14 +46,14 @@ docs/                  Shared reference docs (roles, archetypes, workspace templ
 | `skills/plan/SKILL.md` | Plan stage | Decomposition, DAG creation, plan-review, user approval |
 | `skills/plan/references/` | Plan stage references | Prior context loading, plan-mode protocol |
 | `skills/plan/examples/` | Plan stage examples | Plan proposal example |
-| `skills/plan/agents/` | Plan stage agents | Plan-reviewer agent definition |
+| `skills/plan/agents/` | Plan stage agents | Plan-reviewer, researcher, analyst agent definitions |
 | `skills/execute/SKILL.md` | Execute stage | Spawn, coordination, error recovery loop |
 | `skills/execute/references/` | Execute stage references | Communication protocol, coordination patterns, error recovery |
 | `skills/execute/agents/` | Execute stage agents | Spawn templates, execute-reviewer agent |
 | `skills/audit/SKILL.md` | Audit stage | Completion gates, elegance review, report, lessons |
 | `skills/audit/references/` | Audit stage references | Completion gates, elegance rubric, report format |
 | `skills/audit/examples/` | Audit stage examples | Lessons-learned example |
-| `skills/audit/agents/` | Audit stage agents | Audit-reviewer, elegance-reviewer agents |
+| `skills/audit/agents/` | Audit stage agents | Audit-reviewer, elegance-reviewer, reviewer agents |
 | `docs/teammate-roles.md` | Role definitions + selection guide | Update when adding new roles |
 | `docs/workspace-templates.md` | Workspace file templates + `task-graph.json` schema | Update when adding new workspace files or changing DAG schema |
 | `docs/team-archetypes.md` | Team type definitions + phase profiles | Update when adding new archetypes or modifying plan-mode defaults |

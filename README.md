@@ -338,7 +338,7 @@ agent-team-plugin/
 │   │   ├── SKILL.md             # Plan stage — decomposition + DAG + approval
 │   │   ├── references/          # Prior context loading, plan-mode protocol
 │   │   ├── examples/            # Plan proposal examples
-│   │   └── agents/              # Plan-reviewer agent
+│   │   └── agents/              # Plan-reviewer, researcher, analyst agents
 │   ├── execute/
 │   │   ├── SKILL.md             # Execute stage — spawn + coordination + recovery
 │   │   ├── references/          # Communication protocol, coordination patterns, error recovery
@@ -347,12 +347,18 @@ agent-team-plugin/
 │       ├── SKILL.md             # Audit stage — gates + elegance + report + lessons
 │       ├── references/          # Completion gates, elegance rubric, report format
 │       ├── examples/            # Lessons-learned examples
-│       └── agents/              # Audit-reviewer, elegance-reviewer agents
+│       └── agents/              # Audit-reviewer, elegance-reviewer, reviewer agents
 ├── docs/
 │   ├── teammate-roles.md          # Role definitions and selection guide
 │   ├── workspace-templates.md     # Workspace file templates
 │   ├── team-archetypes.md         # Team type definitions and phase profiles
 │   └── custom-roles.md            # Template for project-specific roles
+├── tests/
+│   ├── run-tests.sh               # Test runner (12 test files)
+│   ├── lib/
+│   │   └── test-helpers.sh        # Shared test utilities
+│   ├── hooks/                     # Hook-specific tests
+│   └── structure/                 # Plugin structure validation tests
 ├── CLAUDE.md
 └── README.md
 ```
