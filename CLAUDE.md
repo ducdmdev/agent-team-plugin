@@ -10,20 +10,28 @@ A Claude Code plugin that adds an Agent Team skill for orchestrating parallel wo
 .claude-plugin/        Plugin manifest + marketplace registry
 hooks/hooks.json       Plugin-level hooks (use ${CLAUDE_PLUGIN_ROOT} for paths)
 scripts/               Hook scripts (bash, require jq)
-skills/agent-team/     Hybrid/catch-all orchestrator
-skills/agent-implement/ Implementation team orchestrator
-skills/agent-research/  Research team orchestrator
-skills/agent-audit/     Audit team orchestrator
-skills/agent-plan/      Planning team orchestrator
-docs/                  Shared phases + reference docs consumed by skills at runtime
+skills/start/          Pipeline entry point — type detection + routing
+skills/plan/           Plan stage — decomposition, DAG, approval
+  references/          Prior context loading, plan-mode protocol
+  examples/            Plan proposal examples
+  agents/              Plan-reviewer agent
+skills/execute/        Execute stage — spawn, coordination, error recovery
+  references/          Communication protocol, coordination patterns, error recovery
+  agents/              Spawn templates, execute-reviewer agent
+skills/audit/          Audit stage — gates, elegance review, report, lessons
+  references/          Completion gates, elegance rubric, report format
+  examples/            Lessons-learned examples
+  agents/              Audit-reviewer, elegance-reviewer agents
+docs/                  Shared reference docs (roles, archetypes, workspace templates, custom roles)
 ```
 
 ### Key Design Decisions
 
 - **Hooks are plugin-level** (`hooks/hooks.json`), not in SKILL.md frontmatter — this is how Claude Code plugins register hooks
 - **`${CLAUDE_PLUGIN_ROOT}`** is the only valid path variable in hooks.json — it resolves to the plugin install directory at runtime
-- **SKILL.md inlines** workspace templates and communication protocol so the skill is self-contained for core workflow. Detailed role definitions and patterns stay in `docs/` to keep SKILL.md focused
-- **workspace.md is not a standalone file** — its content was inlined into SKILL.md Phase 3 and Phase 4
+- **Each stage skill is self-contained** — stage-specific references, examples, and agents live in subfolders (`references/`, `examples/`, `agents/`) alongside SKILL.md
+- **Shared docs** (`docs/`) contain only cross-cutting references: teammate roles, workspace templates, team archetypes, custom roles
+- **Team per stage** — each pipeline stage (plan, execute, audit) creates and manages its own ephemeral team. Teams communicate with the lead via SendMessage. Workspace files are the only handoff between stages.
 - **No `disable-model-invocation`** — the skill auto-invokes on matching trigger phrases
 
 ## File Ownership
@@ -34,21 +42,22 @@ docs/                  Shared phases + reference docs consumed by skills at runt
 | `.claude-plugin/marketplace.json` | Marketplace registry | Bump version here too, keep in sync with plugin.json |
 | `hooks/hooks.json` | Hook registration (9 hook entries) | Update timeout values, add new hooks, or update hook command paths |
 | `scripts/*.sh` | Hook enforcement logic (12 scripts) | Written in bash (`#!/bin/bash`), degrade gracefully without `jq` |
-| `skills/agent-team/SKILL.md` | Hybrid/catch-all skill | Archetype detection + hybrid-specific overrides |
-| `skills/agent-implement/SKILL.md` | Implementation skill | Implementation-specific Phase 3/5 |
-| `skills/agent-research/SKILL.md` | Research skill | Research-specific Phase 3/5 |
-| `skills/agent-audit/SKILL.md` | Audit skill | Audit-specific Phase 3/5 |
-| `skills/agent-plan/SKILL.md` | Planning skill | Planning-specific Phase 3/5 |
-| `docs/shared-phases.md` | Shared phase logic | Changes here affect ALL archetype skills |
+| `skills/start/SKILL.md` | Pipeline entry point | Type detection, prior context, routing to plan/execute/audit |
+| `skills/plan/SKILL.md` | Plan stage | Decomposition, DAG creation, plan-review, user approval |
+| `skills/plan/references/` | Plan stage references | Prior context loading, plan-mode protocol |
+| `skills/plan/examples/` | Plan stage examples | Plan proposal example |
+| `skills/plan/agents/` | Plan stage agents | Plan-reviewer, researcher, analyst agent definitions |
+| `skills/execute/SKILL.md` | Execute stage | Spawn, coordination, error recovery loop |
+| `skills/execute/references/` | Execute stage references | Communication protocol, coordination patterns, error recovery |
+| `skills/execute/agents/` | Execute stage agents | Spawn templates, execute-reviewer agent |
+| `skills/audit/SKILL.md` | Audit stage | Completion gates, elegance review, report, lessons |
+| `skills/audit/references/` | Audit stage references | Completion gates, elegance rubric, report format |
+| `skills/audit/examples/` | Audit stage examples | Lessons-learned example |
+| `skills/audit/agents/` | Audit stage agents | Audit-reviewer, elegance-reviewer, reviewer agents |
 | `docs/teammate-roles.md` | Role definitions + selection guide | Update when adding new roles |
-| `docs/spawn-templates.md` | Spawn prompt templates | Update when changing spawn prompts |
-| `docs/communication-protocol.md` | Structured message formats | Update when changing protocol prefixes or role-specific formats |
-| `docs/coordination-patterns.md` | Core conflict resolution, handoffs | Update when adding new core coordination patterns |
-| `docs/coordination-advanced.md` | Advanced coordination patterns | Update when adding new advanced patterns |
 | `docs/workspace-templates.md` | Workspace file templates + `task-graph.json` schema | Update when adding new workspace files or changing DAG schema |
-| `docs/report-format.md` | Final report template | Update when changing report structure |
+| `docs/team-archetypes.md` | Team type definitions + phase profiles | Update when adding new archetypes or modifying plan-mode defaults |
 | `docs/custom-roles.md` | Project-specific role template | Reference for users creating custom roles |
-| `docs/team-archetypes.md` | Team type definitions + phase profiles | Update when adding new archetypes or modifying phase overrides |
 | `CHANGELOG.md` | Version history | Add entry for each release |
 | `README.md` | User-facing documentation | Keep in sync with feature changes |
 | `tests/` | Hook and structure tests | `hooks/` for hook tests, `structure/` for plugin validation |
@@ -84,9 +93,9 @@ chore:    maintenance (CI, dependencies)
 ### SKILL.md Editing
 
 - The frontmatter (`---` block) defines skill metadata — do not add `hooks:` or `disable-model-invocation` back
-- Phase structure (1-5) is the core contract — preserve it
-- Inlined sections (workspace templates in Phase 3, communication protocol in Phase 4) must stay in sync with `docs/` if the same content exists in both places
-- Doc references use `../../docs/` relative paths from `skills/agent-team/`
+- Each stage skill has its own phase structure — preserve the stage-specific flow
+- Stage-specific content lives in subfolders (`references/`, `examples/`, `agents/`) — keep SKILL.md focused on orchestration logic, detailed reference material in subfolders
+- Doc references use `../../docs/` relative paths from `skills/{stage}/` for shared docs, `./references/` or `./agents/` for stage-local files
 
 ## Testing
 
@@ -96,7 +105,7 @@ chore:    maintenance (CI, dependencies)
 bash tests/run-tests.sh
 ```
 
-Runs 12 test files (145 assertions) covering all hooks and plugin structure.
+Runs 12 test files covering all hooks and plugin structure.
 
 ### Validate Plugin
 
@@ -133,27 +142,27 @@ Nine hook entries registered in `hooks/hooks.json`:
 1. Add the script to `scripts/`
 2. Make it executable
 3. Register it in `hooks/hooks.json` using `${CLAUDE_PLUGIN_ROOT}/scripts/your-script.sh`
-4. Document in shared-phases.md Hooks section and README
+4. Document in the relevant stage skill's SKILL.md and README
 5. Test: run `claude plugin validate .` then test manually in a team session
 
 ### Adding a New Teammate Role
 
-1. Add the role definition and spawn template to `docs/teammate-roles.md`
-2. Update the Role Selection Guide table
-3. Update README Teammate Roles table
+1. Add the role definition to `docs/teammate-roles.md`
+2. Add the spawn template to `skills/execute/agents/spawn-templates.md`
+3. Update the Role Selection Guide table in `docs/teammate-roles.md`
+4. Update README Teammate Roles table
 
-### Adding a New Archetype Skill
+### Adding a New Pipeline Stage
 
-1. Create a new `skills/agent-{name}/SKILL.md` with frontmatter (name, description, argument-hint, allowed-tools)
-2. Reference `../../docs/shared-phases.md` for shared logic (Phases 1, 2, 4)
-3. Add archetype-specific Phase 3 and Phase 5 overrides
-4. Add the archetype to the detection table in `skills/agent-team/SKILL.md`
-5. Add trigger patterns to `docs/team-archetypes.md`
-6. Add the report variant template to `docs/report-format.md`
-7. Update `tests/structure/test-doc-references.sh` (auto-detected via `skills/*/SKILL.md` glob)
-8. Update `README.md` Archetype-Specific Commands table and Plugin Structure tree
-9. Add row to `CLAUDE.md` File Ownership table
-10. Test: run `bash tests/run-tests.sh`, then trigger the skill with a matching phrase
+1. Create a new `skills/{stage}/SKILL.md` with frontmatter (name, description, argument-hint, allowed-tools)
+2. Create subfolders as needed: `references/`, `examples/`, `agents/`
+3. Add stage-specific orchestration logic, referencing `../../docs/` for shared docs
+4. Update `skills/start/SKILL.md` routing table to include the new stage
+5. Add trigger patterns to `docs/team-archetypes.md` if applicable
+6. Update `tests/structure/test-doc-references.sh` — add assertions for new skill and subfolders
+7. Update `README.md` Pipeline Commands table and Plugin Structure tree
+8. Add rows to `CLAUDE.md` File Ownership table
+9. Test: run `bash tests/run-tests.sh`, then trigger the skill with a matching phrase
 
 ### Releasing a New Version
 

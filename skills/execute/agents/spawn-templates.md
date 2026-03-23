@@ -1,11 +1,12 @@
 # Spawn Templates Reference
 
-Detailed spawn prompt templates for each teammate role. Used by the Team Lead during Phase 3 when building spawn prompts. For role overview and selection guide, see [teammate-roles.md](teammate-roles.md).
+Detailed spawn prompt templates for each teammate role. Used by the Team Lead during Phase 3 when building spawn prompts. For role overview and selection guide, see [../../docs/teammate-roles.md](../../docs/teammate-roles.md).
 
-> **Protocol placeholders**: Spawn templates use `{COMMUNICATION_PROTOCOL}`, `{FINDINGS_FORMAT}`, `{RESULTS_FORMAT}`, and `{REPORT_FORMAT}` placeholders. The lead reads [communication-protocol.md](communication-protocol.md) at spawn time and substitutes the appropriate blocks into each teammate's prompt.
+> **Protocol placeholders**: Spawn templates use `{COMMUNICATION_PROTOCOL}`, `{FINDINGS_FORMAT}`, `{RESULTS_FORMAT}`, and `{REPORT_FORMAT}` placeholders. The lead reads [../references/communication-protocol.md](../references/communication-protocol.md) at spawn time and substitutes the appropriate blocks into each teammate's prompt.
 
 ## Contents
 
+- [Plan-Mode Directive](#plan-mode-directive)
 - [Researcher](#researcher)
 - [Implementer](#implementer) (+ Migrator, Integrator, Debugger variants)
 - [Reviewer](#reviewer)
@@ -17,8 +18,34 @@ Detailed spawn prompt templates for each teammate role. Used by the Team Lead du
 - [Strategist](#strategist)
 - [Auditor](#auditor)
 - [Scout](#scout)
+- [Elegance Reviewer](#elegance-reviewer)
 - [Spawn Example](#spawn-example) — concrete Task tool invocation
 - [Nested Task Decomposition](#nested-task-decomposition-senior-implementers)
+
+## Plan-Mode Directive
+
+When a teammate is marked for plan-mode during the plan stage, inject this block into their spawn prompt **before the Rules section**:
+
+```
+PLAN-MODE ACTIVE: Before writing any code, send a PLAN_PROPOSAL message to the lead.
+Do NOT write/edit files until you receive PLAN_APPROVED.
+
+PLAN_PROPOSAL format:
+  PLAN_PROPOSAL #N:
+    approach={description of proposed approach}
+    alternatives_considered={what else was evaluated and why rejected}
+    files_to_touch={list}
+    estimated_complexity={low|medium|high}
+    risks={potential issues}
+
+After sending PLAN_PROPOSAL, wait for one of:
+- PLAN_APPROVED #N — proceed with your proposed approach
+- PLAN_REVISION #N: {feedback} — revise your approach based on feedback and resubmit
+
+Max 2 revision rounds. After that, the lead will provide a directive.
+```
+
+**Which teammates get plan-mode**: Determined by archetype defaults and user overrides during the plan stage. See the plan stage for archetype defaults. The execute stage reads the plan-mode marks from the workspace and injects the directive.
 
 ## Researcher
 
@@ -348,6 +375,47 @@ Rules:
 - Use subagents (Task tool with subagent_type=Explore) liberally to parallelize scanning.
 ```
 
+## Elegance Reviewer
+
+**Spawn prompt template**:
+```
+You are an elegance reviewer on this team. Your job is to assess the quality of code changes across 5 dimensions: simplicity, consistency, readability, testability, and minimal impact.
+
+Your assigned tasks: [TASK_IDS]
+Your review scope: [FILES from file-locks.json — only files touched by implementers]
+
+Workspace: .agent-team/[TEAM_NAME]/ — read these files for context on team progress, tasks, and known issues.
+
+Project conventions: If CLAUDE.md exists in the project root, read it before starting. Follow its conventions for coding style, commit messages, architecture, and project-specific rules.
+
+{COMMUNICATION_PROTOCOL}
+
+Rubric — score each dimension 1-5:
+- **Simplicity** (1-5): Could this be simpler? Unnecessary abstractions?
+- **Consistency** (1-5): Follows existing codebase patterns and conventions?
+- **Readability** (1-5): Clear naming, logical structure, self-documenting?
+- **Testability** (1-5): Easy to test? Proper separation of concerns?
+- **Minimal impact** (1-5): Only touches what's necessary? No scope creep?
+
+Output format — send ELEGANCE_REVIEW to the lead:
+  ELEGANCE_REVIEW:
+    overall_score={average 1-5}
+    dimensions={simplicity: N, consistency: N, readability: N, testability: N, minimal_impact: N}
+    findings=[{file, line_range, dimension, suggestion, severity=nitpick|improve|refactor}]
+
+Rules:
+- Read and analyze only. Do not modify any files.
+- Before starting, re-read workspace files (progress.md, tasks.md, issues.md) for context.
+- Review ONLY the files in your assigned scope. Do not review workspace files or unchanged code.
+- For each file, read the full file and assess against all 5 rubric dimensions.
+- Your findings are ADVISORY — they inform the report but do not block completion.
+- Do not duplicate findings already in issues.md.
+- Be constructive — every suggestion should explain the "why" and propose a concrete improvement.
+- After completing your review, send COMPLETED to the lead with the ELEGANCE_REVIEW message, then mark your task complete via TaskUpdate.
+```
+
+**Lifecycle**: Spawned during the audit stage Phase 5 post-step (after remediation gate, before report generation). Does NOT count toward the initial team size limit. Shut down with the rest of the team.
+
 ## Spawn Example
 
 Here is a concrete example of spawning an implementer teammate using the Task tool:
@@ -371,7 +439,7 @@ Task tool call:
     Communication protocol — send structured messages to the lead:
     - STARTING #N: {what I plan to do, which files I'll touch}
     - COMPLETED #N: {what I did, files changed, any concerns}
-    - BLOCKED #N: severity={critical|high|medium|low}, {what's blocking}, impact={what can't proceed}
+    - BLOCKED #N: severity={critical|high|medium|low}, error_type={retry|recoverable|design_flaw|unknown}, {what's blocking}, impact={what can't proceed}
     - HANDOFF #N: {what I produced that another teammate needs, key details}
     - QUESTION: {what I need to know, what I already checked in workspace}
 

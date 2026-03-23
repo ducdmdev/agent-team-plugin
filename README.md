@@ -147,33 +147,38 @@ Trigger the skill with phrases like:
 
 The skill activates when your task has **2+ independent work streams**. If the task is better handled sequentially, the lead will tell you.
 
-### Archetype-Specific Commands
+### Pipeline Commands
 
 | Command | When to Use | Example |
 |---------|------------|---------|
-| `/agent-implement` | Build, refactor, fix, migrate code | "implement the new auth module in parallel" |
-| `/agent-research` | Investigate, analyze, compare | "research database options with a team" |
-| `/agent-audit` | Review, assess, evaluate | "audit security with parallel reviewers" |
-| `/agent-plan` | Design, architect, produce specs | "design the API with a planning team" |
-| `/agent-team` | Mixed work types or unsure | "research then implement the caching layer" |
+| `/agent-team:start` | Full pipeline for any task type | "use agent team to refactor auth" |
+| `/agent-team:plan` | Plan only, without executing | "plan the API redesign with a team" |
+| `/agent-team:execute` | Resume from an approved plan | "execute the plan" |
+| `/agent-team:audit` | Re-run verification on completed work | "audit the team output" |
 
 ## How It Works
 
 ```
-Phase 1          Phase 2          Phase 3          Phase 4          Phase 5
-Analyze    -->   Present Plan --> Create Team -->  Coordinate  -->  Synthesize
-                 (user approves)  (spawn agents)   (track work)     (report)
+plan --> [plan-review] --> user approval --> execute --> [execute-review] --> audit --> [audit-review] --> report
 ```
 
-| Phase | What Happens |
-|-------|-------------|
-| **1. Analyze** | Detect or create a plan, audit it, then decompose into independent streams, dependencies, file ownership |
-| **2. Plan** | Present teammate roles, task breakdown, and dependencies. **You approve before anything starts** |
-| **3. Create** | Create team, initialize workspace, create tasks, spawn teammates with roles and protocols |
-| **4. Coordinate** | Monitor progress, update workspace, resolve blockers, route handoffs between teammates |
-| **5. Synthesize** | Collect results, verify integration, generate final report, shut down team |
+The pipeline is split into four stages, each a separate skill:
 
-**Plan-aware:** Phase 1 scans for existing plan files (`docs/plans/`, `docs/specs/`, etc.). If found, it audits and uses the plan. If not found, it gathers context and creates one (via the `writing-plans` skill or inline). The team decomposition derives from the approved plan.
+| Stage | What Happens |
+|-------|-------------|
+| **Start** | Entry point — detects team type, loads prior context, routes to the appropriate pipeline |
+| **Plan** | Loads prior context, decomposes task into parallel streams, creates DAG with dependencies, presents plan for **user approval** |
+| **Execute** | Creates team, initializes workspace, spawns teammates, coordinates work, resolves blockers, runs error recovery |
+| **Audit** | Runs completion gates, elegance review, generates final report, captures lessons learned |
+
+Each stage creates its own team:
+- **Plan team** (2-3): Researchers scan the codebase + Analyst evaluates complexity + Plan Reviewer validates the plan
+- **Execute team** (2-4): Implementers write code + Tester verifies + Reviewer validates + Execute Reviewer smoke-tests
+- **Audit team** (2-3): Reviewer runs completion gates + Elegance Reviewer scores quality + Audit Reviewer validates report
+
+Each stage has an optional **inter-stage review agent** (plan-reviewer, execute-reviewer, audit-reviewer) that validates output before the next stage begins.
+
+**Plan-aware:** The plan stage scans for existing plan files (`docs/plans/`, `docs/specs/`, etc.). If found, it audits and uses the plan. If not found, it gathers context and creates one. The team decomposition derives from the approved plan.
 
 ### Teammate Roles
 
@@ -191,6 +196,7 @@ Analyze    -->   Present Plan --> Create Team -->  Coordinate  -->  Synthesize
 | **Strategist** | Evaluate trade-offs, recommend direction | Read, Grep, Glob, WebFetch, WebSearch |
 | **Auditor** | Systematic checks against standards/checklists | Read, Grep, Glob, Bash (read-only) |
 | **Scout** | Quick recon — scan and report structure | Read, Grep, Glob, Bash (read-only) |
+| **Elegance Reviewer** | Post-execution quality assessment (auto-spawned by audit stage) | Read, Grep, Glob, Bash (read-only) |
 
 ### Team Types
 
@@ -204,7 +210,7 @@ The lead auto-detects the team type from your request and adapts the workflow ac
 | **Planning** | Design, architect, produce specs | Planners/Strategists + Researcher | Plan/spec document |
 | **Hybrid** | Mixed work types (e.g., research then implement) | Mix from all roles | Standard report |
 
-The team type determines which completion checks apply and what the final report looks like. You can override the auto-detected type during plan approval.
+The team type determines which completion checks apply and what the final report looks like. You can override the auto-detected type during plan approval. The start stage auto-detects the type and routes to the plan stage with appropriate defaults.
 
 ### Communication Protocol
 
@@ -326,27 +332,33 @@ agent-team-plugin/
 │   ├── record-demo.sh              # Demo recording utility
 │   └── generate-demo-cast.sh       # Demo asciicast generator
 ├── skills/
-│   ├── agent-team/
-│   │   └── SKILL.md             # Hybrid/catch-all orchestrator
-│   ├── agent-implement/
-│   │   └── SKILL.md             # Implementation teams
-│   ├── agent-research/
-│   │   └── SKILL.md             # Research teams
-│   ├── agent-audit/
-│   │   └── SKILL.md             # Audit teams
-│   └── agent-plan/
-│       └── SKILL.md             # Planning teams
+│   ├── start/
+│   │   └── SKILL.md             # Pipeline entry point — type detection + routing
+│   ├── plan/
+│   │   ├── SKILL.md             # Plan stage — decomposition + DAG + approval
+│   │   ├── references/          # Prior context loading, plan-mode protocol
+│   │   ├── examples/            # Plan proposal examples
+│   │   └── agents/              # Plan-reviewer, researcher, analyst agents
+│   ├── execute/
+│   │   ├── SKILL.md             # Execute stage — spawn + coordination + recovery
+│   │   ├── references/          # Communication protocol, coordination patterns, error recovery
+│   │   └── agents/              # Spawn templates, execute-reviewer agent
+│   └── audit/
+│       ├── SKILL.md             # Audit stage — gates + elegance + report + lessons
+│       ├── references/          # Completion gates, elegance rubric, report format
+│       ├── examples/            # Lessons-learned examples
+│       └── agents/              # Audit-reviewer, elegance-reviewer, reviewer agents
 ├── docs/
-│   ├── shared-phases.md           # Shared phase logic for all archetype skills
 │   ├── teammate-roles.md          # Role definitions and selection guide
-│   ├── spawn-templates.md         # Spawn prompt templates for all roles
-│   ├── coordination-patterns.md   # Core conflict resolution and handoff patterns
-│   ├── coordination-advanced.md   # Advanced patterns (re-plan, checkpoint, escalation)
-│   ├── communication-protocol.md  # Structured message formats for teammates
-│   ├── workspace-templates.md   # Workspace file templates for Phase 3
-│   ├── report-format.md         # Final report specification
-│   ├── team-archetypes.md       # Team type definitions and phase profiles
-│   └── custom-roles.md          # Template for project-specific roles
+│   ├── workspace-templates.md     # Workspace file templates
+│   ├── team-archetypes.md         # Team type definitions and phase profiles
+│   └── custom-roles.md            # Template for project-specific roles
+├── tests/
+│   ├── run-tests.sh               # Test runner (12 test files)
+│   ├── lib/
+│   │   └── test-helpers.sh        # Shared test utilities
+│   ├── hooks/                     # Hook-specific tests
+│   └── structure/                 # Plugin structure validation tests
 ├── CLAUDE.md
 └── README.md
 ```

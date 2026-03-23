@@ -9,6 +9,8 @@ Templates for the 3 workspace tracking files initialized during Phase 3. The lea
 - [issues.md](#issuesmd) — issue tracker with severity and impact
 - [Additional Workspace Files](#additional-workspace-files) — files created during Phase 3/4 (not template-based)
 - [Workspace Update Protocol](#workspace-update-protocol) — event-to-file mapping table
+- [lessons.md](#lessonsmd) — team execution insights captured during audit
+- [error-patterns.json (Global)](#error-patternsjson-global) — cross-project error pattern library
 
 ## progress.md
 
@@ -17,9 +19,13 @@ Templates for the 3 workspace tracking files initialized during Phase 3. The lea
 
 **Task**: {one-line description of the overall task}
 **Status**: active | completing | done
+**Stage**: {plan|execute|audit}
+**Pipeline status**: {approved|executed|audited}
+**Archetype**: {implementation|research|audit|planning|hybrid}
 **Created**: {timestamp}
 **Last updated**: {timestamp}
 **Remediation cycle**: 0
+**Recovery cycles**: 0
 
 ## References
 
@@ -51,12 +57,23 @@ Append-only log of significant decisions.
 
 - [{timestamp}] {decision and reasoning}
 
+## Plan Proposals
+
+| Teammate | Task | Proposal | Status | Revisions |
+|----------|------|----------|--------|-----------|
+
 ## Handoffs
 
 Cross-teammate information transfers.
 
 - [{timestamp}] {source} → {target}: {what was handed off}
 ````
+
+### Field Documentation
+
+- **Stage**: Which pipeline stage last wrote to this workspace (plan, execute, or audit)
+- **Pipeline status**: Cross-stage handoff state. Distinct from the `**Status**` field which tracks team lifecycle. Values: `approved` (plan complete, user approved), `executed` (execute complete, work done), `audited` (audit complete, report generated). Absence of this field means "not gated" for backward compatibility.
+- **Archetype**: The detected team archetype. Set by the plan stage (or start skill) during workspace creation. Read by execute and audit stages to determine role selection, completion gates, and report variant.
 
 ## tasks.md
 
@@ -108,6 +125,15 @@ Cross-teammate information transfers.
 - **degraded**: Quality or scope reduced
 - **rework**: Completed work must be redone
 - **deferred**: Logged for post-team follow-up
+
+## Issue Detail Fields
+
+Per-issue fields appended below the table row when relevant:
+
+- **Error type**: {retry|recoverable|design_flaw|unknown}
+- **Recovery attempts**:
+  1. {strategy} — {SUCCEEDED|FAILED}
+- **Pattern captured**: {Yes (pattern-NNN)|No}
 ````
 
 ## Additional Workspace Files
@@ -204,6 +230,9 @@ Created during Phase 3 step 4a immediately after creating all tasks. Contains th
 | `nodes.*.output_files` | string[] | Relative file paths produced by this task |
 | `nodes.*.critical_path` | boolean | Whether this node is on the current critical path |
 | `nodes.*.convergence_point` | boolean | Whether this node has 2+ upstream dependencies. Scripts derive converging task IDs from `depends_on` when this is `true` — no separate `converges_from` field needed. |
+| `nodes.*.approach` | string (optional) | Description of the planned implementation approach |
+| `nodes.*.fallback_approach` | string (optional) | Alternative approach if primary fails |
+| `nodes.*.fallback_reason` | string (optional) | When to activate the fallback (e.g., "Use if JWT library has compatibility issues") |
 | `critical_path` | string[] | Ordered list of task IDs forming the current critical path |
 | `critical_path_length` | number | Number of nodes on the critical path |
 
@@ -231,6 +260,76 @@ Created during Phase 3 step 4a immediately after creating all tasks. Contains th
 
 Note: For read-only archetypes (Research, Audit, Planning), `output_files` will typically be empty or reference workspace files. Staleness validation in resume mode uses git-tracked files only, so resume is most valuable for Implementation and Hybrid teams.
 
+### lessons.md
+
+Created by the audit stage (`agent-team:audit`) during Phase 5 post-step. Captures team execution insights for future teams.
+
+````markdown
+# Lessons Learned — {team-name}
+
+## What Worked
+- {lesson}
+
+## What Failed
+- {lesson}: **Root cause**: {why}
+
+## Estimation Accuracy
+| Task | Estimated | Actual | Delta |
+|------|-----------|--------|-------|
+| {task} | {est} | {actual} | {+/-} |
+
+## Integration Friction Points
+- {point}: {resolution}
+
+## Recommendations for Future Teams
+- {recommendation}
+````
+
+**Fields:**
+- **What Worked**: Patterns, tools, approaches that saved time or prevented issues
+- **What Failed**: Problems encountered + root cause analysis (not just symptoms)
+- **Estimation Accuracy**: Compare task-graph.json `created_at` vs `completed_at` timestamps
+- **Integration Friction Points**: Where handoffs or convergence caused delays
+- **Recommendations**: Concrete, actionable advice for future teams with similar scope
+
+### error-patterns.json (Global)
+
+Stored at `~/.claude/agent-team-patterns.json`. Created at runtime by the audit stage if not present. Shared across all projects.
+
+```json
+{
+  "patterns": [
+    {
+      "id": "pattern-001",
+      "error_regex": "Cannot find module",
+      "error_type": "recoverable",
+      "context": "import resolution",
+      "strategies": ["check_tsconfig_paths", "verify_package_installed"],
+      "success_rate": { "attempts": 10, "successes": 8 },
+      "last_seen": "2026-03-20",
+      "source_team": "0320-refactor-imports"
+    }
+  ]
+}
+```
+
+**Fields:**
+- **id**: Unique pattern identifier (pattern-NNN)
+- **error_regex**: Regex matching the error message
+- **error_type**: One of `retry`, `recoverable`, `design_flaw`
+- **context**: Short description of when this error occurs
+- **strategies**: Ordered list of recovery actions to try
+- **success_rate**: Attempts and successes for tracking effectiveness
+- **last_seen**: ISO date of last occurrence
+- **source_team**: Team that first captured this pattern
+
+**Lifecycle:**
+- Created by audit stage Sub-step 3 (only from resolved issues)
+- Max 5 new patterns per team (highest severity first)
+- Global cap: 200 patterns. Evict lowest `success_rate` when full
+- Deduplication by `error_regex` similarity
+- If `~/.claude/` doesn't exist, create with `mkdir -p`
+
 ### events.log
 
 Created by the SubagentStart/SubagentStop hooks during Phase 4. Each line is a JSON object recording teammate spawn and stop events. Used for post-mortem analysis.
@@ -244,7 +343,7 @@ Event types: `spawn`, `stop`, `task_start`, `task_complete`, `blocked`, `handoff
 
 ### report.md
 
-Generated during Phase 5 using the template in [report-format.md](report-format.md). This is the final artifact written before shutdown.
+Generated during Phase 5 using the template in [report-format.md](../skills/audit/references/report-format.md). This is the final artifact written before shutdown.
 
 ## Plan File Conventions
 

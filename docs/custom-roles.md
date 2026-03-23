@@ -7,7 +7,7 @@ The team lead reads this file during Phase 1 task decomposition and uses custom 
 ## How to Use
 
 1. Define custom roles below using the template
-2. When invoking `/agent-team`, the lead will check for this file
+2. When invoking `/agent-team:start`, the lead will check for this file
 3. Custom roles are used alongside built-in roles — they don't replace them
 
 ## Template

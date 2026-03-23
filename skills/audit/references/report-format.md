@@ -8,12 +8,14 @@ The final report is a persistent artifact generated at completion. It lives in t
 - [Template](#template) — full report structure
 - [Generation Protocol](#generation-protocol) — how the lead generates it
 - [Guidelines](#guidelines) — writing conventions
+- [Elegance Review](#elegance-review) — code quality assessment section
+- [Lessons Summary](#lessons-summary) — team execution insights section
 
 ## Location
 
 `.agent-team/{team-name}/report.md` (relative to project root)
 
-This file is generated during the archetype-specific Phase 5 sequence, after the completion gate and before the remediation gate. It is the last major artifact written before shutdown.
+This file is generated during Phase 5 (Step 7), after the completion gate, remediation gate, and elegance gate, and before the audit review agent validates it.
 
 ## Template
 
@@ -68,6 +70,54 @@ This file is generated during the archetype-specific Phase 5 sequence, after the
 
 ---
 
+## Elegance Review
+
+_(Include this section only if the elegance gate ran — i.e., the team had write-access teammates that completed tasks. Omit entirely for pure research/audit/planning teams.)_
+
+### Overall Score: {N.N}/5
+
+| Dimension | Score |
+|-----------|-------|
+| Simplicity | {1-5} |
+| Consistency | {1-5} |
+| Readability | {1-5} |
+| Testability | {1-5} |
+| Minimal impact | {1-5} |
+
+### Findings
+
+| File | Lines | Dimension | Severity | Suggestion |
+|------|-------|-----------|----------|------------|
+| {path} | {range} | {dimension} | {nitpick/improve/refactor} | {suggestion} |
+
+_{If no findings: "No actionable findings — code meets elegance standards."}_
+
+---
+
+## Lessons Summary
+
+_(Include this section if `lessons.md` was generated during the audit stage.)_
+
+### Top Takeaways
+{Top 3 most impactful lessons from the team execution — draw from What Worked and What Failed in lessons.md}
+
+1. {takeaway with brief context}
+2. {takeaway with brief context}
+3. {takeaway with brief context}
+
+### Estimation Accuracy
+
+| Metric | Value |
+|--------|-------|
+| Tasks on target (+/- 20%) | {count}/{total} |
+| Average overrun | {+N min or N/A} |
+| Largest overrun | {task name: +N min} |
+| Systematic bias | {over/under/none} |
+
+_(Derived from the Estimation Accuracy table in lessons.md. "On target" means actual time was within 20% of estimated time.)_
+
+---
+
 ## Full Audit Trail
 
 ### Team Composition
@@ -119,17 +169,20 @@ Source documents consulted during this team's work.
 
 ## Generation Protocol
 
-The lead generates the report during Phase 5 (MANDATORY — do not skip):
+The lead generates the report during Phase 5 Step 7 (MANDATORY — do not skip):
 
 1. Read all workspace files:
    - `.agent-team/{team-name}/progress.md` — team members, decisions, handoffs, **references**
    - `.agent-team/{team-name}/tasks.md` — task ledger
    - `.agent-team/{team-name}/issues.md` — issue tracker
+   - `.agent-team/{team-name}/task-graph.json` — dependency graph with timestamps
 2. Read TaskList for final task states (source of truth for status)
-3. Incorporate teammate summaries collected via structured request in Phase 5 step 2
+3. Incorporate teammate summaries collected via structured request in Phase 5 step 2 (from the execute stage)
 4. Copy References section from `progress.md` into the report's References section
-5. Write `.agent-team/{team-name}/report.md` using the template above
-6. **Self-check**: read the file back — does it contain the Executive Summary section? If not, regenerate
+5. If the elegance gate ran (Step 4), include the Elegance Review section with scores and findings from the `ELEGANCE_REVIEW` message
+6. If lessons were captured (Step 5), include the Lessons Summary section derived from `.agent-team/{team-name}/lessons.md`
+7. Write `.agent-team/{team-name}/report.md` using the template above
+8. **Self-check**: read the file back — does it contain the Executive Summary section? If not, regenerate
 
 ## Guidelines
 
@@ -139,10 +192,12 @@ The lead generates the report during Phase 5 (MANDATORY — do not skip):
 - File paths should be relative to the project root where possible
 - Keep the report factual — no speculation about what "might" need attention unless backed by evidence from the session
 - The report draws from workspace files, not from memory — this ensures accuracy after context compaction
+- The Elegance Review section is included only when the elegance gate ran; omit it entirely for read-only teams
+- The Lessons Summary section distills the most impactful insights; the full lessons.md remains in the workspace for detailed reference
 
 ## Report Variants
 
-All archetypes share the same outer structure (Executive Summary, Team Metrics, Full Audit Trail, Per-Teammate Summaries). Only the middle content sections differ. The lead selects the variant based on the team archetype detected in Phase 1.
+All archetypes share the same outer structure (Executive Summary, Elegance Review, Lessons Summary, Team Metrics, Full Audit Trail, Per-Teammate Summaries). Only the middle content sections differ. The lead selects the variant based on the team archetype detected in Phase 1.
 
 ### Findings Report
 
@@ -172,7 +227,7 @@ Replaces the "Files Changed" section in the Executive Summary and adds a Finding
 - **Recommended next steps**: {actionable items based on findings}
 ```
 
-The "Files Changed" section is omitted (research teams don't modify files). The "Per-Teammate Summaries" section uses "Findings" instead of "Files modified".
+The "Files Changed" section is omitted (research teams don't modify files). The "Per-Teammate Summaries" section uses "Findings" instead of "Files modified". Elegance Review section is omitted (no code to review).
 
 ### Audit Report
 
@@ -214,7 +269,7 @@ Replaces the "Files Changed" section and adds an Audit Results section:
 | {item} | PASS / FAIL / WARNING / N/A | {file references} | {details} |
 ```
 
-The "Per-Teammate Summaries" section uses "Audit findings" and "Items checked" instead of "Files modified".
+The "Per-Teammate Summaries" section uses "Audit findings" and "Items checked" instead of "Files modified". Elegance Review section is omitted (no code to review).
 
 ### Plan Report
 
@@ -250,4 +305,4 @@ Replaces the "Files Changed" section and adds design/planning sections:
 - [ ] {Next step}
 ```
 
-The "Per-Teammate Summaries" section uses "Design contributions" and "Decisions proposed" instead of "Files modified".
+The "Per-Teammate Summaries" section uses "Design contributions" and "Decisions proposed" instead of "Files modified". Elegance Review section is omitted (no code to review).
