@@ -104,7 +104,7 @@ chore:    maintenance (CI, dependencies)
 bash tests/run-tests.sh
 ```
 
-Runs 12 test files (150 assertions) covering all hooks and plugin structure.
+Runs 12 test files covering all hooks and plugin structure.
 
 ### Validate Plugin
 

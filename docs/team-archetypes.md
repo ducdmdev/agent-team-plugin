@@ -147,8 +147,7 @@ Senior implementers spawn subagents for independent subtasks within their scope.
 
 ## See Also
 
-- `/agent-team:execute` — Execute stage (for implementation teams)
-- `/agent-team:start` — Entry point (specify research archetype)
-- `/agent-team:audit` — Audit stage (for re-running verification)
+- `/agent-team:start` — Full pipeline orchestrator (auto-detects archetype from task description)
 - `/agent-team:plan` — Plan stage (for standalone planning)
-- `/agent-team:start` — Full pipeline orchestrator
+- `/agent-team:execute` — Execute stage (resume from approved plan)
+- `/agent-team:audit` — Audit stage (for re-running verification)

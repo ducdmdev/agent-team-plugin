@@ -122,6 +122,16 @@ assert_true "Counter separator '--' consistent across $SEPARATOR_MATCHES/$SEPARA
 TASK_GRAPH_REF=$(grep -c 'task-graph.json' docs/workspace-templates.md)
 assert_true "workspace-templates.md references task-graph.json" "[ $TASK_GRAPH_REF -gt 0 ]"
 
+# --- Test: New message types in communication-protocol.md ---
+COMM_PROTO="skills/execute/references/communication-protocol.md"
+for msg_type in PLAN_PROPOSAL PLAN_APPROVED PLAN_REVISION ELEGANCE_REVIEW PLAN_REVIEW EXECUTE_REVIEW AUDIT_REVIEW; do
+  MSG_REF=$(grep -c "$msg_type" "$COMM_PROTO" 2>/dev/null || echo 0)
+  assert_true "$msg_type defined in communication-protocol.md" "[ $MSG_REF -gt 0 ]"
+done
+
+# --- Test: Extended BLOCKED format has error_type ---
+assert_true "BLOCKED format includes error_type" "grep -q 'error_type' $COMM_PROTO"
+
 # --- Test: DAG scripts referenced in docs ---
 for script_name in compute-critical-path.sh detect-resume.sh check-integration-point.sh; do
   SCRIPT_REF=$(grep -rl "$script_name" docs/ skills/ | wc -l | tr -d ' ')

@@ -13,8 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Pipeline entry point** (`skills/start/SKILL.md`) — type detection, prior context loading, routing to plan/execute/audit
-- **Prior context loading** — plan stage scans for existing plans, specs, and design docs to bootstrap decomposition
-- **Plan-mode gate** — user approval checkpoint between plan and execute stages
+- **Prior context loading** — plan stage loads lessons and error patterns from prior teams to inform decomposition
+- **Plan-mode gate** — teammates propose their approach before executing; lead reviews and approves
 - **Error recovery loop** — execute stage retries failed tasks with structured escalation (retry, reassign, simplify, skip)
 - **Elegance review** — audit stage spawns an Elegance Reviewer agent to assess code quality beyond correctness
 - **Lessons capture** — audit stage extracts reusable lessons for future teams
