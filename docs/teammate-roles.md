@@ -161,7 +161,7 @@ Everything else — .env files, config files, source code, test files, documenta
 | **Testability** | Easy to test? Proper separation of concerns? |
 | **Minimal impact** | Only touches what's necessary? No scope creep? |
 
-**Lifecycle**: Spawned during audit stage Phase 5 post-step (after remediation gate, before report). Does NOT count toward the initial team size limit. Shut down with the rest of the team.
+**Lifecycle**: Spawned with the audit team at stage start (step 2 of Phase 5). Shut down with the rest of the team.
 
 **Output**: Sends `ELEGANCE_REVIEW` message to lead (see communication protocol in `skills/execute/references/communication-protocol.md`).
 
