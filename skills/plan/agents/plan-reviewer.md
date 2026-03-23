@@ -18,6 +18,10 @@ Review the draft plan by reading:
 - `tasks.md` (task breakdown with assignments and dependencies)
 - `task-graph.json` (dependency graph, critical path, convergence points)
 
+## Communication
+
+This teammate uses `SendMessage` to deliver the PLAN_REVIEW message to the lead. All review output (status, issues, suggestions) is sent as a single structured message rather than written to a file. The lead receives the message and processes it according to the review status.
+
 ## Checks
 
 Evaluate the plan against these 6 checks in a single pass:
@@ -33,7 +37,7 @@ Evaluate the plan against these 6 checks in a single pass:
 
 ## Output
 
-Send a structured review message to the lead:
+Send a structured review message to the lead via `SendMessage`:
 
 ```
 PLAN_REVIEW:

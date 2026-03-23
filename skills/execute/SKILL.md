@@ -29,6 +29,8 @@ Before starting execution, verify:
 2. **Agent Teams feature flag** is enabled — verify TeamCreate tool is available. If not, tell the user: "Agent Teams requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in your settings.json env or shell environment. Please enable it and restart."
 3. **User has approved the plan** — `progress.md` status must be `approved` (set by the plan stage after user confirmation)
 
+> **Pipeline gate**: Check `progress.md` for `**Pipeline status**: approved`. If this field is absent (legacy/manual workspace), proceed without blocking — treat absence as "not gated" for backward compatibility.
+
 If preconditions are not met and the execute stage was invoked independently (not via `start`), inform the user what is missing and suggest running the plan stage first.
 
 **Recommended**: Tell the user to press Shift+Tab to enable delegate mode, which restricts you to coordination-only tools. This reinforces the Zero-Code Rule.
@@ -72,6 +74,8 @@ The MMDD prefix is today's date. This prevents name collisions across sessions a
 ```
 
 ### Step 3: Initialize Workspace
+
+> **Workspace**: If `.agent-team/{team-name}/progress.md` already exists (plan stage created it), skip workspace initialization — read and extend existing files. Only create workspace if it doesn't exist (independent invocation without plan stage).
 
 Immediately after TeamCreate, create the workspace directory and all 3 tracking files:
 
@@ -310,6 +314,15 @@ Spawn the execute review agent using the prompt in [agents/execute-reviewer.md](
 - If `status=ready_for_audit` -> proceed to audit stage
 - If `status=issues_found` with warnings only -> proceed to audit with warnings forwarded
 - If `status=issues_found` with blocking issues -> lead attempts remediation (one cycle: fix and re-review). If still blocking after remediation, proceed to audit anyway with blocking issues flagged — the audit stage will capture them in the report
+
+### Team Shutdown
+
+After execute-reviewer passes (or one remediation cycle completes):
+1. Send parallel shutdown requests to all teammates
+2. Wait for confirmations
+3. Write `**Pipeline status**: executed` to `progress.md`
+4. Write `**Stage**: execute` to `progress.md`
+5. `TeamDelete`
 
 ## References
 

@@ -6,7 +6,7 @@ description: >
   Use independently to plan without executing.
   Triggers: "plan in parallel", "design with a team", "architect with teammates".
 argument-hint: "[task description]"
-allowed-tools: Read, Glob, Grep, Bash, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, TaskGet
+allowed-tools: Read, Glob, Grep, Bash, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, TaskGet, TeamCreate, TeamDelete, SendMessage
 ---
 
 # Plan Stage
@@ -16,6 +16,38 @@ allowed-tools: Read, Glob, Grep, Bash, AskUserQuestion, TaskCreate, TaskUpdate, 
 This skill owns Phase 1 (analyze and decompose) and Phase 2 (present plan and user approval) of the Agent Team pipeline. It analyzes the user's task, loads lessons from prior teams, scans for or creates a plan, decomposes it into parallel work streams, applies the plan-mode gate, and presents the full plan for user approval. The plan stage can be invoked independently (to plan without executing) or as part of the full `agent-team:start` pipeline.
 
 When invoked independently, the plan stage detects the archetype itself and writes it to `progress.md`. When invoked via `agent-team:start`, the archetype is passed from the start stage.
+
+## Team Management
+
+The plan stage creates and manages its own planning team.
+
+### Workspace Creation
+
+The plan stage creates the workspace directory at the start (before Phase 1):
+1. Generate team name: `MMDD-{task-slug}` (e.g., `0323-refactor-auth`)
+2. Create `.agent-team/{team-name}/`
+3. Initialize `progress.md` with `**Stage**: plan`, `**Archetype**: {detected type}`, and Learned Context (from prior-context loading)
+4. Initialize empty `tasks.md` and `task-graph.json`
+5. Add `.agent-team/` to `.gitignore` if not already excluded
+
+### Team Creation
+
+After workspace initialization:
+1. `TeamCreate` with the team name
+2. Spawn teammates:
+   - 1-2 Researchers (always) — scan codebase, report findings via FINDING messages
+   - 1 Analyst (complex tasks only) — evaluate complexity via ANALYSIS message
+   - 1 Plan Reviewer (always) — validate plan structure via PLAN_REVIEW message
+3. Researchers and Analyst work in parallel during Phase 1a/1b
+4. Plan Reviewer runs after lead completes decomposition (inter-stage review)
+
+### Team Shutdown
+
+After plan-reviewer completes (and any fix cycles):
+1. Send parallel shutdown requests to all teammates
+2. `TeamDelete`
+3. Lead presents plan to user for approval (team no longer needed)
+4. Write `**Pipeline status**: approved` to `progress.md` after user approves
 
 ## Phase 1: Analyze
 
@@ -28,9 +60,11 @@ Before scanning for plans, load lessons and error patterns from prior teams to i
 The resulting `## Learned Context` block (if any) is:
 - Held in memory during the plan stage
 - Surfaced in the Phase 2 plan presentation for user visibility
-- Written to `progress.md` after workspace creation (execute stage)
+- Written to `progress.md` during plan stage workspace creation (Team Management section above)
 
 If no prior lessons or patterns exist, skip silently.
+
+> **Team context**: Researchers scan the codebase in parallel during Phase 1a. Their FINDING messages inform the lead's plan detection and decomposition. The Analyst evaluates complexity after researchers report.
 
 ### Early Exit -- Trivial Tasks
 
@@ -51,7 +85,7 @@ Phase 1a should remain lightweight relative to the overall team workflow:
 
 #### Step 0 -- Archetype Context
 
-For **dedicated stage invocation** (`/agent-team:plan`), the archetype is detected from the task description using the trigger patterns in [team-archetypes.md](../../docs/team-archetypes.md). Write the detected archetype to the workspace when it is created (execute stage writes `**Archetype**: {type}` to `progress.md`).
+For **dedicated stage invocation** (`/agent-team:plan`), the archetype is detected from the task description using the trigger patterns in [team-archetypes.md](../../docs/team-archetypes.md). Write the detected archetype to the workspace when it is created (plan stage writes `**Archetype**` during workspace creation).
 
 For **pipeline invocation** via `/agent-team:start`, the archetype is passed from the start stage. This archetype context is available throughout Phase 1a and informs plan creation if needed.
 

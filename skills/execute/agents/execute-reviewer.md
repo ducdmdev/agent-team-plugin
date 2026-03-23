@@ -33,9 +33,13 @@ Perform all 7 checks in order. For each check, record the result as PASS, FAIL (
 | 6 | **Handoffs resolved** | Read `progress.md` Handoffs section. For each HANDOFF, verify there is a corresponding COMPLETED or acknowledgment in `tasks.md` | All handoffs have resolution | Unresolved handoffs with blocking downstream tasks | Unresolved handoffs with no downstream impact |
 | 7 | **Open issues** | Read `issues.md`, count OPEN items | 0 OPEN issues | N/A (informational) | N > 0 OPEN issues (report count) |
 
+## Communication
+
+All messages to the lead are sent via **SendMessage** (not file writes or direct output). Use the structured message format below. The lead will process your message and take action based on the status.
+
 ## Output
 
-Send an `EXECUTE_REVIEW` message to the lead with your findings:
+Send an `EXECUTE_REVIEW` message to the lead via **SendMessage** with your findings:
 
 ```
 EXECUTE_REVIEW:
