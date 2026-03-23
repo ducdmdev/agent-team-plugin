@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.1] - 2026-03-23
+
+### Fixed
+- Plan stage now initializes `issues.md` during workspace creation (TaskCompleted hook requires it)
+- Plan stage now documents `task-graph.json` population with JSON schema after decomposition
+- Audit stage now explicitly requires spawning all 3 roles (Reviewer, Elegance Reviewer, Audit Reviewer) with spawn prompt references
+
+### Changed
+- README demo rewritten for v3.0.0 pipeline architecture (3-stage flow with team-per-stage)
+
 ## [3.0.0] - 2026-03-23
 
 ### Breaking Changes
