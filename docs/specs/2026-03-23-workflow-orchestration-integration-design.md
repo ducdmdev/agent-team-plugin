@@ -237,7 +237,7 @@ This is a **major version bump** (skill names change, folder structure changes).
 
 Files within a skill folder use relative paths:
 - Skill-local references: `references/plan-mode-protocol.md` (from SKILL.md)
-- Shared docs in plugin root: `../../../docs/teammate-roles.md` (from `skills/plan/SKILL.md` → `docs/`)
+- Shared docs in plugin root: `../../docs/teammate-roles.md` (from `skills/plan/SKILL.md` → `docs/`)
 - Cross-stage references: avoid where possible; use shared `docs/` files instead
 
 ### Test Suite Migration
@@ -666,9 +666,8 @@ This means `start/SKILL.md` references the other 3 skills' logic via `Read` inst
 |------|--------|
 | `docs/workspace-templates.md` | Add `lessons.md` template, `error-patterns.json` schema, `fallback_approach`/`fallback_reason` in task-graph.json, Plan Proposals section in progress.md, recovery tracking in issues.md, Recovery cycles counter |
 | `docs/teammate-roles.md` | Add Elegance Reviewer role (13 total), add `recovery_class` field to all roles |
-| `docs/team-archetypes.md` | Add plan-mode defaults per archetype |
+| `docs/team-archetypes.md` | Add plan-mode defaults per archetype; fix cross-references to migrated docs (e.g., `coordination-advanced.md` → `skills/execute/references/coordination-patterns.md`) |
 | `docs/custom-roles.md` | Update `/agent-team` reference to `/agent-team:start` |
-| `docs/team-archetypes.md` | Add plan-mode defaults; fix cross-references to migrated docs (e.g., `coordination-advanced.md` → `skills/execute/references/coordination-patterns.md`) |
 | `.claude-plugin/plugin.json` | Major version bump |
 | `.claude-plugin/marketplace.json` | Major version bump (sync) |
 | `README.md` | Update skill commands, folder structure, Teammate Roles table (13 roles), pipeline stage documentation |
@@ -700,7 +699,7 @@ This is a **major version bump** (breaking change: skill names change from `agen
 | Plan-mode adds latency to simple tasks | Medium | Defaults conservative (OFF for research/audit); user can skip |
 | Error recovery loops extend execution time | Low | Hard bounds: 2 retries, 3 cycles per team |
 | Elegance reviewer disagreements | Low | Advisory only, not blocking |
-| Global pattern library grows unbounded | Low | Max 5 patterns per team; deduplication; 200 pattern global cap with LRU eviction |
+| Global pattern library grows unbounded | Low | Max 5 patterns per team; deduplication; 200 pattern global cap with lowest-success-rate eviction |
 | Lessons.md becomes noisy | Medium | Structured template; relevance filter |
 | Stage-specific docs drift from shared docs | Medium | Clear ownership table; tests validate references |
 
