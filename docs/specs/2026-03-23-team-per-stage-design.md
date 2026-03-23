@@ -16,6 +16,29 @@ Each pipeline stage (`plan`, `execute`, `audit`) creates and manages its own tea
 Plan team → workspace → Execute team → workspace → Audit team → workspace → report
 ```
 
+### Team Naming
+
+All 3 teams share the **same team name** (`MMDD-{task-slug}`) and the **same workspace directory** (`.agent-team/{team-name}/`). Each stage calls TeamCreate with the same name, uses the workspace, then TeamDelete. The workspace persists across all three stages; only the team resource is ephemeral.
+
+When chained via `start`, the start skill generates the team name once and each stage reuses it. When invoked independently, the stage reads the team name from the existing workspace directory.
+
+### Workspace Creation
+
+The **plan stage** creates the workspace directory at the start of its team lifecycle (after TeamCreate, before spawning teammates). This is a change from the current design where the execute stage creates the workspace. The plan stage initializes:
+- `progress.md` with `**Stage**: plan`, `**Archetype**: {type}`, and Learned Context
+- `tasks.md` (empty, populated during decomposition)
+- `task-graph.json` (empty, populated during decomposition)
+
+The execute and audit stages read and extend the existing workspace — they do NOT re-create it.
+
+### Parent Spec Overrides
+
+This addendum overrides the following from the parent spec (`2026-03-23-workflow-orchestration-integration-design.md`):
+- Plan stage frontmatter: gains `TeamCreate, TeamDelete, SendMessage` (parent had no team tools)
+- Audit stage frontmatter: gains `TeamDelete` (parent had `TeamCreate` but not `TeamDelete`)
+- Elegance Reviewer lifecycle: now spawned with the audit team at stage start (parent said "spawned after remediation gate")
+- Workspace creation: now owned by plan stage (parent said execute stage)
+
 ---
 
 ## Section 1: Plan Stage Team
@@ -31,9 +54,14 @@ Plan team → workspace → Execute team → workspace → Audit team → worksp
 ### Lifecycle
 
 ```
-TeamCreate → spawn planning team → researchers scan codebase → analyst evaluates →
-lead decomposes → plan-reviewer validates → user approval → TeamDelete
+TeamCreate → create workspace → spawn planning team → researchers scan codebase →
+analyst evaluates → lead decomposes → plan-reviewer validates (max 2 fix cycles) →
+shutdown teammates → TeamDelete → user approval
 ```
+
+**TeamDelete timing**: The planning team is shut down BEFORE presenting the plan to the user. The team's job is to gather information and validate the plan structure. User approval is a lead-only interaction that doesn't need the team alive. This keeps the team lifecycle short and predictable.
+
+**If invoked independently** (`/agent-team:plan`): Same lifecycle. After TeamDelete, the lead presents the plan and waits for user approval. Workspace persists with `**Pipeline status**: approved`.
 
 ### Communication
 
@@ -67,7 +95,7 @@ allowed-tools: Read, Glob, Grep, Bash, Agent, AskUserQuestion, TaskCreate, TaskU
 | `skills/plan/agents/plan-reviewer.md` | Update from subagent prompt to teammate spawn template |
 | `skills/plan/agents/researcher.md` | New: spawn template for plan-stage researcher |
 | `skills/plan/agents/analyst.md` | New: spawn template for plan-stage analyst |
-| `skills/execute/agents/spawn-templates.md` | Remove plan-reviewer references (now owned by plan stage) |
+| `skills/execute/agents/spawn-templates.md` | Add Researcher and Analyst spawn templates for plan-stage reference (or note plan stage owns its own) |
 | `skills/execute/references/communication-protocol.md` | Add FINDING and ANALYSIS message types |
 | `docs/workspace-templates.md` | Add `**Stage**: {plan\|execute\|audit}` field to progress.md template |
 
@@ -110,7 +138,7 @@ Previously, execute created the team but audit shut it down. Now execute owns th
 
 | File | Change |
 |------|--------|
-| `skills/execute/SKILL.md` | Add TeamDelete to Phase 4 (after execute-review passes). Write `**Status**: executed` to progress.md before shutdown. |
+| `skills/execute/SKILL.md` | Add TeamDelete to Phase 4 (after execute-review passes). Write `**Pipeline status**: executed` to progress.md before shutdown. |
 | `skills/execute/agents/execute-reviewer.md` | Update from subagent prompt to teammate spawn template |
 
 ---
@@ -153,13 +181,13 @@ AUDIT_REVIEW: status={approved|revisions_needed}, issues=[...]
 ### Preconditions (Updated)
 
 - Workspace exists with `task-graph.json` where at least one task has `status: completed`
-- `progress.md` contains `**Status**: executed` (set by execute stage after shutdown)
+- `progress.md` contains `**Pipeline status**: executed` (set by execute stage after shutdown)
 - If all tasks incomplete → exit with "nothing to audit"
 - **No dependency on execute team being alive** — audit creates its own team
 
 ### Frontmatter Changes
 
-`skills/audit/SKILL.md` gains TeamCreate:
+`skills/audit/SKILL.md` gains TeamDelete (TeamCreate already present):
 ```
 allowed-tools: Read, Write, Glob, Grep, Bash, Agent, AskUserQuestion, TaskCreate, TaskUpdate, TaskList, TaskGet, TeamCreate, TeamDelete, SendMessage
 ```
@@ -194,24 +222,35 @@ allowed-tools: Read, Write, Glob, Grep, Bash, Agent, AskUserQuestion, TaskCreate
 
 ### Progress.md Stage Tracking
 
-New field in `progress.md`:
+Two new fields in `progress.md` (distinct from the existing `**Status**: active | completing | done` field which tracks team lifecycle):
+
 ```markdown
 **Stage**: {plan|execute|audit}
-**Status**: {approved|executed|audited}
+**Pipeline status**: {approved|executed|audited}
 ```
 
+The existing `**Status**` field tracks the team's internal lifecycle (active/completing/done). The new `**Pipeline status**` field tracks cross-stage handoff state. Both are needed and do not conflict.
+
 Stage transitions:
-- Plan stage writes: `**Stage**: plan`, then `**Status**: approved` after user approval
-- Execute stage writes: `**Stage**: execute`, then `**Status**: executed` after TeamDelete
-- Audit stage writes: `**Stage**: audit`, then `**Status**: audited` after TeamDelete
+- Plan stage creates workspace, writes `**Stage**: plan`. After user approval: `**Pipeline status**: approved`
+- Execute stage updates `**Stage**: execute`. After TeamDelete: `**Pipeline status**: executed`
+- Audit stage updates `**Stage**: audit`. After TeamDelete: `**Pipeline status**: audited`
+
+### Backward Compatibility
+
+If execute is invoked on a workspace without `**Pipeline status**` (e.g., hand-crafted or legacy workspace), treat the absence as "not gated" — proceed as if approved. Similarly, if audit is invoked without `**Pipeline status**: executed`, proceed with a warning but do not block.
+
+### Skipping Stages
+
+Running audit directly after plan (skipping execute) is intentionally blocked — the precondition `**Pipeline status**: executed` prevents this. If the user wants to audit without executing, they should run `/agent-team:audit` on a workspace where work was done manually (no `**Pipeline status**` field → backward compatibility allows it).
 
 ### Preconditions per Stage
 
 | Stage | Precondition | What it checks |
 |-------|-------------|----------------|
 | `plan` | None (or task description) | Starts fresh |
-| `execute` | `**Status**: approved` in progress.md | Plan stage completed and user approved |
-| `audit` | `**Status**: executed` in progress.md | Execute stage completed |
+| `execute` | `**Pipeline status**: approved` in progress.md | Plan stage completed and user approved |
+| `audit` | `**Pipeline status**: executed` in progress.md | Execute stage completed |
 
 ### Independent Invocation
 
@@ -240,15 +279,16 @@ Each invocation is fully self-contained: TeamCreate → work → TeamDelete.
 
 | File | Change |
 |------|--------|
-| `skills/plan/SKILL.md` | Add TeamCreate/TeamDelete/SendMessage to tools. Add team creation, coordination, shutdown. |
+| `skills/start/SKILL.md` | Update orchestration narrative: each stage creates/destroys its own team. Remove TeamCreate/TeamDelete from start's own usage (delegates to stages). |
+| `skills/plan/SKILL.md` | Add TeamCreate/TeamDelete/SendMessage to tools. Add workspace creation, team creation, coordination, shutdown. |
 | `skills/plan/agents/plan-reviewer.md` | Subagent prompt → teammate spawn template |
-| `skills/execute/SKILL.md` | Own TeamDelete (no longer delegated to audit). Write `**Status**: executed`. |
+| `skills/execute/SKILL.md` | Own TeamDelete (no longer delegated to audit). Write `**Pipeline status**: executed`. |
 | `skills/execute/agents/execute-reviewer.md` | Subagent prompt → teammate spawn template |
 | `skills/execute/references/communication-protocol.md` | Add FINDING and ANALYSIS message types |
 | `skills/audit/SKILL.md` | Add TeamCreate. Own full lifecycle. Update to 12-step ordering. |
 | `skills/audit/agents/elegance-reviewer.md` | Subagent prompt → teammate spawn template |
 | `skills/audit/agents/audit-reviewer.md` | Subagent prompt → teammate spawn template |
-| `docs/workspace-templates.md` | Add `**Stage**` and update `**Status**` field in progress.md template |
+| `docs/workspace-templates.md` | Add `**Stage**` and `**Pipeline status**` fields to progress.md template (distinct from existing `**Status**` field) |
 | `README.md` | Update How It Works to show 3 teams |
 | `CLAUDE.md` | Update architecture description |
 | `CHANGELOG.md` | Add team-per-stage entry |
@@ -280,6 +320,6 @@ This is a **minor version bump** (3.0.0 → 3.1.0). No skill names change. Addit
 | Audit stage has reviewer.md | New spawn template exists |
 | FINDING and ANALYSIS in communication-protocol.md | New message types |
 | `**Stage**` field in workspace-templates.md progress.md | Handoff field exists |
-| `**Status**: executed` documented | Execute stage marker |
+| `**Pipeline status**: executed` documented | Execute stage marker |
 | Integration: `/agent-team:plan` creates and destroys its own team | Full lifecycle |
 | Integration: `/agent-team:audit` works without prior team | Independent invocation |
