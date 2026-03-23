@@ -363,6 +363,39 @@ Activates when task complexity ≥ standard (3+ steps or architectural decisions
 
 This plan-mode gate is distinct from the Claude Code platform's `mode: "plan"` spawn parameter. The platform `mode: "plan"` gates individual tool use. The plan-mode gate described here is an **orchestration-level pattern** where the teammate proposes their overall approach via `PLAN_PROPOSAL` messages before the lead authorizes execution. Both can be used together but serve different purposes.
 
+### Inter-Stage Review: Plan Review Agent
+
+**When**: Mandatory — runs after plan decomposition, BEFORE presenting the plan to the user for approval.
+
+**Purpose**: Catch plan quality issues before the user sees the plan. The user should review a pre-validated plan, not raw output.
+
+**Agent**: `skills/plan/agents/plan-reviewer.md`
+- Tools: Read, Grep, Glob (read-only)
+- Scope: Reads the draft plan from workspace (`progress.md`, `tasks.md`, `task-graph.json`)
+
+**Checks**:
+
+| Check | What it validates |
+|-------|-------------------|
+| **Completeness** | Every task has an owner, description, and dependencies |
+| **Dependency integrity** | No circular dependencies, no orphaned tasks, convergence points identified |
+| **File ownership** | No overlapping file assignments between teammates |
+| **Scope sanity** | Task count vs. team size is reasonable (not 10 tasks for 2 teammates) |
+| **Missing coverage** | Common gaps: no test task, no review task, no integration verification |
+| **Estimate plausibility** | Flags tasks with no estimate or estimates that seem off (e.g., "refactor entire module" marked as low complexity) |
+
+**Output**: `PLAN_REVIEW` message to lead:
+```
+PLAN_REVIEW:
+  status={approved|issues_found}
+  issues=[{check, severity=blocking|warning, description, suggestion}]
+```
+
+**Behavior**:
+- If `status=approved` → lead presents plan to user as-is
+- If `status=issues_found` with only warnings → lead presents plan with warnings noted
+- If `status=issues_found` with blocking issues → lead fixes the plan and re-runs the review (max 2 cycles, then present with caveats)
+
 ### Stage-Specific Files
 
 | File | Content |
@@ -370,12 +403,12 @@ This plan-mode gate is distinct from the Claude Code platform's `mode: "plan"` s
 | `skills/plan/references/plan-mode-protocol.md` | Plan-mode rules, message formats, revision limits, archetype defaults |
 | `skills/plan/references/prior-context-loading.md` | Lessons scanning, pattern library querying, relevance filtering algorithm |
 | `skills/plan/examples/plan-proposal-example.md` | Sample PLAN_PROPOSAL → PLAN_APPROVED exchange |
-| `skills/plan/agents/plan-reviewer.md` | Prompt for reviewing teammate proposals (used by lead during plan-mode evaluation) |
+| `skills/plan/agents/plan-reviewer.md` | Plan review agent prompt — validates plan quality before user approval |
 
 ### Invariants
 
 - Plan detection (existing Phase 1a) and decomposition logic are preserved
-- Phase 2's core approval gate (user approves full team plan) is unchanged
+- Phase 2's core approval gate (user approves full team plan) is unchanged — the review agent runs BEFORE this gate, not instead of it
 - Plan-mode is an additional layer within Phase 2
 - Prior context loading is a no-op if no prior data exists
 
@@ -475,6 +508,41 @@ The `docs/teammate-roles.md` role definitions gain a new field: `recovery_class:
 - Total recovery budget: max 3 cycles per team. Track in `progress.md` as `**Recovery cycles**: 0`
 - All recovery attempts logged in `issues.md` and `events.log`
 
+### Inter-Stage Review: Execute Review Agent
+
+**When**: Mandatory — runs after all tasks complete (or are abandoned), BEFORE handoff to the audit stage.
+
+**Purpose**: Quick smoke test to catch obvious failures before the full audit. Saves the audit stage from reviewing obviously broken output.
+
+**Agent**: `skills/execute/agents/execute-reviewer.md`
+- Tools: Read, Grep, Glob, Bash (read-only — `git status`, `git diff`, test runners)
+- Scope: Workspace files + all files owned by teammates (from `file-locks.json`)
+
+**Checks**:
+
+| Check | What it validates |
+|-------|-------------------|
+| **Files exist** | All files listed in `file-locks.json` exist on disk |
+| **No uncommitted changes** | `git status` shows clean for owned files |
+| **Build passes** | `npm run build` / `tsc` / equivalent exits 0 (if applicable) |
+| **Tests pass** | `npm test` / equivalent exits 0 (if applicable) |
+| **No merge conflicts** | No conflict markers (`<<<<<<<`) in owned files |
+| **Handoffs resolved** | All HANDOFF messages have a corresponding COMPLETED or acknowledgment |
+| **Open issues** | Count of OPEN issues in `issues.md` — reported but not blocking |
+
+**Output**: `EXECUTE_REVIEW` message to lead:
+```
+EXECUTE_REVIEW:
+  status={ready_for_audit|issues_found}
+  issues=[{check, severity=blocking|warning, description}]
+  summary={N tasks completed, M files changed, K open issues}
+```
+
+**Behavior**:
+- If `status=ready_for_audit` → proceed to audit stage
+- If `status=issues_found` with warnings only → proceed to audit with warnings forwarded
+- If `status=issues_found` with blocking issues → lead attempts remediation (one cycle: fix and re-review). If still blocking after remediation, proceed to audit anyway with blocking issues flagged — the audit stage will capture them in the report
+
 ### Stage-Specific Files
 
 | File | Content |
@@ -483,12 +551,14 @@ The `docs/teammate-roles.md` role definitions gain a new field: `recovery_class:
 | `skills/execute/references/coordination-patterns.md` | Core conflict resolution, handoffs, error recovery pattern (migrated from `docs/`) |
 | `skills/execute/references/communication-protocol.md` | All message formats including extended BLOCKED with error_type (migrated from `docs/`) |
 | `skills/execute/agents/spawn-templates.md` | All teammate spawn prompts including plan-mode directive (migrated from `docs/`) |
+| `skills/execute/agents/execute-reviewer.md` | Execute review agent prompt — smoke test before audit handoff |
 
 ### Invariants
 
 - Existing BLOCKED handling still works — `error_type` is additive
 - If teammate sends BLOCKED without `error_type`, lead classifies as `unknown`
 - Recovery is bounded and always terminates
+- Execute review agent does NOT block handoff to audit — blocking issues are forwarded, not gates
 
 ---
 
@@ -507,8 +577,9 @@ Owns Phase 5 (completion gate, report, shutdown). New: elegance review, lessons 
 5. **Lessons capture** (new — Sub-step 2)
 6. **Pattern library update** (new — Sub-step 3)
 7. Report generation (existing, now includes elegance + lessons data)
-8. Team shutdown (existing)
-9. Cleanup (existing)
+8. **Audit review agent** (new — validates report quality before presenting to user)
+9. Team shutdown (existing)
+10. Cleanup (existing)
 
 ### Sub-step 1: Elegance Gate
 
@@ -561,6 +632,38 @@ Lead synthesizes lessons from the entire team execution.
 - Global library cap: 200 patterns maximum. When cap is reached, evict patterns with the lowest `success_rate` (least useful) before adding new ones
 - If `~/.claude/agent-team-patterns.json` doesn't exist, create `~/.claude/` directory if needed (`mkdir -p`) and initialize with `{"patterns": []}`
 
+### Inter-Stage Review: Audit Review Agent
+
+**When**: Mandatory — runs after report generation, BEFORE team shutdown. This is the final quality gate.
+
+**Purpose**: Meta-review of the audit output itself — ensures the report is complete, lessons are actionable, and findings are backed by evidence. Catches audit quality issues before the report is presented to the user.
+
+**Agent**: `skills/audit/agents/audit-reviewer.md`
+- Tools: Read, Grep, Glob (read-only)
+- Scope: Workspace files only (`report.md`, `lessons.md`, `issues.md`, `progress.md`)
+
+**Checks**:
+
+| Check | What it validates |
+|-------|-------------------|
+| **Report completeness** | All required sections present per report template for the archetype |
+| **Evidence backing** | Every finding in the report has a file reference or concrete example |
+| **Lessons actionability** | Lessons in `lessons.md` are specific and reusable (not vague like "communicate better") |
+| **Consistency** | No contradictions between report sections (e.g., "0 issues" but issues.md has OPEN items) |
+| **Metrics accuracy** | Task counts, file counts, duration match workspace data |
+| **Elegance review included** | If elegance gate ran, its findings appear in the report |
+
+**Output**: `AUDIT_REVIEW` message to lead:
+```
+AUDIT_REVIEW:
+  status={approved|revisions_needed}
+  issues=[{check, severity=blocking|warning, description, fix_suggestion}]
+```
+
+**Behavior**:
+- If `status=approved` → proceed to shutdown and present report to user
+- If `status=revisions_needed` → lead fixes the report/lessons and re-runs review (max 2 cycles, then finalize as-is with a note that the report may have quality gaps)
+
 ### Stage-Specific Files
 
 | File | Content |
@@ -570,12 +673,14 @@ Lead synthesizes lessons from the entire team execution.
 | `skills/audit/references/report-format.md` | Report template + variants + new elegance/lessons sections (migrated from `docs/`) |
 | `skills/audit/examples/lessons-example.md` | Sample `lessons.md` from a completed team |
 | `skills/audit/agents/elegance-reviewer.md` | Spawn prompt for Elegance Reviewer |
+| `skills/audit/agents/audit-reviewer.md` | Audit review agent prompt — meta-review of report and lessons quality |
 
 ### Invariants
 
 - Existing completion gate checks unchanged
 - Post-steps run after them, not instead
 - Report generation now includes elegance and lessons data
+- Audit review agent runs after report generation but before shutdown — it reviews the report, not the code
 
 ---
 
@@ -595,11 +700,19 @@ The user-facing entry point that chains all 3 pipeline stages. Detects archetype
    - Planning: design, architect, produce specs
    - Hybrid: mixed or unclear
 3. **Invoke `agent-team:plan`** with task + archetype config
-4. **Wait for user approval** (plan stage handles this)
-5. **Invoke `agent-team:execute`** with approved plan
-6. **Invoke `agent-team:audit`** with completed workspace
+   - Plan review agent validates the plan
+   - User approves the validated plan
+4. **Invoke `agent-team:execute`** with approved plan
+   - Execute review agent smoke-tests the output
+5. **Invoke `agent-team:audit`** with reviewed workspace
+   - Audit review agent validates the final report
 
 If any stage fails or the user cancels, the pipeline stops. Workspace persists for resumption.
+
+**Full pipeline with review agents**:
+```
+plan → [plan-review] → user approval → execute → [execute-review] → audit → [audit-review] → report to user
+```
 
 ### Stage Chaining Mechanism
 
@@ -630,18 +743,20 @@ This means `start/SKILL.md` references the other 3 skills' logic via `Read` inst
 | `skills/plan/references/plan-mode-protocol.md` | Plan-mode rules and formats |
 | `skills/plan/references/prior-context-loading.md` | Lessons/pattern loading algorithm |
 | `skills/plan/examples/plan-proposal-example.md` | Sample proposal exchange |
-| `skills/plan/agents/plan-reviewer.md` | Proposal review prompt |
+| `skills/plan/agents/plan-reviewer.md` | Plan review agent — validates plan quality before user approval |
 | `skills/execute/SKILL.md` | Execute stage skill |
 | `skills/execute/references/error-recovery-protocol.md` | Error recovery decision tree |
 | `skills/execute/references/coordination-patterns.md` | Migrated + extended from `docs/` |
 | `skills/execute/references/communication-protocol.md` | Migrated + extended from `docs/` |
 | `skills/execute/agents/spawn-templates.md` | Migrated from `docs/` |
+| `skills/execute/agents/execute-reviewer.md` | Execute review agent — smoke test before audit handoff |
 | `skills/audit/SKILL.md` | Audit stage skill |
 | `skills/audit/references/completion-gates.md` | Archetype-specific gates |
 | `skills/audit/references/elegance-rubric.md` | 5-dimension rubric |
 | `skills/audit/references/report-format.md` | Migrated + extended from `docs/` |
 | `skills/audit/examples/lessons-example.md` | Sample lessons.md |
 | `skills/audit/agents/elegance-reviewer.md` | Elegance Reviewer prompt |
+| `skills/audit/agents/audit-reviewer.md` | Audit review agent — meta-review of report quality |
 | `~/.claude/agent-team-patterns.json` | Global error pattern library (created at runtime if not present) |
 
 ### Deleted Files
@@ -733,6 +848,9 @@ This is a **major version bump** (breaking change: skill names change from `agen
 | `error-patterns.json` schema in `workspace-templates.md` | Schema with required fields |
 | `fallback_approach`/`fallback_reason` in task-graph.json schema | New optional fields |
 | Plan-mode defaults in `team-archetypes.md` | Each archetype has a default |
+| Plan review agent in `skills/plan/agents/plan-reviewer.md` | Agent prompt exists |
+| Execute review agent in `skills/execute/agents/execute-reviewer.md` | Agent prompt exists |
+| Audit review agent in `skills/audit/agents/audit-reviewer.md` | Agent prompt exists |
 
 ### Integration Tests (Manual)
 
@@ -748,3 +866,7 @@ This is a **major version bump** (breaking change: skill names change from `agen
 | Elegance gate | Complete implementation team, verify Elegance Reviewer spawns |
 | Lessons capture | Complete any team, verify lessons.md written |
 | Pattern library update | Complete team with resolved issues, verify `~/.claude/agent-team-patterns.json` updated |
+| Plan review agent | Run `/agent-team:plan`, verify `PLAN_REVIEW` message appears before user approval |
+| Execute review agent | Complete all tasks, verify `EXECUTE_REVIEW` message appears before audit |
+| Audit review agent | Complete audit, verify `AUDIT_REVIEW` message appears before report is presented |
+| Review agent cycle limits | Trigger blocking issues in plan review, verify max 2 fix cycles then proceed |
