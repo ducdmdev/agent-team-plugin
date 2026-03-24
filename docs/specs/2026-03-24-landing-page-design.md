@@ -20,7 +20,11 @@ A single-page landing page for the agent-team-plugin, hosted on GitHub Pages. Pr
 **Content**:
 - Headline: `Agent Team` — large monospace, white
 - Subheadline: `Orchestrate parallel AI teammates in Claude Code` — smaller, muted gray
-- Install command in a terminal block with copy button: `$ claude plugin install agent-team`
+- Install commands in a terminal block with copy button:
+  ```
+  $ claude plugin marketplace add ducdmdev/agent-team-plugin
+  $ claude plugin install agent-team
+  ```
 - Version badge: `v3.2.0` — small, muted
 - Scroll cue: "Watch the demo ↓" pointing to terminal section
 
@@ -45,11 +49,19 @@ A single-page landing page for the agent-team-plugin, hosted on GitHub Pages. Pr
   - Execute: blue (#60a5fa)
   - Audit: green (#4ade80)
 
-### Animation Sequence (~30 seconds)
+### Animation Timing
+- Lines appear in blocks (not character-by-character for every line) — type effect for user input only
+- User input lines: ~50ms per character with cursor blink
+- Output lines: appear in rapid succession (~100ms between lines)
+- Stage headers: 500ms pause before content
+- Between stages: 800ms pause
+- Total animation: ~25-35 seconds depending on pacing
+
+### Animation Sequence
 1. Type effect: `You > use agent team to refactor the auth module`
 2. Pause (500ms), then Stage 1 — Plan output appears line by line:
    - `━━ Stage 1 — Plan ━━`
-   - `[Planning team created: 2 Researchers + 1 Plan Reviewer]`
+   - `[Planning team created: 2 Researchers + 1 Analyst + 1 Plan Reviewer]`
    - Researcher FINDING lines (2-3 lines)
    - `plan-reviewer: PLAN_REVIEW: status=approved`
    - Team plan summary (teammates, task breakdown)
@@ -88,7 +100,10 @@ Directly from the README demo walkthrough (lines 24-104 of README.md). Proven ac
 
 ## Section 3: Pipeline Overview
 
-**Layout**: 3-column grid below the terminal, centered.
+**Intro paragraph** (plain-text fallback for users who skip or can't view the animation):
+> "Agent Team splits every task into 3 stages — Plan, Execute, Audit — each with its own ephemeral team. The workspace is the only handoff between stages. Auto-detects team type (Implementation, Research, Audit, Planning, Hybrid) from your task description."
+
+**Layout**: 3-column grid below the intro, centered.
 
 ### Columns
 
@@ -116,7 +131,7 @@ Directly from the README demo walkthrough (lines 24-104 of README.md). Proven ac
 
 ## Section 4: Features Grid
 
-**Layout**: 2x3 grid of feature cards.
+**Layout**: Grid of feature cards (7 cards — 2x3 + 1 full-width, or responsive flow).
 
 ### Cards
 
@@ -128,6 +143,7 @@ Directly from the README demo walkthrough (lines 24-104 of README.md). Proven ac
 | Elegance Review | `score=4.2/5` | 5-dimension quality: simplicity, consistency, readability, testability, minimal impact. Advisory, not blocking |
 | Lessons Capture | `lessons.md` | Post-execution insights feed future teams. Global error pattern library at ~/.claude/agent-team-patterns.json |
 | Team Per Stage | `TeamCreate → TeamDelete` | Each stage owns its lifecycle. Ephemeral teams, persistent workspace. 3 teams per pipeline run |
+| 5 Archetypes | `auto-detected` | Implementation, Research, Audit, Planning, Hybrid — auto-detected from your task. Determines roles, gates, and report format |
 
 ### Design
 - Dark cards (#1a1a2e background)
@@ -149,11 +165,15 @@ Directly from the README demo walkthrough (lines 24-104 of README.md). Proven ac
   $ claude plugin install agent-team
   ```
   ```
-  # Enable agent teams feature
+  # Enable agent teams feature (pick one)
   $ export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+
+  # Or add to settings.json for persistence:
+  # { "env": { "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1" } }
   ```
 - Each block has a copy button
-- Prerequisites listed below: Claude Code CLI (required), `jq` (required for hooks, graceful fallback), `git` (optional)
+- Prerequisites listed below: Claude Code CLI (required), `jq` (required by hooks — hooks skip gracefully if missing), `git` (optional)
+- Link to README for detailed docs: "See the [full documentation](https://github.com/ducdmdev/agent-team-plugin#readme)"
 
 ### Footer
 - Single line: GitHub repo link | v3.2.0 | "Made for Claude Code developers"
@@ -169,7 +189,7 @@ Directly from the README demo walkthrough (lines 24-104 of README.md). Proven ac
 site/
 ├── index.html          # Single file — all CSS and JS inline
 └── assets/
-    └── demo.gif        # Fallback for no-JS (copy from repo root assets/)
+    └── demo.gif        # Fallback for no-JS (copy from repo root assets/ if exists, or generate during implementation)
 ```
 
 ### GitHub Pages Deployment
