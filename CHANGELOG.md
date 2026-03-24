@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-03-24
+
+### Added
+- **`validate-task-graph.sh` hook** (SubagentStart) — validates task-graph.json schema and detects circular dependencies before teammate spawn. Blocks on invalid JSON, missing required fields, dangling dependency references, or cycles.
+- **Plan audit completeness gate** — mandatory Plan Audit Result table in `progress.md` with all 7 checks filled before plan presentation. Hard gate in plan SKILL.md.
+- **Plan Audit Result template** in `docs/workspace-templates.md` for `progress.md`
+
 ## [3.0.1] - 2026-03-23
 
 ### Fixed
