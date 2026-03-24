@@ -40,8 +40,8 @@ docs/                  Shared reference docs (roles, archetypes, workspace templ
 |------|---------|----------------|
 | `.claude-plugin/plugin.json` | Plugin identity | Bump version here on release |
 | `.claude-plugin/marketplace.json` | Marketplace registry | Bump version here too, keep in sync with plugin.json |
-| `hooks/hooks.json` | Hook registration (9 hook entries) | Update timeout values, add new hooks, or update hook command paths |
-| `scripts/*.sh` | Hook enforcement logic (12 scripts) | Written in bash (`#!/bin/bash`), degrade gracefully without `jq` |
+| `hooks/hooks.json` | Hook registration (10 hook entries) | Update timeout values, add new hooks, or update hook command paths |
+| `scripts/*.sh` | Hook enforcement logic (13 scripts) | Written in bash (`#!/bin/bash`), degrade gracefully without `jq` |
 | `skills/start/SKILL.md` | Pipeline entry point | Type detection, prior context, routing to plan/execute/audit |
 | `skills/plan/SKILL.md` | Plan stage | Decomposition, DAG creation, plan-review, user approval |
 | `skills/plan/references/` | Plan stage references | Prior context loading, plan-mode protocol |
@@ -105,7 +105,7 @@ chore:    maintenance (CI, dependencies)
 bash tests/run-tests.sh
 ```
 
-Runs 12 test files covering all hooks and plugin structure.
+Runs 13 test files covering all hooks and plugin structure.
 
 ### Validate Plugin
 
@@ -123,17 +123,18 @@ Then trigger with: "use agent team to [task]"
 
 ### Verify Hooks
 
-Nine hook entries registered in `hooks/hooks.json`:
+Ten hook entries registered in `hooks/hooks.json`:
 
 1. **TaskCompleted** — try marking a task complete without file changes (should block)
 2. **TeammateIdle** — let a teammate go idle with in-progress tasks (should nudge)
 3. **SessionStart(compact)** — compact context in a team session (should recover workspace)
 4. **PreToolUse(Write|Edit)** — have a teammate edit another's file (should warn, then block)
-5. **SubagentStart** — spawn a teammate (should log to events.log)
-6. **SubagentStop** — teammate shuts down (should log to events.log)
-7. **ComputeCriticalPath** — complete a task and check stderr for critical path update
-8. **DetectResume** — start a new session with an incomplete workspace and check stdout for resume context
-9. **CheckIntegrationPoint** — complete both upstream tasks of a convergence point and check stderr for integration nudge
+5. **ValidateTaskGraph** — spawn a teammate with malformed task-graph.json (should block)
+6. **SubagentStart** — spawn a teammate (should log to events.log)
+7. **SubagentStop** — teammate shuts down (should log to events.log)
+8. **ComputeCriticalPath** — complete a task and check stderr for critical path update
+9. **DetectResume** — start a new session with an incomplete workspace and check stdout for resume context
+10. **CheckIntegrationPoint** — complete both upstream tasks of a convergence point and check stderr for integration nudge
 
 ## Common Tasks
 

@@ -235,7 +235,7 @@ CHECKPOINT #N: intermediate results, artifacts, ready_for=[task IDs]
 
 ## Hooks
 
-Nine hooks enforce team discipline and provide DAG-aware coordination:
+Ten hooks enforce team discipline and provide DAG-aware coordination:
 
 ### TaskCompleted
 
@@ -262,6 +262,13 @@ Enforces file ownership boundaries:
 - Reads `file-locks.json` from the workspace to determine ownership
 - First violation: warns (exit 0). Second violation: blocks (exit 2)
 - Workspace files are always allowed regardless of ownership
+
+### ValidateTaskGraph (SubagentStart)
+
+Validates `task-graph.json` schema and detects circular dependencies before each teammate is spawned:
+- Checks: valid JSON, nodes have required fields, dependency references resolve, no cycles
+- Blocks teammate spawn if task-graph is invalid or has circular dependencies
+- Gracefully allows spawn if task-graph doesn't exist yet (workspace may still be initializing)
 
 ### SubagentStart / SubagentStop
 
@@ -325,6 +332,7 @@ agent-team-plugin/
 │   ├── check-teammate-idle.sh       # TeammateIdle hook
 │   ├── recover-context.sh           # SessionStart(compact) hook
 │   ├── check-file-ownership.sh      # PreToolUse(Write|Edit) hook
+│   ├── validate-task-graph.sh       # ValidateTaskGraph hook (SubagentStart)
 │   ├── track-teammate-lifecycle.sh  # SubagentStart/Stop hook
 │   ├── setup-worktree.sh            # Worktree creation for isolation mode
 │   ├── merge-worktrees.sh           # Worktree merge in Phase 5
@@ -356,7 +364,7 @@ agent-team-plugin/
 │   ├── team-archetypes.md         # Team type definitions and phase profiles
 │   └── custom-roles.md            # Template for project-specific roles
 ├── tests/
-│   ├── run-tests.sh               # Test runner (12 test files)
+│   ├── run-tests.sh               # Test runner (13 test files)
 │   ├── lib/
 │   │   └── test-helpers.sh        # Shared test utilities
 │   ├── hooks/                     # Hook-specific tests
