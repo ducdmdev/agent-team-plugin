@@ -235,7 +235,7 @@ CHECKPOINT #N: intermediate results, artifacts, ready_for=[task IDs]
 
 ## Hooks
 
-Ten hooks enforce team discipline and provide DAG-aware coordination:
+Thirteen hooks enforce team discipline and provide DAG-aware coordination:
 
 ### TaskCompleted
 
@@ -269,6 +269,27 @@ Validates `task-graph.json` schema and detects circular dependencies before each
 - Checks: valid JSON, nodes have required fields, dependency references resolve, no cycles
 - Blocks teammate spawn if task-graph is invalid or has circular dependencies
 - Gracefully allows spawn if task-graph doesn't exist yet (workspace may still be initializing)
+
+### WorkspaceCompleteness (SubagentStart)
+
+Validates all 4 tracking files and required fields before teammate spawn:
+- Checks `progress.md`, `tasks.md`, `issues.md`, `task-graph.json` exist in the workspace
+- Validates that `progress.md` contains required fields (`Archetype`, `Pipeline status`)
+- Blocks teammate spawn if workspace is incomplete or missing required metadata
+
+### PlanRevisionLimit (PreToolUse(SendMessage))
+
+Enforces max 2 plan-mode revision rounds per teammate:
+- Counts `PLAN_REVISION` messages sent to each teammate
+- Blocks the third `PLAN_REVISION` with guidance to approve or reassign
+- Prevents infinite plan-mode loops that waste context and time
+
+### PreShutdownCommit (PreToolUse(TeamDelete))
+
+Blocks TeamDelete if any owned files have uncommitted changes:
+- Reads `file-locks.json` to determine which files each teammate owns
+- Checks `git status` for uncommitted changes in owned files
+- Blocks team deletion until all owned files are committed or explicitly abandoned
 
 ### SubagentStart / SubagentStop
 
@@ -333,6 +354,9 @@ agent-team-plugin/
 │   ├── recover-context.sh           # SessionStart(compact) hook
 │   ├── check-file-ownership.sh      # PreToolUse(Write|Edit) hook
 │   ├── validate-task-graph.sh       # ValidateTaskGraph hook (SubagentStart)
+│   ├── check-workspace-completeness.sh  # WorkspaceCompleteness hook
+│   ├── enforce-plan-revision-limit.sh   # PlanRevisionLimit hook
+│   ├── enforce-pre-shutdown-commit.sh   # PreShutdownCommit hook
 │   ├── track-teammate-lifecycle.sh  # SubagentStart/Stop hook
 │   ├── setup-worktree.sh            # Worktree creation for isolation mode
 │   ├── merge-worktrees.sh           # Worktree merge in Phase 5
@@ -364,7 +388,7 @@ agent-team-plugin/
 │   ├── team-archetypes.md         # Team type definitions and phase profiles
 │   └── custom-roles.md            # Template for project-specific roles
 ├── tests/
-│   ├── run-tests.sh               # Test runner (13 test files)
+│   ├── run-tests.sh               # Test runner (16 test files)
 │   ├── lib/
 │   │   └── test-helpers.sh        # Shared test utilities
 │   ├── hooks/                     # Hook-specific tests

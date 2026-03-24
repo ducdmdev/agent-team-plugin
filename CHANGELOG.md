@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-03-24
+
+### Added
+- **Workspace completeness hook** (SubagentStart) — validates all 4 tracking files and Archetype/Pipeline status fields before teammate spawn
+- **Plan-mode revision limit hook** (PreToolUse(SendMessage)) — enforces max 2 revision rounds per teammate, blocks third PLAN_REVISION
+- **Pre-shutdown commit hook** (PreToolUse(TeamDelete)) — blocks TeamDelete if any owned files have uncommitted changes
+- **Integration point file validation** — enhanced existing hook to verify upstream task output files exist at convergence points
+
 ## [3.1.0] - 2026-03-24
 
 ### Added
