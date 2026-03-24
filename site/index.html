@@ -580,6 +580,7 @@ footer span { margin: 0 12px; }
   <a href="#demo" class="scroll-cue" aria-label="Scroll to demo">Watch the demo &#8595;</a>
 </header>
 
+<main>
 <!-- ════════════ Terminal Demo ════════════ -->
 <section class="demo-section container" id="demo" aria-label="Live terminal demo showing the 3-stage pipeline">
   <div class="terminal" role="img" aria-label="Animated terminal showing Agent Team orchestrating a refactor task through Plan, Execute, and Audit stages">
@@ -590,7 +591,11 @@ footer span { margin: 0 12px; }
       <div class="terminal-title">claude</div>
       <button class="terminal-skip" id="skipBtn" aria-label="Skip animation">Skip</button>
     </div>
-    <div class="terminal-body" id="terminalBody"></div>
+    <div class="terminal-body" id="terminalBody">
+      <noscript>
+        <pre style="color: var(--text-muted); font-size: 0.8rem; white-space: pre-wrap;">This demo requires JavaScript to animate. Visit the GitHub README for the full pipeline walkthrough: https://github.com/ducdmdev/agent-team-plugin#see-it-in-action</pre>
+      </noscript>
+    </div>
   </div>
   <div class="replay-hint" id="replayHint">Click terminal to replay</div>
 </section>
@@ -598,7 +603,7 @@ footer span { margin: 0 12px; }
 <!-- ════════════ Pipeline Overview ════════════ -->
 <section class="pipeline-section" id="pipeline">
   <div class="container">
-    <p class="section-intro">Agent Team splits every task into 3 stages &mdash; Plan, Execute, Audit &mdash; each with its own ephemeral team. Auto-detects team type (Implementation, Research, Audit, Planning, Hybrid) from your task description.</p>
+    <p class="section-intro">Agent Team splits every task into 3 stages &mdash; Plan, Execute, Audit &mdash; each with its own ephemeral team. The workspace is the only handoff between stages. Auto-detects team type (Implementation, Research, Audit, Planning, Hybrid) from your task description.</p>
 
     <div class="pipeline-grid">
       <div class="pipeline-card pipeline-card--plan">
@@ -711,6 +716,8 @@ footer span { margin: 0 12px; }
   </div>
 </section>
 
+</main>
+
 <footer>
   <a href="https://github.com/ducdmdev/agent-team-plugin" target="_blank" rel="noopener noreferrer">GitHub</a>
   <span>&middot;</span>
@@ -754,6 +761,7 @@ footer span { margin: 0 12px; }
     { type: 'blank' },
     { type: 'output', cls: 'stage-plan', html: '  <span class="tm-researcher">researcher-1:</span>  <span class="line-finding">FINDING: auth module has 3 sub-modules (token, session, middleware), relevance=high</span>' },
     { type: 'output', cls: 'stage-plan', html: '  <span class="tm-researcher">researcher-2:</span>  <span class="line-finding">FINDING: token interface shared across 4 consumers, relevance=high</span>' },
+    { type: 'output', cls: 'stage-plan', html: '  <span class="tm-researcher">researcher-1:</span>  <span class="line-finding">FINDING: no tests for session management, relevance=medium</span>' },
     { type: 'output', cls: 'stage-plan', html: '  <span class="tm-plan-reviewer">plan-reviewer:</span> <span class="line-approved">PLAN_REVIEW: status=approved</span>' },
     { type: 'blank' },
     { type: 'output', cls: 'stage-plan line-summary', text: '  Team plan for: refactor auth module' },
@@ -764,6 +772,13 @@ footer span { margin: 0 12px; }
     { type: 'output', cls: 'stage-plan', html: '  - <span class="tm-impl">auth-impl-2</span> (Implementer): session management' },
     { type: 'output', cls: 'stage-plan', html: '  - <span class="tm-reviewer">auth-reviewer</span> (Reviewer): validate all changes' },
     { type: 'blank' },
+    { type: 'output', cls: 'stage-plan line-summary', text: '  Task breakdown:' },
+    { type: 'output', cls: 'stage-plan', text: '  1. Refactor token validation logic        → auth-impl-1' },
+    { type: 'output', cls: 'stage-plan', text: '  2. Extract session management             → auth-impl-2' },
+    { type: 'output', cls: 'stage-plan', text: '  3. Update middleware (blocked by #2)       → auth-impl-1' },
+    { type: 'output', cls: 'stage-plan', text: '  4. Review all changes (blocked by #1, #3) → auth-reviewer' },
+    { type: 'blank' },
+    { type: 'output', cls: 'stage-plan line-summary', text: '  Pipeline status: approved' },
     { type: 'output', cls: 'stage-plan line-bracket', text: '  [Planning team shut down]' },
     { type: 'output', cls: 'stage-plan line-summary', text: '  Approve?' },
     { type: 'blank' },
@@ -784,8 +799,9 @@ footer span { margin: 0 12px; }
     { type: 'output', cls: 'stage-execute', html: '  <span class="tm-impl">auth-impl-1:</span>   <span class="line-completed">COMPLETED #3: Middleware updated</span>' },
     { type: 'output', cls: 'stage-execute', html: '  <span class="tm-reviewer">auth-reviewer:</span>  <span class="line-completed">COMPLETED #4: 5 issues \u2014 0 high, 3 medium, 2 low</span>' },
     { type: 'blank' },
-    { type: 'output', cls: 'stage-execute', html: '  <span class="tm-exec-reviewer">exec-reviewer:</span> <span class="line-approved">EXECUTE_REVIEW: status=ready_for_audit</span>' },
+    { type: 'output', cls: 'stage-execute', html: '  <span class="tm-exec-reviewer">exec-reviewer:</span> <span class="line-approved">EXECUTE_REVIEW: status=ready_for_audit, 4/4 tasks done, 6 files changed</span>' },
     { type: 'blank' },
+    { type: 'output', cls: 'stage-execute line-summary', text: '  Pipeline status: executed' },
     { type: 'output', cls: 'stage-execute line-bracket', text: '  [Execution team shut down]' },
     { type: 'blank' },
     { type: 'stage', text: '\u2501\u2501 Stage 3 \u2014 Audit \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501', stage: 'audit' },
@@ -800,9 +816,10 @@ footer span { margin: 0 12px; }
     { type: 'output', cls: 'stage-audit line-summary', text: '  Pattern library updated' },
     { type: 'blank' },
     { type: 'output', cls: 'stage-audit line-summary', text: '  Report: .agent-team/0323-refactor-auth/report.md' },
+    { type: 'output', cls: 'stage-audit line-summary', text: '  Pipeline status: audited' },
     { type: 'output', cls: 'stage-audit line-bracket', text: '  [Audit team shut down]' },
     { type: 'blank' },
-    { type: 'output', cls: 'line-summary', html: '  Total: 6 files changed, 4/4 tasks completed, elegance <span class="line-approved">4.2/5</span>' }
+    { type: 'output', cls: 'line-summary', html: '  Total: 6 files changed, 4/4 tasks completed, 0 open issues, elegance <span class="line-approved">4.2/5</span>' }
   ];
 
   var animationId = null;
