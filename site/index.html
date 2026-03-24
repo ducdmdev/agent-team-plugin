@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Team — Orchestrate parallel AI teammates in Claude Code</title>
+<meta name="description" content="A Claude Code plugin for orchestrating parallel AI teammates. Plan, Execute, Audit — 3-stage pipeline with 13 hooks, 13 roles, and error recovery.">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f0f23;
+  --card: #1a1a2e;
+  --card-hover: #1f1f35;
+  --purple: #a78bfa;
+  --blue: #60a5fa;
+  --green: #4ade80;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --dim: #64748b;
+  --code-font: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+  --body-font: system-ui, -apple-system, sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--body-font);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a { color: var(--purple); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── Hero ──────────────────────────────────────────────── */
+
+.hero {
+  min-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  padding: 80px 24px 48px;
+}
+
+.github-link {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  color: var(--muted);
+  transition: color 0.2s;
+}
+.github-link:hover { color: var(--text); text-decoration: none; }
+.github-link svg { display: block; }
+
+.hero h1 {
+  font-family: var(--code-font);
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff;
+  margin-bottom: 12px;
+}
+
+.hero .subtitle {
+  font-size: clamp(1rem, 2.5vw, 1.25rem);
+  color: var(--muted);
+  margin-bottom: 40px;
+  max-width: 500px;
+}
+
+.hero-install {
+  background: var(--card);
+  border: 1px solid #2a2a40;
+  border-radius: 8px;
+  padding: 20px 24px;
+  text-align: left;
+  position: relative;
+  max-width: 560px;
+  width: 100%;
+}
+
+.hero-install code {
+  font-family: var(--code-font);
+  font-size: 0.85rem;
+  line-height: 1.8;
+  color: var(--text);
+  display: block;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.hero-install .dollar { color: var(--green); user-select: none; }
+
+.copy-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: 1px solid #3a3a55;
+  border-radius: 4px;
+  color: var(--muted);
+  font-family: var(--code-font);
+  font-size: 0.7rem;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.copy-btn:hover { border-color: var(--purple); color: var(--text); }
+.copy-btn:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+
+.version-badge {
+  margin-top: 20px;
+  font-family: var(--code-font);
+  font-size: 0.8rem;
+  color: var(--dim);
+}
+
+.scroll-cue {
+  margin-top: 48px;
+  color: var(--dim);
+  font-size: 0.9rem;
+  animation: float 2.5s ease-in-out infinite;
+  cursor: pointer;
+}
+.scroll-cue:hover { color: var(--muted); text-decoration: none; }
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+/* ── Terminal Demo ─────────────────────────────────────── */
+
+.demo-section {
+  padding: 40px 0 80px;
+}
+
+.terminal {
+  max-width: 820px;
+  margin: 0 auto;
+  background: #0c0c1a;
+  border: 1px solid #2a2a40;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+}
+
+.terminal-titlebar {
+  display: flex;
+  align-items: center;
+  background: #16162a;
+  padding: 12px 16px;
+  gap: 8px;
+  user-select: none;
+}
+
+.terminal-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+.terminal-dot--red { background: #ff5f57; }
+.terminal-dot--yellow { background: #febc2e; }
+.terminal-dot--green { background: #28c840; }
+
+.terminal-title {
+  flex: 1;
+  text-align: center;
+  font-family: var(--code-font);
+  font-size: 0.8rem;
+  color: var(--dim);
+}
+
+.terminal-skip {
+  background: transparent;
+  border: 1px solid #3a3a55;
+  border-radius: 4px;
+  color: var(--muted);
+  font-family: var(--code-font);
+  font-size: 0.7rem;
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.terminal-skip:hover { border-color: var(--purple); color: var(--text); }
+.terminal-skip:focus-visible { outline: 2px solid var(--purple); outline-offset: 2px; }
+
+.terminal-body {
+  padding: 20px 24px 28px;
+  font-family: var(--code-font);
+  font-size: 0.82rem;
+  line-height: 1.7;
+  min-height: 480px;
+  max-height: 70vh;
+  overflow-y: auto;
+  cursor: pointer;
+  overflow-x: auto;
+}
+
+.terminal-body .line { white-space: pre; }
+.terminal-body .line-hidden { display: none; }
+
+/* User input lines */
+.line-user {
+  color: #fff;
+  font-weight: 600;
+}
+.line-user .prompt { color: var(--green); }
+
+/* Stage headers */
+.line-stage { font-weight: 700; margin-top: 8px; }
+.line-stage--plan { color: var(--purple); border-left: 3px solid var(--purple); padding-left: 12px; }
+.line-stage--execute { color: var(--blue); border-left: 3px solid var(--blue); padding-left: 12px; }
+.line-stage--audit { color: var(--green); border-left: 3px solid var(--green); padding-left: 12px; }
+
+/* Plan stage lines */
+.stage-plan { border-left: 3px solid rgba(167, 139, 250, 0.2); padding-left: 12px; }
+.stage-execute { border-left: 3px solid rgba(96, 165, 250, 0.2); padding-left: 12px; }
+.stage-audit { border-left: 3px solid rgba(74, 222, 128, 0.2); padding-left: 12px; }
+
+/* Teammate name colors */
+.tm-researcher { color: var(--purple); }
+.tm-analyst { color: #c084fc; }
+.tm-plan-reviewer { color: #e879f9; }
+.tm-impl { color: var(--blue); }
+.tm-reviewer { color: #38bdf8; }
+.tm-exec-reviewer { color: #22d3ee; }
+.tm-audit-reviewer { color: var(--green); }
+.tm-elegance-reviewer { color: #34d399; }
+.tm-lead { color: #fbbf24; }
+
+.line-bracket { color: var(--dim); }
+.line-finding { color: var(--muted); }
+.line-summary { color: var(--text); }
+.line-approved { color: var(--green); }
+.line-blocked { color: #f87171; }
+.line-recovery { color: #fbbf24; }
+.line-completed { color: var(--green); }
+
+/* Blinking cursor */
+.cursor {
+  display: inline-block;
+  width: 8px;
+  height: 1.1em;
+  background: var(--text);
+  vertical-align: text-bottom;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.replay-hint {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--dim);
+  margin-top: 12px;
+  font-family: var(--code-font);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.replay-hint.visible { opacity: 1; }
+
+/* ── Pipeline Overview ─────────────────────────────────── */
+
+.pipeline-section {
+  padding: 80px 0;
+}
+
+.pipeline-section .section-intro {
+  max-width: 720px;
+  margin: 0 auto 48px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.pipeline-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+.pipeline-card {
+  background: var(--card);
+  border-radius: 8px;
+  padding: 28px 24px;
+  border-top: 4px solid;
+}
+.pipeline-card--plan { border-top-color: var(--purple); }
+.pipeline-card--execute { border-top-color: var(--blue); }
+.pipeline-card--audit { border-top-color: var(--green); }
+
+.pipeline-card h3 {
+  font-family: var(--code-font);
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+}
+.pipeline-card--plan h3 { color: var(--purple); }
+.pipeline-card--execute h3 { color: var(--blue); }
+.pipeline-card--audit h3 { color: var(--green); }
+
+.pipeline-card .team {
+  font-family: var(--code-font);
+  font-size: 0.78rem;
+  color: var(--dim);
+  margin-bottom: 16px;
+}
+
+.pipeline-card ul {
+  list-style: none;
+  padding: 0;
+}
+.pipeline-card li {
+  position: relative;
+  padding-left: 16px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+.pipeline-card li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+.pipeline-card--plan li::before { background: var(--purple); }
+.pipeline-card--execute li::before { background: var(--blue); }
+.pipeline-card--audit li::before { background: var(--green); }
+
+/* ── Features Grid ─────────────────────────────────────── */
+
+.features-section {
+  padding: 40px 0 80px;
+}
+
+.features-section h2 {
+  text-align: center;
+  font-family: var(--code-font);
+  font-size: 1.6rem;
+  margin-bottom: 48px;
+  color: #fff;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.feature-card {
+  background: var(--card);
+  border: 1px solid #2a2a40;
+  border-radius: 8px;
+  padding: 24px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.feature-card:hover {
+  border-color: #3a3a55;
+  background: var(--card-hover);
+}
+
+.feature-card .accent {
+  font-family: var(--code-font);
+  font-size: 0.8rem;
+  margin-bottom: 8px;
+  display: block;
+}
+.accent--purple { color: var(--purple); }
+.accent--blue { color: var(--blue); }
+.accent--green { color: var(--green); }
+
+.feature-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+
+.feature-card p {
+  font-size: 0.85rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.feature-card--wide {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .feature-card--wide {
+    grid-column: 1 / -1;
+    max-width: 400px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+@media (min-width: 1024px) {
+  .feature-card--wide {
+    grid-column: 1 / -1;
+    max-width: 380px;
+    margin: 0 auto;
+    width: 100%;
+  }
+}
+
+/* ── Install + Footer ──────────────────────────────────── */
+
+.install-section {
+  padding: 80px 0 60px;
+  text-align: center;
+}
+
+.install-section h2 {
+  font-family: var(--code-font);
+  font-size: 1.6rem;
+  margin-bottom: 40px;
+  color: #fff;
+}
+
+.install-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  max-width: 780px;
+  margin: 0 auto 36px;
+}
+
+.install-block {
+  background: var(--card);
+  border: 1px solid #2a2a40;
+  border-radius: 8px;
+  padding: 20px 24px;
+  text-align: left;
+  position: relative;
+}
+
+.install-block .block-label {
+  font-family: var(--code-font);
+  font-size: 0.72rem;
+  color: var(--dim);
+  display: block;
+  margin-bottom: 12px;
+}
+
+.install-block code {
+  font-family: var(--code-font);
+  font-size: 0.82rem;
+  line-height: 1.8;
+  color: var(--text);
+  display: block;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.install-block .dollar { color: var(--green); user-select: none; }
+.install-block .comment { color: var(--dim); }
+
+.prereqs {
+  max-width: 780px;
+  margin: 0 auto 24px;
+  text-align: left;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.prereqs strong { color: var(--text); font-weight: 600; }
+
+.prereqs ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 8px;
+}
+.prereqs li {
+  padding-left: 16px;
+  position: relative;
+  margin-bottom: 4px;
+}
+.prereqs li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--dim);
+}
+
+.prereqs code {
+  font-family: var(--code-font);
+  font-size: 0.82rem;
+  color: var(--purple);
+}
+
+.docs-link {
+  font-size: 0.95rem;
+  margin-bottom: 24px;
+  display: inline-block;
+}
+
+footer {
+  border-top: 1px solid #1a1a2e;
+  padding: 28px 24px;
+  text-align: center;
+  font-family: var(--code-font);
+  font-size: 0.78rem;
+  color: var(--dim);
+}
+
+footer a { color: var(--muted); }
+footer a:hover { color: var(--text); }
+footer span { margin: 0 12px; }
+
+/* ── Responsive ────────────────────────────────────────── */
+
+@media (max-width: 1023px) {
+  .pipeline-grid { grid-template-columns: 1fr; max-width: 480px; margin: 0 auto; }
+  .features-grid { grid-template-columns: repeat(2, 1fr); }
+  .feature-card--wide { grid-column: 1 / -1; }
+}
+
+@media (max-width: 767px) {
+  .hero { min-height: auto; padding: 60px 20px 40px; }
+  .hero h1 { font-size: 2.2rem; }
+  .hero-install code { font-size: 0.75rem; }
+  .terminal-body { padding: 16px; font-size: 0.72rem; }
+  .features-grid { grid-template-columns: 1fr; }
+  .install-grid { grid-template-columns: 1fr; }
+  .install-block code { font-size: 0.75rem; }
+}
+
+/* ── Reduced motion ────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .scroll-cue { animation: none; }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════ Hero ════════════ -->
+<header class="hero" id="hero">
+  <a href="https://github.com/ducdmdev/agent-team-plugin" class="github-link" aria-label="View on GitHub" target="_blank" rel="noopener noreferrer">
+    <svg width="28" height="28" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+  </a>
+
+  <h1>Agent Team</h1>
+  <p class="subtitle">Orchestrate parallel AI teammates in Claude Code</p>
+
+  <div class="hero-install">
+    <button class="copy-btn" data-copy="claude plugin marketplace add ducdmdev/agent-team-plugin&#10;claude plugin install agent-team" aria-label="Copy install commands">Copy</button>
+    <code><span class="dollar">$ </span>claude plugin marketplace add ducdmdev/agent-team-plugin
+<span class="dollar">$ </span>claude plugin install agent-team</code>
+  </div>
+
+  <div class="version-badge">v3.2.0</div>
+
+  <a href="#demo" class="scroll-cue" aria-label="Scroll to demo">Watch the demo &#8595;</a>
+</header>
+
+<!-- ════════════ Terminal Demo ════════════ -->
+<section class="demo-section container" id="demo" aria-label="Live terminal demo showing the 3-stage pipeline">
+  <div class="terminal" role="img" aria-label="Animated terminal showing Agent Team orchestrating a refactor task through Plan, Execute, and Audit stages">
+    <div class="terminal-titlebar">
+      <div class="terminal-dot terminal-dot--red"></div>
+      <div class="terminal-dot terminal-dot--yellow"></div>
+      <div class="terminal-dot terminal-dot--green"></div>
+      <div class="terminal-title">claude</div>
+      <button class="terminal-skip" id="skipBtn" aria-label="Skip animation">Skip</button>
+    </div>
+    <div class="terminal-body" id="terminalBody"></div>
+  </div>
+  <div class="replay-hint" id="replayHint">Click terminal to replay</div>
+</section>
+
+<!-- ════════════ Pipeline Overview ════════════ -->
+<section class="pipeline-section" id="pipeline">
+  <div class="container">
+    <p class="section-intro">Agent Team splits every task into 3 stages &mdash; Plan, Execute, Audit &mdash; each with its own ephemeral team. Auto-detects team type (Implementation, Research, Audit, Planning, Hybrid) from your task description.</p>
+
+    <div class="pipeline-grid">
+      <div class="pipeline-card pipeline-card--plan">
+        <h3>Stage 1: Plan</h3>
+        <div class="team">Researcher + Analyst + Plan Reviewer</div>
+        <ul>
+          <li>Prior context loading</li>
+          <li>Plan-mode gate</li>
+          <li>7-check plan audit</li>
+        </ul>
+      </div>
+      <div class="pipeline-card pipeline-card--execute">
+        <h3>Stage 2: Execute</h3>
+        <div class="team">Implementers + Tester + Reviewer + Execute Reviewer</div>
+        <ul>
+          <li>Error recovery loop</li>
+          <li>Coordination patterns</li>
+          <li>File ownership enforcement</li>
+        </ul>
+      </div>
+      <div class="pipeline-card pipeline-card--audit">
+        <h3>Stage 3: Audit</h3>
+        <div class="team">Reviewer + Elegance Reviewer + Audit Reviewer</div>
+        <ul>
+          <li>8 completion gates</li>
+          <li>Elegance scoring (1&ndash;5)</li>
+          <li>Lessons capture + pattern library</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════ Features Grid ════════════ -->
+<section class="features-section" id="features">
+  <div class="container">
+    <h2>Built for real work</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <span class="accent accent--purple">exit 2</span>
+        <h3>13 Hooks</h3>
+        <p>Block premature completion, enforce file ownership, validate task graphs, limit plan revisions, enforce pre-shutdown commits.</p>
+      </div>
+      <div class="feature-card">
+        <span class="accent accent--blue">SendMessage</span>
+        <h3>13 Roles</h3>
+        <p>Implementers, researchers, reviewers, analysts &mdash; each with scoped tools and a recovery class.</p>
+      </div>
+      <div class="feature-card">
+        <span class="accent accent--purple">error_type=recoverable</span>
+        <h3>Error Recovery</h3>
+        <p>Classify errors (retry, recoverable, design flaw), auto-retry with pattern library, bounded recovery cycles.</p>
+      </div>
+      <div class="feature-card">
+        <span class="accent accent--green">score=4.2/5</span>
+        <h3>Elegance Review</h3>
+        <p>5-dimension quality: simplicity, consistency, readability, testability, minimal impact. Advisory, not blocking.</p>
+      </div>
+      <div class="feature-card">
+        <span class="accent accent--green">lessons.md</span>
+        <h3>Lessons Capture</h3>
+        <p>Post-execution insights feed future teams via a global pattern library.</p>
+      </div>
+      <div class="feature-card">
+        <span class="accent accent--blue">TeamCreate &rarr; TeamDelete</span>
+        <h3>Team Per Stage</h3>
+        <p>Each stage owns its lifecycle. Ephemeral teams, persistent workspace. 3 teams per pipeline run.</p>
+      </div>
+      <div class="feature-card feature-card--wide">
+        <span class="accent accent--purple">auto-detected</span>
+        <h3>5 Archetypes</h3>
+        <p>Implementation, Research, Audit, Planning, Hybrid &mdash; auto-detected from your task. Determines roles, gates, and report format.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════ Install + Footer ════════════ -->
+<section class="install-section" id="install">
+  <div class="container">
+    <h2>Get Started</h2>
+
+    <div class="install-grid">
+      <div class="install-block">
+        <button class="copy-btn" data-copy="claude plugin marketplace add ducdmdev/agent-team-plugin&#10;claude plugin install agent-team" aria-label="Copy install commands">Copy</button>
+        <span class="block-label"># Install from marketplace</span>
+        <code><span class="dollar">$ </span>claude plugin marketplace add ducdmdev/agent-team-plugin
+<span class="dollar">$ </span>claude plugin install agent-team</code>
+      </div>
+      <div class="install-block">
+        <button class="copy-btn" data-copy="export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1" aria-label="Copy feature flag command">Copy</button>
+        <span class="block-label"># Enable agent teams feature</span>
+        <code><span class="dollar">$ </span>export CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1
+
+<span class="comment"># Or add to settings.json:</span>
+<span class="comment"># { "env": { "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1" } }</span></code>
+      </div>
+    </div>
+
+    <div class="prereqs">
+      <strong>Prerequisites</strong>
+      <ul>
+        <li>Claude Code CLI (required)</li>
+        <li><code>jq</code> (required by hooks &mdash; hooks skip gracefully if missing)</li>
+        <li><code>git</code> (optional)</li>
+      </ul>
+    </div>
+
+    <a href="https://github.com/ducdmdev/agent-team-plugin#readme" class="docs-link" target="_blank" rel="noopener noreferrer">See the full documentation &rarr;</a>
+  </div>
+</section>
+
+<footer>
+  <a href="https://github.com/ducdmdev/agent-team-plugin" target="_blank" rel="noopener noreferrer">GitHub</a>
+  <span>&middot;</span>
+  v3.2.0
+  <span>&middot;</span>
+  Made for Claude Code developers
+</footer>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── Copy buttons ───────────────────────────────────────
+  document.querySelectorAll('.copy-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var text = btn.getAttribute('data-copy');
+      navigator.clipboard.writeText(text).then(function() {
+        btn.textContent = 'Copied!';
+        setTimeout(function() { btn.textContent = 'Copy'; }, 1500);
+      });
+    });
+  });
+
+  // ── Terminal animation ─────────────────────────────────
+
+  var terminalBody = document.getElementById('terminalBody');
+  var skipBtn = document.getElementById('skipBtn');
+  var replayHint = document.getElementById('replayHint');
+
+  // Check reduced motion preference
+  var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Terminal line definitions
+  // type: 'user' (typed char by char), 'output' (appears instantly), 'stage' (header), 'blank'
+  var lines = [
+    { type: 'user', text: 'You > use agent team to refactor the auth module' },
+    { type: 'blank' },
+    { type: 'stage', text: '\u2501\u2501 Stage 1 \u2014 Plan \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501', stage: 'plan' },
+    { type: 'blank' },
+    { type: 'output', cls: 'stage-plan line-bracket', text: '  [Planning team created: 2 Researchers + 1 Analyst + 1 Plan Reviewer]' },
+    { type: 'blank' },
+    { type: 'output', cls: 'stage-plan', html: '  <span class="tm-researcher">researcher-1:</span>  <span class="line-finding">FINDING: auth module has 3 sub-modules (token, session, middleware), relevance=high</span>' },
+    { type: 'output', cls: 'stage-plan', html: '  <span class="tm-researcher">researcher-2:</span>  <span class="line-finding">FINDING: token interface shared across 4 consumers, relevance=high</span>' },
+    { type: 'output', cls: 'stage-plan', html: '  <span class="tm-plan-reviewer">plan-reviewer:</span> <span class="line-approved">PLAN_REVIEW: status=approved</span>' },
+    { type: 'blank' },
+    { type: 'output', cls: 'stage-plan line-summary', text: '  Team plan for: refactor auth module' },
+    { type: 'output', cls: 'stage-plan line-summary', text: '  Archetype: implementation (auto-detected)' },
+    { type: 'blank' },
+    { type: 'output', cls: 'stage-plan line-summary', text: '  Teammates (3):' },
+    { type: 'output', cls: 'stage-plan', html: '  - <span class="tm-impl">auth-impl-1</span> (Implementer, plan-mode): token validation + middleware' },
+    { type: 'output', cls: 'stage-plan', html: '  - <span class="tm-impl">auth-impl-2</span> (Implementer): session management' },
+    { type: 'output', cls: 'stage-plan', html: '  - <span class="tm-reviewer">auth-reviewer</span> (Reviewer): validate all changes' },
+    { type: 'blank' },
+    { type: 'output', cls: 'stage-plan line-bracket', text: '  [Planning team shut down]' },
+    { type: 'output', cls: 'stage-plan line-summary', text: '  Approve?' },
+    { type: 'blank' },
+    { type: 'user', text: 'You > y' },
+    { type: 'blank' },
+    { type: 'stage', text: '\u2501\u2501 Stage 2 \u2014 Execute \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501', stage: 'execute' },
+    { type: 'blank' },
+    { type: 'output', cls: 'stage-execute line-bracket', text: '  [Execution team created: 2 Implementers + 1 Reviewer + 1 Execute Reviewer]' },
+    { type: 'blank' },
+    { type: 'output', cls: 'stage-execute', html: '  <span class="tm-impl">auth-impl-1:</span>   PLAN_PROPOSAL #1: Adapter pattern for token validation' },
+    { type: 'output', cls: 'stage-execute', html: '  <span class="tm-lead">Lead:</span>          <span class="line-approved">PLAN_APPROVED #1</span>' },
+    { type: 'output', cls: 'stage-execute', html: '  <span class="tm-impl">auth-impl-1:</span>   STARTING #1: Refactoring token validation' },
+    { type: 'output', cls: 'stage-execute', html: '  <span class="tm-impl">auth-impl-2:</span>   STARTING #2: Extracting session logic' },
+    { type: 'output', cls: 'stage-execute', html: '  <span class="tm-impl">auth-impl-1:</span>   <span class="line-completed">COMPLETED #1: Token validation refactored, 3 files changed</span>' },
+    { type: 'output', cls: 'stage-execute', html: '  <span class="tm-impl">auth-impl-2:</span>   <span class="line-blocked">BLOCKED #2: severity=medium, error_type=recoverable</span>' },
+    { type: 'output', cls: 'stage-execute', html: '  <span class="tm-lead">Lead:</span>          <span class="line-recovery">Recovery: forwarding token interface</span>' },
+    { type: 'output', cls: 'stage-execute', html: '  <span class="tm-impl">auth-impl-2:</span>   <span class="line-completed">COMPLETED #2: Session management extracted</span>' },
+    { type: 'output', cls: 'stage-execute', html: '  <span class="tm-impl">auth-impl-1:</span>   <span class="line-completed">COMPLETED #3: Middleware updated</span>' },
+    { type: 'output', cls: 'stage-execute', html: '  <span class="tm-reviewer">auth-reviewer:</span>  <span class="line-completed">COMPLETED #4: 5 issues \u2014 0 high, 3 medium, 2 low</span>' },
+    { type: 'blank' },
+    { type: 'output', cls: 'stage-execute', html: '  <span class="tm-exec-reviewer">exec-reviewer:</span> <span class="line-approved">EXECUTE_REVIEW: status=ready_for_audit</span>' },
+    { type: 'blank' },
+    { type: 'output', cls: 'stage-execute line-bracket', text: '  [Execution team shut down]' },
+    { type: 'blank' },
+    { type: 'stage', text: '\u2501\u2501 Stage 3 \u2014 Audit \u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501\u2501', stage: 'audit' },
+    { type: 'blank' },
+    { type: 'output', cls: 'stage-audit line-bracket', text: '  [Audit team created: 1 Reviewer + 1 Elegance Reviewer + 1 Audit Reviewer]' },
+    { type: 'blank' },
+    { type: 'output', cls: 'stage-audit', html: '  <span class="tm-reviewer">reviewer:</span>          <span class="line-approved">Completion gate (8/8 passed)</span>' },
+    { type: 'output', cls: 'stage-audit', html: '  <span class="tm-elegance-reviewer">elegance-reviewer:</span> ELEGANCE_REVIEW: overall_score=4.2/5' },
+    { type: 'output', cls: 'stage-audit', html: '  <span class="tm-audit-reviewer">audit-reviewer:</span>    <span class="line-approved">AUDIT_REVIEW: status=approved</span>' },
+    { type: 'blank' },
+    { type: 'output', cls: 'stage-audit line-summary', text: '  Lessons captured \u2192 lessons.md' },
+    { type: 'output', cls: 'stage-audit line-summary', text: '  Pattern library updated' },
+    { type: 'blank' },
+    { type: 'output', cls: 'stage-audit line-summary', text: '  Report: .agent-team/0323-refactor-auth/report.md' },
+    { type: 'output', cls: 'stage-audit line-bracket', text: '  [Audit team shut down]' },
+    { type: 'blank' },
+    { type: 'output', cls: 'line-summary', html: '  Total: 6 files changed, 4/4 tasks completed, elegance <span class="line-approved">4.2/5</span>' }
+  ];
+
+  var animationId = null;
+  var isAnimating = false;
+  var animationComplete = false;
+  var cancelCurrentAnimation = null;
+
+  function createLineElement(lineData) {
+    var div = document.createElement('div');
+    div.className = 'line';
+
+    if (lineData.type === 'blank') {
+      div.innerHTML = '\u00A0';
+      return div;
+    }
+
+    if (lineData.type === 'stage') {
+      div.className = 'line line-stage line-stage--' + lineData.stage;
+      div.textContent = lineData.text;
+      return div;
+    }
+
+    if (lineData.type === 'user') {
+      div.className = 'line line-user';
+      // Will be filled by typing animation or set directly
+      return div;
+    }
+
+    // output type
+    if (lineData.cls) {
+      div.className = 'line ' + lineData.cls;
+    }
+    if (lineData.html) {
+      div.innerHTML = lineData.html;
+    } else {
+      div.textContent = lineData.text;
+    }
+    return div;
+  }
+
+  function renderAllLines() {
+    terminalBody.innerHTML = '';
+    for (var i = 0; i < lines.length; i++) {
+      var el = createLineElement(lines[i]);
+      if (lines[i].type === 'user') {
+        var text = lines[i].text;
+        var promptEnd = text.indexOf('>') + 2;
+        el.innerHTML = '<span class="prompt">' + escapeHtml(text.substring(0, promptEnd)) + '</span>' + escapeHtml(text.substring(promptEnd));
+      }
+      terminalBody.appendChild(el);
+    }
+    animationComplete = true;
+    isAnimating = false;
+    skipBtn.style.display = 'none';
+    replayHint.classList.add('visible');
+  }
+
+  function escapeHtml(text) {
+    var d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
+  }
+
+  function scrollTerminalToBottom() {
+    terminalBody.scrollTop = terminalBody.scrollHeight;
+  }
+
+  function runAnimation() {
+    if (isAnimating) return;
+    isAnimating = true;
+    animationComplete = false;
+    terminalBody.innerHTML = '';
+    skipBtn.style.display = '';
+    replayHint.classList.remove('visible');
+
+    var lineIndex = 0;
+    var cancelled = false;
+
+    cancelCurrentAnimation = function() {
+      cancelled = true;
+      renderAllLines();
+    };
+
+    function processNextLine() {
+      if (cancelled || lineIndex >= lines.length) {
+        if (!cancelled) {
+          animationComplete = true;
+          isAnimating = false;
+          skipBtn.style.display = 'none';
+          replayHint.classList.add('visible');
+        }
+        return;
+      }
+
+      var lineData = lines[lineIndex];
+      lineIndex++;
+
+      if (lineData.type === 'blank') {
+        var blankEl = createLineElement(lineData);
+        terminalBody.appendChild(blankEl);
+        scrollTerminalToBottom();
+        setTimeout(processNextLine, 30);
+        return;
+      }
+
+      if (lineData.type === 'stage') {
+        // Pause before stage header
+        var delay = 400;
+        // Check if previous non-blank was end of another stage (600ms between stages)
+        // Simple heuristic: if the line before blank before this is a stage-ending bracket, use longer delay
+        if (lineIndex > 3) delay = 600;
+        setTimeout(function() {
+          if (cancelled) return;
+          var el = createLineElement(lineData);
+          terminalBody.appendChild(el);
+          scrollTerminalToBottom();
+          setTimeout(processNextLine, 400);
+        }, delay);
+        return;
+      }
+
+      if (lineData.type === 'user') {
+        var el = createLineElement(lineData);
+        terminalBody.appendChild(el);
+        scrollTerminalToBottom();
+
+        var text = lineData.text;
+        var promptEnd = text.indexOf('>') + 2;
+        var promptStr = text.substring(0, promptEnd);
+        var inputStr = text.substring(promptEnd);
+
+        el.innerHTML = '<span class="prompt">' + escapeHtml(promptStr) + '</span>';
+        var cursor = document.createElement('span');
+        cursor.className = 'cursor';
+        el.appendChild(cursor);
+
+        var charIndex = 0;
+        function typeChar() {
+          if (cancelled) return;
+          if (charIndex < inputStr.length) {
+            // Insert character before cursor
+            var charNode = document.createTextNode(inputStr[charIndex]);
+            el.insertBefore(charNode, cursor);
+            charIndex++;
+            scrollTerminalToBottom();
+            setTimeout(typeChar, 40);
+          } else {
+            // Remove cursor after typing complete
+            setTimeout(function() {
+              if (cancelled) return;
+              if (cursor.parentNode) cursor.parentNode.removeChild(cursor);
+              setTimeout(processNextLine, 300);
+            }, 400);
+          }
+        }
+        setTimeout(typeChar, 200);
+        return;
+      }
+
+      // Regular output line
+      var el = createLineElement(lineData);
+      terminalBody.appendChild(el);
+      scrollTerminalToBottom();
+      setTimeout(processNextLine, 80);
+    }
+
+    processNextLine();
+  }
+
+  // Skip button: works at any time — before, during, or after animation
+  skipBtn.addEventListener('click', function() {
+    if (cancelCurrentAnimation) {
+      cancelCurrentAnimation();
+    } else {
+      renderAllLines();
+    }
+    if (observer) observer.disconnect();
+  });
+
+  // Click to replay
+  terminalBody.addEventListener('click', function() {
+    if (animationComplete) {
+      runAnimation();
+    }
+  });
+
+  // Reduced motion: show everything immediately
+  var observer = null;
+  if (prefersReducedMotion) {
+    renderAllLines();
+  } else {
+    // Auto-start on scroll into view
+    observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting && !isAnimating && !animationComplete) {
+          runAnimation();
+          observer.disconnect();
+        }
+      });
+    }, { threshold: 0.15 });
+
+    observer.observe(document.getElementById('demo'));
+  }
+
+})();
+</script>
+</body>
+</html>
