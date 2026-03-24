@@ -78,7 +78,7 @@ while IFS= read -r owner; do
 done <<< "$OWNERS"
 
 if [ -n "$DIRTY_REPORT" ]; then
-  echo "Uncommitted changes detected before shutdown. $DIRTY_REPORT" >&2
+  echo "BLOCKED: Uncommitted changes detected before shutdown. $DIRTY_REPORT" >&2
   exit 2
 fi
 
