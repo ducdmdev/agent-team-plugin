@@ -18,9 +18,9 @@
 ### Checks
 
 1. `progress.md` exists and contains `**Archetype**` field
-2. `tasks.md` exists and is non-empty
-3. `issues.md` exists
-4. `task-graph.json` exists
+2. `tasks.md` exists and is non-empty (has content beyond the header)
+3. `issues.md` exists (may be empty — no issues yet is valid)
+4. `task-graph.json` exists (note: schema and cycle validation already handled by `validate-task-graph.sh` on the same SubagentStart event — this check only verifies file existence, not content)
 5. If `**Pipeline status**` field exists, value is valid (`approved`, `executed`, or `audited`)
 
 ### Behavior
@@ -41,25 +41,64 @@
 **Script**: `scripts/enforce-plan-revision-limit.sh`
 **Hook event**: `PreToolUse(SendMessage)`
 
+### Stdin JSON Shape
+
+`PreToolUse(SendMessage)` fires when the lead calls the SendMessage tool. The stdin JSON includes:
+
+```json
+{
+  "hook_event_name": "PreToolUse",
+  "tool_name": "SendMessage",
+  "tool_input": {
+    "to": "teammate-name",
+    "message": "PLAN_REVISION #1: {feedback}",
+    "summary": "..."
+  },
+  "cwd": "/path/to/project",
+  "team_name": "0324-task-name"
+}
+```
+
+The script reads `tool_input.message` to detect PLAN_REVISION prefix, and `tool_input.to` to identify the targeted teammate.
+
 ### How It Works
 
-1. Read stdin — get message content
-2. Check if message contains `PLAN_REVISION` prefix
-3. If not a revision → exit 0
-4. If revision → read `progress.md` Plan Proposals table
-5. Count revisions for the targeted teammate's task
-6. If count >= 2 → exit 2: "Plan-mode revision limit reached (2/2) for {teammate} on task #{N}. Accept the current proposal or reassign the task."
-7. If count < 2 → exit 0
+1. Read stdin via jq — extract `tool_input.message` and `tool_input.to`
+2. Check if message starts with `PLAN_REVISION` prefix
+3. If not a revision → exit 0 (fast path, most messages hit this)
+4. Extract teammate name from `tool_input.to`
+5. Read `progress.md` from workspace, find the `## Plan Proposals` table
+6. Parse the markdown table — format is: `| Teammate | Task | Proposal | Status | Revisions |`
+7. Count rows where Teammate column matches and Status is "Revision requested"
+8. If count >= 2 → exit 2: "Plan-mode revision limit reached (2/2) for {teammate}. Accept the current proposal or reassign the task."
+9. If count < 2 → exit 0
+
+### Plan Proposals Table Parsing
+
+The table in `progress.md` follows this format (from `docs/workspace-templates.md`):
+
+```markdown
+## Plan Proposals
+| Teammate | Task | Proposal | Status | Revisions |
+|----------|------|----------|--------|-----------|
+| auth-impl-1 | #1 | Adapter pattern | Approved | 0 |
+| auth-impl-2 | #2 | Direct refactor | Revision requested | 1 |
+```
+
+The script uses `grep` to find rows matching the teammate name, then counts the Revisions column value. If the Revisions column value >= 2, block.
 
 ### Edge Cases
 
 - No workspace → exit 0 (not in a team session)
-- No Plan Proposals table → exit 0 (plan-mode not active)
+- No Plan Proposals table in progress.md → exit 0 (plan-mode not active)
 - Message doesn't match PLAN_REVISION → exit 0
+- Teammate not in Plan Proposals table → exit 0 (count = 0, first revision is fine)
+- Plan Proposals table exists but is malformed → exit 0 (graceful degradation)
 
 ### Graceful Degradation
 
 - No jq → exit 0
+- Malformed progress.md → exit 0
 
 ---
 
@@ -70,16 +109,18 @@
 
 ### How It Works
 
-1. Read workspace `file-locks.json` to get owned file paths
-2. For each owner with write-access (Implementer, Tester), run `git status --porcelain` on their files
-3. Uncommitted changes found → exit 2: "Uncommitted changes detected. {teammate} has dirty files: {list}. Commit or stash before shutdown."
-4. All clean → exit 0
+1. Read workspace `file-locks.json` to get all owned file paths
+2. For ALL owners (not filtered by role — `file-locks.json` doesn't contain role info), run `git status --porcelain -- "$path"` on each owned file (note: `--` separator prevents file paths from being misinterpreted as flags, consistent with `verify-task-complete.sh`)
+3. Collect all dirty files per owner
+4. Any dirty files found → exit 2: "Uncommitted changes detected before shutdown. {owner}: {dirty file list}. Commit or stash before calling TeamDelete."
+5. All clean → exit 0
 
 ### Graceful Degradation
 
-- No git → exit 0
-- No file-locks.json → exit 0
+- No git → exit 0 (can't check, allow)
+- No file-locks.json → exit 0 (no ownership tracking)
 - No workspace → exit 0
+- file-locks.json is empty `{}` → exit 0 (no owned files to check)
 
 ---
 
@@ -98,6 +139,10 @@ After the current convergence detection block, add output file validation:
 4. Still exit 0 (advisory, not blocking)
 
 **Why advisory**: Missing output files could be legitimate (renamed, in-memory, different than declared). Blocking would cause false positives.
+
+**Relationship to existing code**: The existing script (lines 79-93) already lists output files for interface alignment context. The new check *supplements* this — after listing the files, it verifies each exists on disk. The existing listing remains unchanged; the new check adds a warning line when files are missing.
+
+**Handling missing `output_files` field**: If a task node has no `output_files` array (absent or null), skip it silently. Tasks without declared outputs have nothing to verify.
 
 ### Estimated Change
 
@@ -127,6 +172,7 @@ After the current convergence detection block, add output file validation:
 | `tests/hooks/test-check-integration-point.sh` | Add test for output file warning |
 | `CLAUDE.md` | Update hook count (13), script count (16), test count |
 | `README.md` | Update hook count, add 3 new hook descriptions, update structure tree |
+| `tests/run-tests.sh` | Auto-discovers new test files (no manual change needed, but verify count) |
 | `CHANGELOG.md` | Add v3.2.0 entry |
 | `.claude-plugin/plugin.json` | Version 3.2.0 |
 | `.claude-plugin/marketplace.json` | Version 3.2.0 |
