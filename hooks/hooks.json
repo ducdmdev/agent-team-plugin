@@ -72,9 +72,38 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "SendMessage",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/enforce-plan-revision-limit.sh",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "TeamDelete",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/enforce-pre-shutdown-commit.sh",
+            "timeout": 15
+          }
+        ]
       }
     ],
     "SubagentStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/scripts/check-workspace-completeness.sh",
+            "timeout": 10
+          }
+        ]
+      },
       {
         "hooks": [
           {
