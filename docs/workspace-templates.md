@@ -57,6 +57,20 @@ Append-only log of significant decisions.
 
 - [{timestamp}] {decision and reasoning}
 
+## Plan Audit Result
+
+Filled by the lead during Phase 1a Step 3 (plan audit). All 7 rows must be completed before presenting the plan to the user.
+
+| # | Check | Status | Notes |
+|---|-------|--------|-------|
+| 1 | Task completeness | {PASS/FAIL} | {notes} |
+| 2 | Dependency coherence | {PASS/FAIL} | {notes} |
+| 3 | File reference validity | {PASS/FAIL} | {notes} |
+| 4 | Scope coverage | {PASS/FAIL} | {notes} |
+| 5 | Reference freshness | {PASS/FAIL} | {notes} |
+| 6 | Feasibility | {PASS/FAIL} | {notes} |
+| 7 | Parallelizability | {PASS/FAIL} | {notes} |
+
 ## Plan Proposals
 
 | Teammate | Task | Proposal | Status | Revisions |

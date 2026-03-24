@@ -176,6 +176,23 @@ Both paths converge here. Every plan is audited before the user sees it.
 
 The Team Lead performs the audit inline -- reading the plan file, cross-referencing codebase state, and evaluating each check. No separate skill invocation needed.
 
+**MANDATORY: Record audit results in progress.md.** Before proceeding to Step 4 or Phase 1b, you MUST fill in this table in the workspace `progress.md`:
+
+```markdown
+## Plan Audit Result
+| # | Check | Status | Notes |
+|---|-------|--------|-------|
+| 1 | Task completeness | {PASS/FAIL} | {notes} |
+| 2 | Dependency coherence | {PASS/FAIL} | {notes} |
+| 3 | File reference validity | {PASS/FAIL} | {notes} |
+| 4 | Scope coverage | {PASS/FAIL} | {notes} |
+| 5 | Reference freshness | {PASS/FAIL} | {notes} |
+| 6 | Feasibility | {PASS/FAIL} | {notes} |
+| 7 | Parallelizability | {PASS/FAIL} | {notes} |
+```
+
+**DO NOT present the plan to the user (Phase 2) until all 7 rows are filled.** This is a hard gate — incomplete audits produce incomplete plans.
+
 #### Step 4 -- User Decision Gate
 
 Present to user regardless of audit status:
