@@ -56,6 +56,7 @@ setup_mock_workspace() {
 
 **Task**: test task
 **Status**: active
+**Archetype**: implementation
 EOF
 
   cat > "$WORKSPACE_DIR/tasks.md" <<'EOF'
