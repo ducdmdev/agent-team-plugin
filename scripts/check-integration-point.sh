@@ -91,6 +91,20 @@ for conv_id in $CONV_IDS; do
       [ -n "$f" ] && echo "    - $f" >&2
     done
   fi
+
+  # Verify upstream output files exist on disk
+  MISSING_OUTPUT=""
+  for dep_id in $DEPS; do
+    OUTPUT_FILES=$(echo "$GRAPH" | jq -r --arg id "$dep_id" '.nodes[$id].output_files // [] | .[]' 2>/dev/null)
+    for ofile in $OUTPUT_FILES; do
+      if [ ! -f "$CWD/$ofile" ]; then
+        MISSING_OUTPUT="$MISSING_OUTPUT $ofile (from $dep_id)"
+      fi
+    done
+  done
+  if [ -n "$MISSING_OUTPUT" ]; then
+    echo "  Warning: upstream output files missing:$MISSING_OUTPUT. Verify before starting $conv_id." >&2
+  fi
 done
 
 exit 0

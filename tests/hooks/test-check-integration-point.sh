@@ -146,5 +146,70 @@ run_hook "$HOOK" '{}'
 assert_exit_code 0 "$HOOK_EXIT" "6: Empty input exits 0"
 cleanup_temp_dir
 
+# --- Test 7: Convergence with all output files present — no missing warning ---
+setup_temp_dir
+cd "$TEST_TEMP_DIR"
+setup_mock_workspace "test"
+setup_mock_task_graph "test" "$(cat <<'JSON'
+{
+  "team": "test",
+  "created": "2026-03-20T10:00:00Z",
+  "updated": "2026-03-20T10:45:00Z",
+  "nodes": {
+    "#1": {"subject":"Auth","owner":"impl-1","status":"completed","depends_on":[],"completed_at":"2026-03-20T10:30:00Z","output_files":["src/a.ts"],"critical_path":true,"convergence_point":false},
+    "#2": {"subject":"Session","owner":"impl-2","status":"completed","depends_on":[],"completed_at":"2026-03-20T10:45:00Z","output_files":["src/b.ts"],"critical_path":false,"convergence_point":false},
+    "#3": {"subject":"Middleware","owner":"impl-1","status":"pending","depends_on":["#1","#2"],"completed_at":null,"output_files":["src/mw.ts"],"critical_path":true,"convergence_point":true}
+  },
+  "critical_path": ["#1","#3"],
+  "critical_path_length": 2
+}
+JSON
+)"
+# Create the output files so they exist on disk
+mkdir -p "$TEST_TEMP_DIR/src"
+echo "export const a = 1;" > "$TEST_TEMP_DIR/src/a.ts"
+echo "export const b = 1;" > "$TEST_TEMP_DIR/src/b.ts"
+run_hook "$HOOK" '{"cwd":"'"$TEST_TEMP_DIR"'","team_name":"test"}'
+assert_exit_code 0 "$HOOK_EXIT" "7: Convergence with output files present exits 0"
+TESTS_TOTAL=$((TESTS_TOTAL + 1))
+if echo "$HOOK_STDERR" | grep -qi "missing"; then
+  TESTS_FAILED=$((TESTS_FAILED + 1))
+  printf "  ${RED}FAIL${RESET} 7: Should not warn about missing files when all present\n"
+  printf "        stderr was: %s\n" "$HOOK_STDERR"
+else
+  TESTS_PASSED=$((TESTS_PASSED + 1))
+  printf "  ${GREEN}PASS${RESET} 7: No missing-file warning when all output files exist\n"
+fi
+cleanup_temp_dir
+
+# --- Test 8: Convergence with missing output file — warns ---
+setup_temp_dir
+cd "$TEST_TEMP_DIR"
+setup_mock_workspace "test"
+setup_mock_task_graph "test" "$(cat <<'JSON'
+{
+  "team": "test",
+  "created": "2026-03-20T10:00:00Z",
+  "updated": "2026-03-20T10:45:00Z",
+  "nodes": {
+    "#1": {"subject":"Auth","owner":"impl-1","status":"completed","depends_on":[],"completed_at":"2026-03-20T10:30:00Z","output_files":["src/a.ts"],"critical_path":true,"convergence_point":false},
+    "#2": {"subject":"Session","owner":"impl-2","status":"completed","depends_on":[],"completed_at":"2026-03-20T10:45:00Z","output_files":["src/b.ts"],"critical_path":false,"convergence_point":false},
+    "#3": {"subject":"Middleware","owner":"impl-1","status":"pending","depends_on":["#1","#2"],"completed_at":null,"output_files":["src/mw.ts"],"critical_path":true,"convergence_point":true}
+  },
+  "critical_path": ["#1","#3"],
+  "critical_path_length": 2
+}
+JSON
+)"
+# Do NOT create src/a.ts — it should be reported as missing
+# Create only src/b.ts
+mkdir -p "$TEST_TEMP_DIR/src"
+echo "export const b = 1;" > "$TEST_TEMP_DIR/src/b.ts"
+run_hook "$HOOK" '{"cwd":"'"$TEST_TEMP_DIR"'","team_name":"test"}'
+assert_exit_code 0 "$HOOK_EXIT" "8: Convergence with missing output file exits 0"
+assert_stderr_contains "missing" "$HOOK_STDERR" "8: Warns about missing upstream output file"
+assert_stderr_contains "src/a.ts" "$HOOK_STDERR" "8: Mentions the specific missing file"
+cleanup_temp_dir
+
 print_summary
 exit "$TESTS_FAILED"
