@@ -69,9 +69,9 @@ The script reads `tool_input.message` to detect PLAN_REVISION prefix, and `tool_
 4. Extract teammate name from `tool_input.to`
 5. Read `progress.md` from workspace, find the `## Plan Proposals` table
 6. Parse the markdown table — format is: `| Teammate | Task | Proposal | Status | Revisions |`
-7. Count rows where Teammate column matches and Status is "Revision requested"
-8. If count >= 2 → exit 2: "Plan-mode revision limit reached (2/2) for {teammate}. Accept the current proposal or reassign the task."
-9. If count < 2 → exit 0
+7. Sum the Revisions column value for all rows where the Teammate column matches
+8. If sum >= 2 → exit 2: "Plan-mode revision limit reached (2/2) for {teammate}. Accept the current proposal or reassign the task."
+9. If sum < 2 → exit 0
 
 ### Plan Proposals Table Parsing
 

@@ -19,6 +19,7 @@
 **Files:**
 - Create: `scripts/check-workspace-completeness.sh`
 - Create: `tests/hooks/test-check-workspace-completeness.sh`
+- Modify: `tests/lib/test-helpers.sh` (add `**Archetype**` to default progress.md template)
 
 - [ ] **Step 1: Create the hook script**
 
@@ -77,7 +78,7 @@ fi
 
 # Check 5: Pipeline status valid if present
 if [ -f "$WS/progress.md" ]; then
-  PIPELINE_STATUS=$(grep -oP '(?<=\*\*Pipeline status\*\*: )\S+' "$WS/progress.md" 2>/dev/null)
+  PIPELINE_STATUS=$(sed -n 's/.*\*\*Pipeline status\*\*: \([^ ]*\).*/\1/p' "$WS/progress.md" 2>/dev/null)
   if [ -n "$PIPELINE_STATUS" ]; then
     case "$PIPELINE_STATUS" in
       approved|executed|audited) ;;  # valid
@@ -100,23 +101,42 @@ exit 0
 chmod +x scripts/check-workspace-completeness.sh
 ```
 
+- [ ] **Step 1.5: Update test-helpers.sh — add Archetype to default progress.md**
+
+In `tests/lib/test-helpers.sh`, find the `setup_mock_workspace` function's `progress.md` template (lines 54-59). Add `**Archetype**: implementation` to the default template so workspace completeness tests pass:
+
+```bash
+  cat > "$WORKSPACE_DIR/progress.md" <<'EOF'
+# Team: test
+
+**Task**: test task
+**Status**: active
+**Archetype**: implementation
+EOF
+```
+
+Verify no existing tests break: `bash tests/run-tests.sh`
+
 - [ ] **Step 2: Create the test file**
 
-Create `tests/hooks/test-check-workspace-completeness.sh` following the pattern from `test-validate-task-graph.sh`:
+Create `tests/hooks/test-check-workspace-completeness.sh` following the pattern from `test-validate-task-graph.sh`.
 
-Test cases (aim for ~10 assertions):
-1. Complete workspace → exit 0
-2. Missing progress.md → exit 2, stderr mentions "progress.md"
-3. Missing Archetype field → exit 2, stderr mentions "Archetype"
+**IMPORTANT**: For "complete workspace" tests, call BOTH `setup_mock_workspace "team"` AND `setup_mock_task_graph "team"` since the hook checks all 4 files (progress.md, tasks.md, issues.md, task-graph.json). The helper creates 3 files; `setup_mock_task_graph` adds the 4th.
+
+Test cases (~11 assertions):
+1. Complete workspace (mock workspace + mock task graph) → exit 0
+2. Missing progress.md (delete it after setup) → exit 2, stderr mentions "progress.md"
+3. Missing Archetype field (overwrite progress.md without it) → exit 2, stderr mentions "Archetype"
 4. Missing tasks.md → exit 2, stderr mentions "tasks.md"
-5. Empty tasks.md → exit 2, stderr mentions "empty"
+5. Empty tasks.md (overwrite with single header line) → exit 2, stderr mentions "empty"
 6. Missing issues.md → exit 2, stderr mentions "issues.md"
-7. Missing task-graph.json → exit 2, stderr mentions "task-graph.json"
-8. Invalid Pipeline status → exit 2, stderr mentions "invalid value"
+7. Missing task-graph.json (skip setup_mock_task_graph) → exit 2, stderr mentions "task-graph.json"
+8. Invalid Pipeline status (add `**Pipeline status**: bogus` to progress.md) → exit 2, stderr mentions "invalid"
 9. No workspace directory → exit 0
-10. Valid Pipeline status "approved" → exit 0
+10. Valid Pipeline status "approved" (add field to progress.md) → exit 0
+11. Team with -fix suffix → exit 0 (uses base team workspace)
 
-Each test: `setup_temp_dir`, `setup_mock_workspace`, modify as needed, `run_hook`, `assert_exit_code`, `assert_stderr_contains` where applicable, `cleanup_temp_dir`.
+Each test: `setup_temp_dir`, `setup_mock_workspace`, `setup_mock_task_graph` where needed, modify as needed, `run_hook`, `assert_exit_code`, `assert_stderr_contains` where applicable, `cleanup_temp_dir`.
 
 - [ ] **Step 3: Run tests**
 
@@ -364,25 +384,25 @@ Identify the convergence detection block (where all upstream deps complete). The
 
 - [ ] **Step 2: Add output file existence check**
 
-After the existing convergence nudge output, add ~15 lines:
+After the existing output file listing block (ends ~line 93, inside the `for conv_id` loop), add ~15 lines using the existing variables (`GRAPH`, `DEPS`, `dep_id`, `conv_id`, `CWD`):
 
 ```bash
-# Check if upstream task output files exist
-for UPSTREAM_ID in $(echo "$UPSTREAM_TASKS" | jq -r '.[]'); do
-  OUTPUT_FILES=$(echo "$GRAPH" | jq -r --arg id "$UPSTREAM_ID" '.nodes[$id].output_files // [] | .[]' 2>/dev/null)
-  for OFILE in $OUTPUT_FILES; do
-    if [ ! -f "$CWD/$OFILE" ]; then
-      MISSING_FILES="$MISSING_FILES $OFILE (from $UPSTREAM_ID)"
+    # Verify upstream output files exist on disk
+    MISSING_OUTPUT=""
+    for dep_id in $DEPS; do
+      OUTPUT_FILES=$(echo "$GRAPH" | jq -r --arg id "$dep_id" '.nodes[$id].output_files // [] | .[]' 2>/dev/null)
+      for ofile in $OUTPUT_FILES; do
+        if [ ! -f "$CWD/$ofile" ]; then
+          MISSING_OUTPUT="$MISSING_OUTPUT $ofile (from $dep_id)"
+        fi
+      done
+    done
+    if [ -n "$MISSING_OUTPUT" ]; then
+      echo "  Warning: upstream output files missing:$MISSING_OUTPUT. Verify before starting $conv_id." >&2
     fi
-  done
-done
-
-if [ -n "$MISSING_FILES" ]; then
-  echo "Warning: Integration point $TASK_ID — upstream output files missing:$MISSING_FILES. Verify before starting downstream task." >&2
-fi
 ```
 
-Adapt variable names to match the existing script's conventions (read the script first).
+Insert BEFORE the closing `done` of the `for conv_id` loop (~line 94).
 
 - [ ] **Step 3: Add test case to existing test**
 
@@ -414,7 +434,7 @@ git commit -m "feat: add output file validation to integration point hook"
 
 - [ ] **Step 1: Add workspace completeness to SubagentStart**
 
-Add `check-workspace-completeness.sh` to SubagentStart array, before `validate-task-graph.sh`:
+Insert at position 0 of the existing `SubagentStart` array (before `validate-task-graph.sh`). The resulting array will have 3 entries: `[check-workspace-completeness, validate-task-graph, track-teammate-lifecycle]`.
 
 ```json
 {
@@ -430,7 +450,7 @@ Add `check-workspace-completeness.sh` to SubagentStart array, before `validate-t
 
 - [ ] **Step 2: Add plan revision limit to PreToolUse**
 
-Add new entry in PreToolUse array with matcher "SendMessage":
+Append to the existing `PreToolUse` array (which currently has 1 entry for `"matcher": "Write|Edit"`). The resulting array will have 3 entries: `[Write|Edit, SendMessage, TeamDelete]`.
 
 ```json
 {
@@ -447,7 +467,7 @@ Add new entry in PreToolUse array with matcher "SendMessage":
 
 - [ ] **Step 3: Add pre-shutdown commit to PreToolUse**
 
-Add new entry in PreToolUse array with matcher "TeamDelete":
+Append to the same `PreToolUse` array after the SendMessage entry:
 
 ```json
 {
