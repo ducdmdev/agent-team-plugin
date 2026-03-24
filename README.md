@@ -3,6 +3,7 @@
 > Orchestrate parallel work via AI Agent Teams in Claude Code — with automated coordination, workspace tracking, and hook enforcement.
 
 [![Claude Code Plugin](https://img.shields.io/badge/Claude_Code-Plugin-blueviolet)](https://github.com/ducdmdev/agent-team-plugin)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Terminal_Dark-0f0f23)](https://ducdmdev.github.io/agent-team-plugin/)
 
 ## What It Does
 
