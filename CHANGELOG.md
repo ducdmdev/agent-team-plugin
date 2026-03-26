@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - 2026-03-26
+
+### Added
+- **Brainstorm & Clarify gate** (plan stage) — conditional gate between plan audit and decomposition. Fires when uncertainty detected (analyst flags complexity, researcher reports risks, multiple decomposition strategies, or any concern). Presents structured options to user before proceeding.
+- **Per-task code review** (execute stage) — Reviewer sends `CODE_REVIEW` after each implementer completes a task. Verdicts: approve, request_changes (max 1 fix cycle), comment. Skipped for read-only teammates.
+- **Deep code review** (audit stage) — new Step 3 in Phase 5. Reviewer reads ALL changed files for correctness, bugs, security, integration, and test coverage. Critical issues route to remediation gate.
+- **`CODE_REVIEW` message type** in communication protocol with execute-stage and audit-stage processing rules
+- **Next-step suggestions** after each pipeline stage completes — guides user to the natural next action (`/agent-team:execute`, `/agent-team:audit`, review report, commit work, etc.)
+- **Landing page** with interactive terminal demo at https://ducdmdev.github.io/agent-team-plugin/ — Terminal Dark style, auto-typing 3-stage pipeline animation
+
+### Fixed
+- Stale step cross-references in audit SKILL.md after Step 3 insertion (Step 4→5, Step 5→6)
+
 ## [3.2.0] - 2026-03-24
 
 ### Added
