@@ -355,6 +355,22 @@ After execute-reviewer passes (or one remediation cycle completes):
 4. Write `**Stage**: execute` to `progress.md`
 5. `TeamDelete`
 
+### Stage Complete — Next Steps
+
+After execution team is shut down, present:
+
+```
+✓ Execution complete. {N} files changed, {X}/{Y} tasks completed, {Z} open issues.
+  Workspace: .agent-team/{team-name}/
+
+Next steps:
+  → /agent-team:audit    Verify work and generate report
+  → Review changes: git diff
+  → Fix issues in .agent-team/{team-name}/issues.md before auditing
+```
+
+When chained via `/agent-team:start`, the pipeline continues automatically to the audit stage. When invoked independently, this is the final output.
+
 ## References
 
 - [../../docs/workspace-templates.md](../../docs/workspace-templates.md) — workspace file templates and task-graph.json schema

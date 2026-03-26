@@ -243,6 +243,24 @@ Report to user:
 - Any open concerns or follow-up items
 - **Workspace path**: `.agent-team/{team-name}/`
 
+### Stage Complete — Next Steps
+
+After the report is presented, show:
+
+```
+✓ Audit complete. Report: .agent-team/{team-name}/report.md
+  {X}/{Y} tasks completed, {N} issues, elegance {score}/5
+
+Next steps:
+  → Review the report at .agent-team/{team-name}/report.md
+  → Review lessons at .agent-team/{team-name}/lessons.md
+  → Commit the team's work if not already committed
+  → Re-run audit if fixes were needed: /agent-team:audit
+  → Start a new task: /agent-team:start [next task]
+```
+
+When chained via `/agent-team:start`, this is the final output of the entire pipeline. The workspace persists for future reference.
+
 ---
 
 ## Completion Gates

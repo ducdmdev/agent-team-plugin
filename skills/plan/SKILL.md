@@ -396,7 +396,22 @@ Mark plan-mode teammates in the plan presentation. The execute stage reads these
 3. "Do any tasks form circular dependencies? Trace each `blocked by` chain -- if task A blocks B blocks C blocks A, that's a cycle. If found, restructure: merge the cyclic tasks or break the cycle by removing one dependency."
 4. "Have I identified the critical path? Is it displayed in the plan? Are convergence points marked?"
 
-Wait for user confirmation before proceeding. If invoked independently (not via `agent-team:start`), the plan stage stops here after user approval. The user can later invoke `agent-team:execute` to proceed.
+Wait for user confirmation before proceeding. If invoked independently (not via `agent-team:start`), the plan stage stops here after user approval.
+
+### Stage Complete — Next Steps
+
+After user approves and the planning team is shut down, present:
+
+```
+✓ Plan approved. Workspace: .agent-team/{team-name}/
+
+Next steps:
+  → /agent-team:execute    Start the execution team
+  → Review the plan at {plan-file-path}
+  → Edit tasks in .agent-team/{team-name}/tasks.md before executing
+```
+
+When chained via `/agent-team:start`, the pipeline continues automatically to the execute stage. When invoked independently, this is the final output.
 
 ## Inter-Stage Review: Plan Review Agent
 
