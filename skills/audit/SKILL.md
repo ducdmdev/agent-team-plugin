@@ -153,7 +153,7 @@ COMPLETED #review:
 
 Review `issues.md` for OPEN items after the completion gate:
 
-- **0 OPEN issues**: Skip — proceed to Step 4
+- **0 OPEN issues**: Skip — proceed to Step 5
 - **OPEN issues exist, remediation cycle = 0**: Present issues to the user, propose a remediation team. Follow the remediation gate protocol in the execute stage's coordination patterns. Set `progress.md` `**Remediation cycle**` to `1` if approved.
 - **OPEN issues exist, remediation cycle = 1**: Do NOT spawn another team. Include unresolved issues in the report:
   > **Unresolved issues (require manual follow-up):**
@@ -191,7 +191,7 @@ Select the variant based on archetype:
 - **Planning**: Plan report (What Was Planned)
 - **Hybrid**: Standard report; omit Files Changed if no implementation component, substitute the appropriate variant section
 
-Include elegance review data (if Step 4 ran) and lessons summary (from Step 5) in the report. See the Elegance Review and Lessons Summary sections in the report format reference.
+Include elegance review data (if Step 5 ran) and lessons summary (from Step 6) in the report. See the Elegance Review and Lessons Summary sections in the report format reference.
 
 **Self-check**: Read the file back. Does it contain the Executive Summary? If not, regenerate.
 
@@ -322,7 +322,7 @@ The lead synthesizes lessons from these workspace sources:
 - `progress.md` — decisions made, handoffs, recovery cycles
 - `events.log` — timeline of team activity, spawn/stop events
 - `task-graph.json` — timestamps for estimation accuracy (`created` vs node `completed_at`)
-- Elegance review findings (if Step 4 ran)
+- Elegance review findings (if Step 5 ran)
 - Recovery attempts and their outcomes
 
 ### Output
