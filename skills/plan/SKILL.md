@@ -228,6 +228,52 @@ Which option?
 
 **Guard rail:** For `insufficient` status, option 1 (proceed as-is) is presented but with a warning: "This plan may not have enough detail to decompose into parallel work. Proceeding may result in a weaker team structure."
 
+### Brainstorm & Clarify Gate (Conditional)
+
+Before decomposing, check if any of these triggers apply:
+
+1. Analyst flagged `parallelizable=no` or `complexity=high`
+2. Any researcher FINDING has `relevance=high` with risk implications
+3. Plan audit status is `needs-revision` or `insufficient`
+4. You see 2+ valid decomposition strategies (by module vs by concern vs by layer)
+5. You have ANY concern or uncertainty about the approach
+
+**If no triggers fire**: Skip this step — proceed directly to Phase 1b.
+
+**If any trigger fires**: Present a Brainstorm & Clarify block to the user:
+
+```
+## Brainstorm & Clarify
+
+Before I decompose this task, I want to discuss {N} points:
+
+### Point 1: {title}
+**Context**: {what was found, what's uncertain, why it matters}
+**Options**:
+  A) {approach} — {tradeoffs}
+  B) {approach} — {tradeoffs}
+  C) {approach} — {tradeoffs}
+**My recommendation**: {which option and why}
+
+### Point 2: ...
+
+What are your thoughts?
+```
+
+**Wait for user response before proceeding.** User can:
+- Pick options ("go with A for point 1, B for point 2")
+- Provide direction ("focus on safety over speed")
+- Ask for more info ("can the researcher check if X exists?")
+- Defer ("your call on all points")
+
+**If user asks for more info**: Send the researcher or analyst to investigate, then re-present the brainstorm with updated findings.
+
+**Record in progress.md**: Log each brainstorm point and the user's decision in the Decision Log section.
+
+**Key rule**: Do NOT decompose while uncertain. If there's a concern, present it. Even a short "I have one question before decomposing" counts. The gate is cheap (one message exchange) but prevents costly wrong decompositions.
+
+---
+
 ### Phase 1b: Decompose from Plan
 
 User has approved a plan (or no plan -- see fallback below). The decomposition steps now derive from the approved plan:
