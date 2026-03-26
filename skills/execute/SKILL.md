@@ -233,7 +233,7 @@ When receiving structured messages:
 | Prefix | Lead Action |
 |--------|--------------|
 | STARTING | Update `tasks.md` status to `in_progress`, add note |
-| COMPLETED | Update `tasks.md` status to `completed`, add file list and notes. Update `task-graph.json`: set node status to `completed`, record `completed_at` and `output_files`. **Self-check**: read `task-graph.json` back to verify valid JSON — malformed JSON silently disables all three hook scripts. Check: does this unblock other tasks? If yes, message the dependent teammate. The `compute-critical-path.sh` hook will output the updated critical path. |
+| COMPLETED | Update `tasks.md` status to `completed`, add file list and notes. Update `task-graph.json`: set node status to `completed`, record `completed_at` and `output_files`. **Self-check**: read `task-graph.json` back to verify valid JSON — malformed JSON silently disables all three hook scripts. **Route to Reviewer for per-task code review** (see below). Check: does this unblock other tasks? If yes, message the dependent teammate. The `compute-critical-path.sh` hook will output the updated critical path. |
 | BLOCKED | Add row to `issues.md` immediately. Acknowledge the teammate. Enter the **Error Recovery Loop** (see below). Route to resolution. |
 | HANDOFF | Extract key details, forward to dependent teammate with actionable context. Log in `progress.md` Handoffs |
 | QUESTION | Check if answer is in workspace files. If yes, answer with file reference. If no, investigate |
@@ -247,6 +247,37 @@ When receiving structured messages:
 When a teammate spawned with `mode: "plan"` finishes planning, they send a `plan_approval_request` message to the lead. You must respond via SendMessage with `type: "plan_approval_response"`, the teammate as `recipient`, the `request_id` from their request, and `approve: true` or `approve: false`. If rejecting, include `content` with specific feedback so the teammate can revise their plan. The teammate cannot proceed with implementation until the plan is approved.
 
 For high-frequency handoffs between specific teammates, you may authorize direct communication — see the Direct Handoff pattern in [references/coordination-patterns.md](references/coordination-patterns.md). The audit trail must still be maintained in `progress.md`.
+
+### Per-Task Code Review (Light)
+
+When an implementer sends `COMPLETED #N`, route the completed task to the Reviewer teammate for a light code review before proceeding to the next task:
+
+```
+Lead → Reviewer: "Review task #N — files changed: {list from file-locks.json / COMPLETED message}"
+```
+
+The Reviewer reads the changed files and responds:
+
+```
+CODE_REVIEW #N:
+  verdict={approve|request_changes|comment}
+  issues=[{file, line, severity=bug|concern|suggestion, description}]
+  summary={one-line}
+```
+
+**Processing the review:**
+
+| Verdict | Action |
+|---------|--------|
+| `approve` | Task stays completed, proceed to unblock dependent tasks |
+| `request_changes` | Forward issues to the implementer. Implementer fixes and re-submits COMPLETED. Max 1 review cycle per task. |
+| `comment` | Note observations in `progress.md` but don't block. Suggestions and style comments for the audit stage. |
+
+**After 1 fix cycle**: If the Reviewer still has concerns after the implementer's fix, note remaining issues in `issues.md` for the audit stage's deep code review. Do not block further — keep execution moving.
+
+**What this catches**: Logic bugs, missing edge cases, wrong API usage — things that build/test passes miss but a human reviewer would catch.
+
+**When to skip**: For read-only teammates (Researcher, Analyst, Reviewer themselves), there is no code to review. Only route to Reviewer when the COMPLETED comes from an Implementer or Tester who wrote/modified files.
 
 ### Error Recovery Loop
 

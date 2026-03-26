@@ -148,6 +148,25 @@ PLAN_REVISION #N: {specific feedback on what to change and why}
 
 The teammate revises their approach and resubmits a PLAN_PROPOSAL. Max 2 revision rounds — after that, the lead decides and either approves or provides a directive.
 
+## Code Review Messages
+
+### CODE_REVIEW
+
+Sent by the Reviewer during execute stage (per-task light review) or audit stage (deep review):
+
+```
+CODE_REVIEW #N:
+  verdict={approve|request_changes|comment}
+  issues=[{file, line, severity=bug|concern|suggestion, description}]
+  summary={one-line}
+```
+
+**Lead processing (execute stage)**: `approve` → proceed to unblock dependents. `request_changes` → forward issues to implementer, max 1 fix cycle. `comment` → log in progress.md, don't block.
+
+**Lead processing (audit stage)**: Extended format with `gate_results` and `code_review` fields. `critical` issues → remediation gate. `important` → issues.md. `minor` → report only.
+
+---
+
 ## Inter-Stage Review Messages
 
 Used by review agents that validate output between pipeline stages.

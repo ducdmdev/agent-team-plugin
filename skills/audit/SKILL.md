@@ -63,17 +63,18 @@ Read: .agent-team/{team-name}/task-graph.json
 
    > **Do not skip spawning.** The audit team needs all applicable roles to produce a thorough review. Spawn them in parallel — they work on different aspects and don't conflict.
 3. Reviewer validates work (completion gate checks per archetype — see `references/completion-gates.md`)
-4. Remediation gate (if open issues — lead coordinates fixes)
-5. Elegance gate (Elegance Reviewer teammate scores code quality)
-6. Lessons capture (lead synthesizes from workspace data)
-7. Pattern library update (lead writes to `~/.claude/agent-team-patterns.json`)
-8. Report generation (lead writes `report.md`)
-9. Audit Reviewer validates report (sends AUDIT_REVIEW message)
-10. **Shutdown teammates** (parallel shutdown requests)
-11. **TeamDelete**
-12. Cleanup — write `**Pipeline status**: audited` and `**Stage**: audit` to `progress.md`
+4. **Reviewer: deep code review** — read ALL changed files, review for correctness, bugs, security, integration, test coverage (see Deep Code Review below)
+5. Remediation gate (if critical issues from gates OR code review — lead coordinates fixes)
+6. Elegance gate (Elegance Reviewer teammate scores code quality)
+7. Lessons capture (lead synthesizes from workspace data)
+8. Pattern library update (lead writes to `~/.claude/agent-team-patterns.json`)
+9. Report generation (lead writes `report.md` — now includes code review findings)
+10. Audit Reviewer validates report (sends AUDIT_REVIEW message)
+11. **Shutdown teammates** (parallel shutdown requests)
+12. **TeamDelete**
+13. Cleanup — write `**Pipeline status**: audited` and `**Stage**: audit` to `progress.md`
 
-Execute these 12 steps in order. Each step references its detailed specification below or in supporting files.
+Execute these 13 steps in order. Each step references its detailed specification below or in supporting files.
 
 ### Step 1: Pre-Shutdown Commit
 
@@ -113,7 +114,42 @@ Log gate result in `progress.md` Decision Log.
 
 If any check fails, create fix tasks and assign to appropriate teammates. Re-run failed checks after fixes complete.
 
-### Step 3: Remediation Gate
+### Step 3: Deep Code Review
+
+**Applies to**: Teams that produced code changes (at least one Implementer completed tasks). Skip for pure research/audit/planning teams.
+
+After completion gates pass, the Reviewer reads ALL files changed by the team. This is a thorough review — not the light per-task review from the execute stage.
+
+**What the Reviewer checks:**
+
+| Category | What to look for |
+|----------|-----------------|
+| **Correctness** | Does the code do what the plan says? Are requirements met? |
+| **Bugs** | Edge cases, null checks, error handling, off-by-one, race conditions |
+| **Security** | Injection risks, auth gaps, exposed secrets, unsafe input handling |
+| **Integration** | Do cross-teammate changes work together? Interface compatibility? |
+| **Test coverage** | Do tests actually cover the behavior, not just mock it? Missing test cases? |
+
+**Reviewer sends extended COMPLETED message:**
+
+```
+COMPLETED #review:
+  gate_results={8/8 passed}
+  code_review={N files reviewed, M issues found}
+  issues=[{file, line, severity=critical|important|minor, category=bug|security|integration|test-gap, description}]
+```
+
+**Processing review findings:**
+
+| Severity | Action |
+|----------|--------|
+| `critical` | Must fix — goes to remediation gate (step 4) |
+| `important` | Logged in `issues.md`, flagged in report. Fix if time allows. |
+| `minor` | Logged in report only (like elegance findings) |
+
+**Difference from Elegance Reviewer**: The Reviewer checks **correctness and safety** (does it work? is it secure?). The Elegance Reviewer checks **quality and craft** (is it clean? could it be simpler?). They complement each other — do not skip either one.
+
+### Step 4: Remediation Gate
 
 Review `issues.md` for OPEN items after the completion gate:
 
@@ -124,7 +160,7 @@ Review `issues.md` for OPEN items after the completion gate:
   > - Issue #N (severity): description
   > See `.agent-team/{team-name}/issues.md` for full details.
 
-### Step 4: Elegance Gate
+### Step 5: Elegance Gate
 
 **When to run**: Only if write-access teammates (implementers) completed tasks. Skip for pure research, audit, or planning teams.
 
@@ -134,17 +170,17 @@ The Elegance Reviewer is spawned with the audit team at stage start (step 2). It
 
 Process the `ELEGANCE_REVIEW` message and include findings in the report. This gate is **advisory only** — findings do not block completion.
 
-### Step 5: Lessons Capture
+### Step 6: Lessons Capture
 
 Synthesize lessons from the entire team execution. See [Lessons Capture](#lessons-capture) section below.
 
 Write `.agent-team/{team-name}/lessons.md` using the template from [workspace-templates.md](../../docs/workspace-templates.md#lessonsmd).
 
-### Step 6: Pattern Library Update
+### Step 7: Pattern Library Update
 
 Extract error patterns from resolved issues and update the global library. See [Pattern Library Update](#pattern-library-update) section below.
 
-### Step 7: Report Generation
+### Step 8: Report Generation
 
 Write `.agent-team/{team-name}/report.md` using the appropriate report variant. See [references/report-format.md](references/report-format.md) for templates.
 
@@ -171,7 +207,7 @@ After the completion gate passes and before the report is finalized, update the 
 
 Skip if no plan file was used. See [workspace-templates.md](../../docs/workspace-templates.md#plan-file-conventions) for the full status value reference.
 
-### Step 8: Audit Review Agent
+### Step 9: Audit Review Agent
 
 Spawn the audit review agent using the prompt in [agents/audit-reviewer.md](agents/audit-reviewer.md). See [Inter-Stage Review: Audit Review Agent](#inter-stage-review-audit-review-agent) section below.
 
@@ -179,7 +215,7 @@ Process the `AUDIT_REVIEW` message:
 - `status=approved` — proceed to shutdown
 - `status=revisions_needed` — fix the report/lessons and re-run review (max 2 cycles, then finalize as-is with a note)
 
-### Step 9: Team Shutdown
+### Step 10: Team Shutdown
 
 Shut down teammates in parallel — not sequentially:
 
@@ -191,7 +227,7 @@ If a teammate rejects: check their reason, resolve, then re-request
 
 Update `progress.md` status to `done`, record completion time.
 
-### Step 10: Cleanup
+### Step 11: Cleanup
 
 - **Only call TeamDelete after ALL teammates have confirmed shutdown.** TeamDelete may fail if teammates are still active.
 - TeamDelete to remove ephemeral team resources (`~/.claude/teams/{team-name}/`). The workspace at `.agent-team/{team-name}/` is NOT deleted — it is the permanent record.
